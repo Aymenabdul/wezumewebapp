@@ -13,31 +13,60 @@ import {
     Toolbar,
     Typography,
     useTheme,
-    useMediaQuery
+    useMediaQuery,
+    Menu,
+    MenuItem
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import VideocamIcon from '@mui/icons-material/Videocam';
-import WorkIcon from '@mui/icons-material/Work';
+import WhatshotIcon from '@mui/icons-material/Whatshot';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Outlet } from 'react-router';
+import PersonIcon from '@mui/icons-material/Person';
+import ActivityIcon from '@mui/icons-material/Timeline';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 
 const drawerWidth = 240;
 
 export default function BaseLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [settingsAnchor, setSettingsAnchor] = useState(null);
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('lg')); 
+    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
 
+    const handleSettingsClick = (event) => {
+        setSettingsAnchor(event.currentTarget);
+    };
+
+    const handleSettingsClose = () => {
+        setSettingsAnchor(null);
+    };
+
+    const handleLogout = () => {
+        handleSettingsClose();
+        navigate('/login');
+    };
+
     const navLinks = [
-        { label: "Dashboard", icon: <DashboardIcon /> },
-        { label: "Videos", icon: <VideocamIcon /> },
-        { label: "Openings", icon: <WorkIcon /> }
+        { label: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
+        { label: "Videos", icon: <VideocamIcon />, path: "/app/videos" },
+        { label: "Trending", icon: <WhatshotIcon />, path: "/app/trending" }
     ];
+
+    const settingsMenuItems = [
+        { label: "Profile", icon: <PersonIcon /> },
+        { label: "Activities", icon: <ActivityIcon /> },
+        { label: "Logout", icon: <LogoutIcon />, onClick: handleLogout }
+    ];
+
+    const isSettingsOpen = Boolean(settingsAnchor);
 
     const drawer = (
         <>
@@ -55,26 +84,33 @@ export default function BaseLayout() {
                     fontFamily: 'Roboto, sans-serif',
                 }}
             >
-                {navLinks.map((navLink, index) => (
-                    <ListItem key={index} disablePadding>
-                        <ListItemButton 
-                            sx={{ 
-                                borderRadius: 2, 
-                                display: "flex", 
-                                gap: 1.5,
-                                '&:hover': {
-                                    bgcolor: 'rgba(255, 255, 255, 0.1)',
-                                }
-                            }}
-                            onClick={isMobile ? handleDrawerToggle : undefined}
-                        >
-                            <ListItemIcon sx={{ color: 'white', minWidth: 'auto' }}>
-                                {navLink.icon}
-                            </ListItemIcon>
-                            <ListItemText primary={navLink.label} />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
+                {navLinks.map((navLink, index) => {
+                    const isActive = location.pathname === navLink.path;
+                    return (
+                        <ListItem key={index} disablePadding>
+                            <ListItemButton 
+                                sx={{ 
+                                    borderRadius: 2, 
+                                    display: "flex", 
+                                    gap: 1.5,
+                                    bgcolor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                    }
+                                }}
+                                onClick={() => {
+                                    navigate(navLink.path);
+                                    if (isMobile) handleDrawerToggle();
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: 'white', minWidth: 'auto' }}>
+                                    {navLink.icon}
+                                </ListItemIcon>
+                                <ListItemText primary={navLink.label} />
+                            </ListItemButton>
+                        </ListItem>
+                    );
+                })}
             </List>
             <List 
                 sx={{ 
@@ -93,15 +129,63 @@ export default function BaseLayout() {
                                 bgcolor: 'rgba(255, 255, 255, 0.1)',
                             }
                         }}
-                        onClick={isMobile ? handleDrawerToggle : undefined}
+                        onClick={(event) => {
+                            handleSettingsClick(event);
+                            if (isMobile) handleDrawerToggle();
+                        }}
                     >
-                        <ListItemIcon sx={{ color: 'white', minWidth: 'auto' }}>
+                        <ListItemIcon sx={{ 
+                            color: 'white', 
+                            minWidth: 'auto',
+                            transform: isSettingsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.3s ease'
+                        }}>
                             <SettingsIcon />
                         </ListItemIcon>
                         <ListItemText primary="Settings" />
                     </ListItemButton>
                 </ListItem>
             </List>
+            <Menu
+                anchorEl={settingsAnchor}
+                open={isSettingsOpen}
+                onClose={handleSettingsClose}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            bgcolor: '#006bb3',
+                            color: 'white',
+                            minWidth: 220,
+                            boxShadow: 'none',
+                            '& .MuiMenuItem-root': {
+                                gap: 1.5,
+                                py: 1,
+                                '&:hover': {
+                                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                                }
+                            }
+                        }
+                    }
+                }}
+            >
+                {settingsMenuItems.map((item, index) => (
+                    <MenuItem 
+                        key={index} 
+                        onClick={item.onClick || handleSettingsClose}
+                    >
+                        {item.icon}
+                        {item.label}
+                    </MenuItem>
+                ))}
+            </Menu>
         </>
     );
 

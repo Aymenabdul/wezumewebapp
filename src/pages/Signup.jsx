@@ -4,6 +4,8 @@ import {
     Box,
     Container,
     FormControl,
+    IconButton,
+    InputAdornment,
     InputLabel,
     MenuItem,
     Select,
@@ -11,6 +13,7 @@ import {
     Typography
 } from "@mui/material";
 import { Link, useNavigate } from "react-router";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import profileSearchAnimation from "../assets/animations/profile-search.lottie";
 import freelancer from "../assets/animations/freelancer.lottie";
@@ -26,7 +29,7 @@ export default function Signup() {
         phoneNo: "",
         role: ""
     });
-
+    const [showPassword, setShowPassword] = useState(false);
     const [currentAnimation, setCurrentAnimation] = useState(0);
     
     const animations = [
@@ -54,6 +57,10 @@ export default function Signup() {
         setCurrentAnimation(index);
     };
 
+    const handleClickShowPassword = () => {
+        setShowPassword(!showPassword);
+    };
+
     return (
         <Container 
           maxWidth={false}
@@ -61,7 +68,6 @@ export default function Signup() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            // bgcolor: "#0087e0",
             background: "linear-gradient(135deg, #0087e0 0%, #005bb5 25%, #0099ff 50%, #006dd1 75%, #0087e0 100%)",
             minHeight: "100vh",
             p: { xs: 0, lg: 2 }
@@ -69,21 +75,23 @@ export default function Signup() {
         >
             <Box
               sx={{
-                height: { xs: "100vh", lg: "87vh" },
+                minHeight: { xs: "100vh", lg: "83vh" },
+                height: { xs: "auto", lg: "83vh" },
                 width: { xs: "100%", lg: "70%" },
                 maxWidth: "1200px",
                 bgcolor: "white",
                 display: "flex",
                 flexDirection: { xs: "column", lg: "row" },
                 borderRadius: { xs: 0, lg: 3 },
-                overflow: "hidden",
+                overflow: { xs: "visible", lg: "hidden" },
                 p: { md: 2 },
                 boxSizing: "border-box"
               }}
             >   
                 <Box
                   sx={{
-                    height: { xs: "35%", lg: "100%" },
+                    minHeight: { xs: "250px", lg: "100%" },
+                    height: { xs: "auto", lg: "100%" },
                     width: { xs: "100%", lg: "50%" },
                     bgcolor: "#0087e0",
                     borderRadius: { md: 3 },
@@ -93,13 +101,14 @@ export default function Signup() {
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
-                    position: "relative"
+                    position: "relative",
+                    flexShrink: 0
                   }}
                 >
                     <Box
                       sx={{
                         width: "100%",
-                        height: { xs: "80%", lg: "85%" },
+                        height: { xs: "200px", lg: "85%" },
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
@@ -152,18 +161,20 @@ export default function Signup() {
 
                 <Box
                   sx={{
-                    height: { xs: "55%", lg: "100%" },
+                    minHeight: { xs: "auto", lg: "100%" },
+                    height: { xs: "auto", lg: "100%" },
                     width: { xs: "100%", lg: "50%" },
-                    p: { xs: 2, md: 2 },
+                    p: { xs: 3, md: 2 },
+                    pb: { xs: 4, md: 2 },
                     boxSizing: "border-box",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
-                    gap: { xs: 2, md: 3 },
-                    overflow: "clip",
+                    gap: { xs: 3, md: 4 },
+                    overflowY: { xs: "visible", lg: "auto" },
                     bgcolor: "white",
-                    mt: { xs: 2, md: 0 }
+                    flex: 1
                   }}
                 >
                     <Box
@@ -185,7 +196,7 @@ export default function Signup() {
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
-                          gap: { xs: 1.5, md: 2 },
+                          gap: { xs: 2, md: 2.5 },
                           width: "100%",
                           maxWidth: "400px"
                       }}
@@ -203,6 +214,7 @@ export default function Signup() {
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 fullWidth
+                                size="small"
                             />
                             <TextField 
                                 label="Last Name"
@@ -210,15 +222,17 @@ export default function Signup() {
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 fullWidth
+                                size="small"
                             />
                         </Box>
-                        
+             
                         <TextField 
                             label="Display Name"
                             name="displayName"
                             value={formData.displayName}
                             onChange={handleChange}
                             fullWidth
+                            size="small"
                         />
                         
                         <TextField 
@@ -228,18 +242,35 @@ export default function Signup() {
                             value={formData.email}
                             onChange={handleChange}
                             fullWidth
+                            size="small"
                         />
                         
                         <TextField 
                             label="Password"
                             name="password"
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             value={formData.password}
                             onChange={handleChange}
                             fullWidth
+                            size="small"
+                            slotProps={{
+                                input: {
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={handleClickShowPassword}
+                                                edge="end"
+                                                size="small"
+                                            >
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }
+                            }}
                         />
                         
-                        <FormControl fullWidth>
+                        <FormControl fullWidth size="small">
                             <InputLabel id="role-label">Role</InputLabel>
                             <Select
                               labelId="role-label"

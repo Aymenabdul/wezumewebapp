@@ -21,7 +21,7 @@ export default function App() {
         <Route path="/app" element={<BaseLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="videos" element={<Videos />} />
-          <Route index element={<Navigate to="dashboard" replace />} />
+          {/* <Route index element={<Navigate to="dashboard" replace />} /> */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
