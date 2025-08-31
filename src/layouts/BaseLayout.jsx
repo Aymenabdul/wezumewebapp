@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { 
+import {
     AppBar,
     Box,
-    Divider,
     Drawer,
     IconButton,
     List,
@@ -71,9 +70,16 @@ export default function BaseLayout() {
     const drawer = (
         <>
             <Toolbar>
-                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                    Wezume
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center",filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.3))", }}>
+                    <img
+                        src="/whitelogo.png" // replace with your actual logo path
+                        alt="Wezume Logo"
+                        style={{
+                            height: "45px", // adjust size
+                            objectFit: "contain",
+                        }}
+                    />
+                </Box>
             </Toolbar>
             <List
                 sx={{
@@ -88,10 +94,10 @@ export default function BaseLayout() {
                     const isActive = location.pathname === navLink.path;
                     return (
                         <ListItem key={index} disablePadding>
-                            <ListItemButton 
-                                sx={{ 
-                                    borderRadius: 2, 
-                                    display: "flex", 
+                            <ListItemButton
+                                sx={{
+                                    borderRadius: 2,
+                                    display: "flex",
                                     gap: 1.5,
                                     bgcolor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                                     '&:hover': {
@@ -112,18 +118,18 @@ export default function BaseLayout() {
                     );
                 })}
             </List>
-            <List 
-                sx={{ 
+            <List
+                sx={{
                     marginTop: 'auto',
                     marginBottom: '3px',
                     px: 2,
                 }}
             >
                 <ListItem disablePadding>
-                    <ListItemButton 
-                        sx={{ 
-                            borderRadius: 2, 
-                            display: "flex", 
+                    <ListItemButton
+                        sx={{
+                            borderRadius: 2,
+                            display: "flex",
                             gap: 1.5,
                             '&:hover': {
                                 bgcolor: 'rgba(255, 255, 255, 0.1)',
@@ -134,8 +140,8 @@ export default function BaseLayout() {
                             if (isMobile) handleDrawerToggle();
                         }}
                     >
-                        <ListItemIcon sx={{ 
-                            color: 'white', 
+                        <ListItemIcon sx={{
+                            color: 'white',
                             minWidth: 'auto',
                             transform: isSettingsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                             transition: 'transform 0.3s ease'
@@ -177,8 +183,8 @@ export default function BaseLayout() {
                 }}
             >
                 {settingsMenuItems.map((item, index) => (
-                    <MenuItem 
-                        key={index} 
+                    <MenuItem
+                        key={index}
                         onClick={item.onClick || handleSettingsClose}
                     >
                         {item.icon}
@@ -196,7 +202,7 @@ export default function BaseLayout() {
                     position="fixed"
                     sx={{
                         width: '100%',
-                        bgcolor: "#0087e0",
+                        background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", // ✅ gradient top bar
                         zIndex: theme.zIndex.drawer + 1,
                     }}
                     elevation={0}
@@ -226,7 +232,7 @@ export default function BaseLayout() {
                         '& .MuiDrawer-paper': {
                             width: drawerWidth,
                             boxSizing: 'border-box',
-                            bgcolor: "#0087e0",
+                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", // ✅ gradient sidebar
                             color: "white",
                             display: 'flex',
                             flexDirection: 'column',
@@ -245,13 +251,13 @@ export default function BaseLayout() {
                     open={mobileOpen}
                     onClose={handleDrawerToggle}
                     ModalProps={{
-                        keepMounted: true, 
+                        keepMounted: true,
                     }}
                     sx={{
                         '& .MuiDrawer-paper': {
                             width: drawerWidth,
                             boxSizing: 'border-box',
-                            bgcolor: "#0087e0",
+                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", // ✅ gradient mobile drawer
                             color: "white",
                             display: 'flex',
                             flexDirection: 'column',
@@ -267,7 +273,7 @@ export default function BaseLayout() {
                 sx={{
                     flexGrow: 1,
                     width: { lg: `calc(100% - ${drawerWidth}px)` },
-                    marginTop: isMobile ? '50px' : 0, 
+                    marginTop: isMobile ? '50px' : 0,
                 }}
             >
                 <Outlet />
