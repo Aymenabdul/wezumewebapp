@@ -125,7 +125,7 @@ export default function Login() {
               <Box
                 sx={{
                   width: "100%",
-                  height: { xs: "250px", sm: "350px", md: "450px", lg: "550px" },
+                  height: { xs: "230px", sm: "330px", md: "430px", lg: "530px" },
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
@@ -155,7 +155,7 @@ export default function Login() {
               autoPlay={true}
               interval={4000}
               showDots={true}
-              containerHeight={{ xs: "250px", sm: "350px", md: "450px", lg: "550px" }}
+              containerHeight={{ xs: "230px", sm: "330px", md: "430px", lg: "530px" }}
               dotSpacing={1}
             />
           </Suspense>
@@ -244,7 +244,7 @@ export default function Login() {
               alignItems: "center",
               gap: { xs: 1.5, sm: 1.8, md: 2.5 }, 
               width: "100%",
-              maxWidth: { xs: "100%", sm: "350px", md: "380px" },
+              maxWidth: { xs: "90%", sm: "320px", md: "380px" },
               position: "relative",
               flex: 1, 
               justifyContent: "flex-start", 
@@ -325,10 +325,10 @@ export default function Login() {
                   loading="lazy"
                   sx={{
                     position: "absolute",
-                    right: "-70px",
+                    right: { xs: "-40px", sm: "-70px" },
                     top: "50%",
                     transform: "translateY(-50%)",
-                    width: { xs: 60, md: 80 },
+                    width: { xs: 40, sm: 60, md: 80 },
                     height: "auto",
                     animation: `${isExiting ? slideOut : slideIn} 0.4s ease forwards`,
                     pointerEvents: "none",

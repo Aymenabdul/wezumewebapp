@@ -17,7 +17,27 @@ import { Link, useNavigate } from "react-router";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
 
-const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
+const slideIn = keyframes`
+  0% {
+    transform: translateX(100px) translateY(-50%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 1;
+  }
+`;
+
+const slideOut = keyframes`
+  0% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100px) translateY(-50%);
+    opacity: 0;
+  }
+`;
 
 const jelly = keyframes`
     0% { transform: scale(1, 1); }
@@ -26,6 +46,8 @@ const jelly = keyframes`
     75% { transform: scale(1.05, 0.95); }
     100% { transform: scale(1, 1); }
 `;
+
+const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
 
 export default function Signup() {
     const [formData, setFormData] = useState({
@@ -39,6 +61,8 @@ export default function Signup() {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isAnimationPaused, setIsAnimationPaused] = useState(false);
+    const [showPerson, setShowPerson] = useState(false);
+    const [isExiting, setIsExiting] = useState(false);
 
     const navigate = useNavigate();
 
@@ -63,6 +87,15 @@ export default function Signup() {
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [name]: value }));
+        if (name === "email") {
+            if (value.length > 0) {
+                setShowPerson(true);
+                setIsExiting(false);
+            } else {
+                setIsExiting(true);
+                setTimeout(() => setShowPerson(false), 400);
+            }
+        }
     }, []);
 
     const handleClickShowPassword = useCallback(() => {
@@ -79,6 +112,13 @@ export default function Signup() {
     const handleRegister = useCallback(() => {
         navigate("/login");
     }, [navigate]);
+
+    const handleEmailBlur = useCallback(() => {
+        if (formData.email.length > 0) {
+            setIsExiting(true);
+            setTimeout(() => setShowPerson(false), 400);
+        }
+    }, [formData.email]);
 
     return (
         <Container
@@ -127,7 +167,7 @@ export default function Signup() {
                       <Box
                         sx={{
                           width: "100%",
-                          height: { xs: "250px", sm: "350px", md: "450px", lg: "550px" },
+                          height: { xs: "230px", sm: "330px", md: "430px", lg: "530px" },
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "center",
@@ -157,7 +197,7 @@ export default function Signup() {
                       autoPlay={true}
                       interval={4000}
                       showDots={true}
-                      containerHeight={{ xs: "250px", sm: "350px", md: "450px", lg: "550px" }}
+                      containerHeight={{ xs: "230px", sm: "330px", md: "430px", lg: "530px" }}
                       dotSpacing={1}
                     />
                   </Suspense>
@@ -176,7 +216,7 @@ export default function Signup() {
                     bgcolor: "white",
                     position: "relative",
                     my: 2,
-                    overflow: { md: "auto" }
+                    overflow: { xs: "visible", md: "auto" }
                   }}
                 >
                     <Box
@@ -249,9 +289,10 @@ export default function Signup() {
                         alignItems: "center",
                         gap: { xs: 1.5, md: 2 },
                         width: "100%",
-                        maxWidth: "400px",
+                        maxWidth: { xs: "90%", sm: "320px", md: "350px" },
                         flex: 1,
                         pb: { xs: 2, md: 1 },
+                        position: "relative",
                       }}
                     >
                         <Box
@@ -300,19 +341,41 @@ export default function Signup() {
                             }}
                         />
                         
-                        <TextField 
-                            label="Email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            fullWidth
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "8px",
-                              },
-                            }}
-                        />
+                        <Box sx={{ width: "100%", position: "relative" }}>
+                            <TextField 
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                onBlur={handleEmailBlur}
+                                fullWidth
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                  },
+                                }}
+                            />
+                            {showPerson && (
+                                <Box
+                                  component="img"
+                                  src="/person.png"
+                                  alt="Peeking Person"
+                                  loading="lazy"
+                                  sx={{
+                                    position: "absolute",
+                                    right: { xs: "-40px", sm: "-60px" },
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    width: { xs: 40, sm: 50, md: 70 },
+                                    height: "auto",
+                                    animation: `${isExiting ? slideOut : slideIn} 0.4s ease forwards`,
+                                    pointerEvents: "none",
+                                    zIndex: 10,
+                                  }}
+                                />
+                            )}
+                        </Box>
                         
                         <TextField 
                             label="Password"
