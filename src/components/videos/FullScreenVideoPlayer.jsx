@@ -7,6 +7,8 @@ import BarChartIcon from "@mui/icons-material/BarChart";
 import ShareIcon from "@mui/icons-material/Share";
 import MailIcon from "@mui/icons-material/Mail";
 import PhoneIcon from "@mui/icons-material/Phone";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import { useSwipeable } from "react-swipeable";
 import AnalyticsModal from "./AnalyticsModal";
 
@@ -15,11 +17,13 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
   const [openModal, setOpenModal] = useState(false);
   const [likedVideos, setLikedVideos] = useState(new Set());
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef(null);
   const videoRefs = useRef([]);
   const scrollTimeoutRef = useRef(null);
   const touchStartY = useRef(0);
   const touchEndY = useRef(0);
+  const lastScrollTime = useRef(0);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -30,6 +34,7 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
       if (video) {
         if (idx === currentIndex) {
           video.play();
+          video.muted = isMuted;
         } else {
           video.pause();
         }
@@ -41,10 +46,14 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
       document.body.style.touchAction = "auto";
       document.documentElement.style.overflow = "auto";
     };
-  }, [currentIndex]);
+  }, [currentIndex, isMuted]);
 
   const handleSwipe = (direction) => {
-    if (isScrolling) return;
+    if (isScrolling || openModal) return;
+    
+    const now = Date.now();
+    if (now - lastScrollTime.current < 800) return;
+    lastScrollTime.current = now;
     
     setIsScrolling(true);
     
@@ -63,23 +72,25 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
     clearTimeout(scrollTimeoutRef.current);
     scrollTimeoutRef.current = setTimeout(() => {
       setIsScrolling(false);
-    }, 500);
+    }, 800);
   };
 
   const handleTouchStart = (event) => {
+    if (openModal) return;
     touchStartY.current = event.touches[0].clientY;
   };
 
   const handleTouchMove = (event) => {
+    if (openModal) return;
     event.preventDefault();
   };
 
   const handleTouchEnd = (event) => {
-    if (!touchStartY.current) return;
+    if (openModal || !touchStartY.current) return;
     
     touchEndY.current = event.changedTouches[0].clientY;
     const deltaY = touchStartY.current - touchEndY.current;
-    const threshold = 50;
+    const threshold = 80;
     
     if (Math.abs(deltaY) > threshold && !isScrolling) {
       if (deltaY > 0) {
@@ -94,11 +105,13 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
   };
 
   const handleScroll = (event) => {
+    if (openModal) return;
+    
     event.preventDefault();
     event.stopPropagation();
     
     const delta = event.deltaY;
-    const threshold = 10;
+    const threshold = 50;
     
     if (Math.abs(delta) > threshold) {
       if (delta > 0) {
@@ -110,12 +123,12 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
   };
 
   const swipeHandlers = useSwipeable({
-    onSwipedUp: () => handleSwipe("up"),
-    onSwipedDown: () => handleSwipe("down"),
+    onSwipedUp: () => !openModal && handleSwipe("up"),
+    onSwipedDown: () => !openModal && handleSwipe("down"),
     trackMouse: true,
-    preventScrollOnSwipe: true,
+    preventScrollOnSwipe: !openModal,
     trackTouch: true,
-    delta: 50,
+    delta: 80,
   });
 
   const handleOpenModal = () => setOpenModal(true);
@@ -132,6 +145,10 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
       }
       return newSet;
     });
+  };
+
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
   };
 
   const getAnalyticsData = (videoTitle) => {
@@ -184,9 +201,9 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
         },
         scrollbarWidth: "none",
         msOverflowStyle: "none",
-        touchAction: "none",
+        touchAction: openModal ? "auto" : "none",
       }}
-      {...swipeHandlers}
+      {...(!openModal ? swipeHandlers : {})}
       onWheel={handleScroll}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -210,12 +227,33 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
         <ArrowBackIcon fontSize="large" />
       </IconButton>
 
+      <IconButton
+        onClick={handleMuteToggle}
+        sx={{
+          display: { xs: "block", md: "none" },
+          position: "absolute",
+          top: { xs: 24 },
+          left: { xs: 70 },
+          color: "white",
+          zIndex: 1400,
+          backgroundColor: "rgba(0, 0, 0, 0.3)",
+          "&:hover": {
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+          },
+        }}
+      >
+        {isMuted ? <VolumeOffIcon fontSize="large" /> : <VolumeUpIcon fontSize="large" />}
+      </IconButton>
+
       <Box
         sx={{
           position: "relative",
           height: "100%",
           width: "100%",
           overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         {videos.map((video, idx) => (
@@ -234,47 +272,298 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
               transform: `translateY(${(idx - currentIndex) * 100}vh)`,
             }}
           >
-            {/* Video Container - Rectangular aspect ratio */}
             <Box
               sx={{
                 position: "relative",
                 width: { xs: "100%", md: "auto" },
-                height: { xs: "auto", md: "90vh" },
+                height: { xs: "100%", md: "90vh" },
                 maxWidth: { xs: "100vw", md: "60vw" },
-                aspectRatio: "9/16", // TikTok/Shorts aspect ratio
+                aspectRatio: { xs: "auto", md: "9/16" },
                 backgroundColor: "black",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <video
-                ref={(el) => (videoRefs.current[idx] = el)}
-                src={video.src}
-                controls
-                autoPlay={idx === initialIndex}
-                loop
-                muted
-                style={{
+              <Box
+                sx={{
+                  position: "relative",
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <video
+                  ref={(el) => (videoRefs.current[idx] = el)}
+                  src={video.src}
+                  controls
+                  autoPlay={idx === initialIndex}
+                  loop
+                  muted={isMuted}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: window.innerWidth < 900 ? "0" : "8px",
+                  }}
+                />
 
-              {/* Action Buttons - Positioned like YouTube Shorts */}
+                <Box
+                  sx={{
+                    display: { xs: "block", md: "none" },
+                    position: "absolute",
+                    right: 12,
+                    bottom: 100,
+                    zIndex: 10,
+                  }}
+                >
+                  <Stack
+                    spacing={3}
+                    sx={{
+                      alignItems: "center",
+                      pointerEvents: openModal ? "none" : "auto",
+                      opacity: openModal ? 0.5 : 1,
+                      transition: "opacity 0.2s ease-in-out",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <IconButton
+                        onClick={handleLike}
+                        sx={{
+                          color: isLiked ? "#ff4757" : "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.4)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          width: 48,
+                          height: 48,
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            transform: "scale(1.1)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                        }}
+                      >
+                        {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
+                      </IconButton>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "white",
+                          mt: 0.5,
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        {isLiked ? "1.2K" : "1.1K"}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <IconButton
+                        onClick={handleOpenModal}
+                        sx={{
+                          color: "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.4)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          width: 48,
+                          height: 48,
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            transform: "scale(1.1)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                        }}
+                      >
+                        <BarChartIcon />
+                      </IconButton>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "white",
+                          mt: 0.5,
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        Analytics
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <IconButton
+                        sx={{
+                          color: "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.4)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          width: 48,
+                          height: 48,
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            transform: "scale(1.1)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                        }}
+                      >
+                        <ShareIcon />
+                      </IconButton>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "white",
+                          mt: 0.5,
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        Share
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <IconButton
+                        sx={{
+                          color: "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.4)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          width: 48,
+                          height: 48,
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            transform: "scale(1.1)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                        }}
+                      >
+                        <MailIcon />
+                      </IconButton>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "white",
+                          mt: 0.5,
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        Message
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <IconButton
+                        sx={{
+                          color: "white",
+                          backgroundColor: "rgba(0, 0, 0, 0.4)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          width: 48,
+                          height: 48,
+                          "&:hover": {
+                            backgroundColor: "rgba(0, 0, 0, 0.6)",
+                            transform: "scale(1.1)",
+                          },
+                          transition: "all 0.2s ease-in-out",
+                        }}
+                      >
+                        <PhoneIcon />
+                      </IconButton>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "white",
+                          mt: 0.5,
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                        }}
+                      >
+                        Call
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Box
+                  sx={{
+                    position: "absolute",
+                    bottom: 20,
+                    left: 16,
+                    right: { xs: 80, md: 16 },
+                    color: "white",
+                    zIndex: 10,
+                    pointerEvents: openModal ? "none" : "auto",
+                    opacity: openModal ? 0.5 : 1,
+                    transition: "opacity 0.2s ease-in-out",
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 500,
+                      mb: 3,
+                      textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                    }}
+                  >
+                    {video.title}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            <IconButton
+              onClick={handleMuteToggle}
+              sx={{
+                display: { xs: "none", md: "block" },
+                position: "absolute",
+                left: "calc(50% - 32vw - 80px)",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "white",
+                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                width: 56,
+                height: 56,
+                zIndex: 10,
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  transform: "translateY(-50%) scale(1.1)",
+                },
+                transition: "all 0.2s ease-in-out",
+              }}
+            >
+              {isMuted ? <VolumeOffIcon fontSize="large" /> : <VolumeUpIcon fontSize="large" />}
+            </IconButton>
+
+            <Box
+              sx={{
+                display: { xs: "none", md: "block" },
+                position: "absolute",
+                right: 16, 
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 10,
+              }}
+            >
+
               <Stack
                 spacing={3}
                 sx={{
-                  position: "absolute",
-                  right: 12,
-                  bottom: 100,
                   alignItems: "center",
-                  zIndex: 10,
+                  pointerEvents: openModal ? "none" : "auto",
+                  opacity: openModal ? 0.5 : 1,
+                  transition: "opacity 0.2s ease-in-out",
                 }}
               >
-                {/* Like Button */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <IconButton
                     onClick={handleLike}
@@ -283,8 +572,8 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       backgroundColor: "rgba(0, 0, 0, 0.4)",
                       backdropFilter: "blur(10px)",
                       border: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       "&:hover": {
                         backgroundColor: "rgba(0, 0, 0, 0.6)",
                         transform: "scale(1.1)",
@@ -292,14 +581,14 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       transition: "all 0.2s ease-in-out",
                     }}
                   >
-                    {isLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />}
+                    {isLiked ? <ThumbUpIcon fontSize="large" /> : <ThumbUpOutlinedIcon fontSize="large" />}
                   </IconButton>
                   <Typography
                     variant="caption"
                     sx={{
                       color: "white",
-                      mt: 0.5,
-                      fontSize: "10px",
+                      mt: 1,
+                      fontSize: "12px",
                       fontWeight: 600,
                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                     }}
@@ -308,7 +597,6 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                   </Typography>
                 </Box>
 
-                {/* Analytics Button */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   <IconButton
                     onClick={handleOpenModal}
@@ -317,8 +605,8 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       backgroundColor: "rgba(0, 0, 0, 0.4)",
                       backdropFilter: "blur(10px)",
                       border: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       "&:hover": {
                         backgroundColor: "rgba(0, 0, 0, 0.6)",
                         transform: "scale(1.1)",
@@ -326,14 +614,14 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       transition: "all 0.2s ease-in-out",
                     }}
                   >
-                    <BarChartIcon />
+                    <BarChartIcon fontSize="large" />
                   </IconButton>
                   <Typography
                     variant="caption"
                     sx={{
                       color: "white",
-                      mt: 0.5,
-                      fontSize: "10px",
+                      mt: 1,
+                      fontSize: "12px",
                       fontWeight: 600,
                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                     }}
@@ -349,8 +637,8 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       backgroundColor: "rgba(0, 0, 0, 0.4)",
                       backdropFilter: "blur(10px)",
                       border: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       "&:hover": {
                         backgroundColor: "rgba(0, 0, 0, 0.6)",
                         transform: "scale(1.1)",
@@ -358,14 +646,14 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       transition: "all 0.2s ease-in-out",
                     }}
                   >
-                    <ShareIcon />
+                    <ShareIcon fontSize="large" />
                   </IconButton>
                   <Typography
                     variant="caption"
                     sx={{
                       color: "white",
-                      mt: 0.5,
-                      fontSize: "10px",
+                      mt: 1,
+                      fontSize: "12px",
                       fontWeight: 600,
                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                     }}
@@ -381,8 +669,8 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       backgroundColor: "rgba(0, 0, 0, 0.4)",
                       backdropFilter: "blur(10px)",
                       border: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       "&:hover": {
                         backgroundColor: "rgba(0, 0, 0, 0.6)",
                         transform: "scale(1.1)",
@@ -390,14 +678,14 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       transition: "all 0.2s ease-in-out",
                     }}
                   >
-                    <MailIcon />
+                    <MailIcon fontSize="large" />
                   </IconButton>
                   <Typography
                     variant="caption"
                     sx={{
                       color: "white",
-                      mt: 0.5,
-                      fontSize: "10px",
+                      mt: 1,
+                      fontSize: "12px",
                       fontWeight: 600,
                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                     }}
@@ -413,8 +701,8 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       backgroundColor: "rgba(0, 0, 0, 0.4)",
                       backdropFilter: "blur(10px)",
                       border: "1px solid rgba(255, 255, 255, 0.1)",
-                      width: 48,
-                      height: 48,
+                      width: 56,
+                      height: 56,
                       "&:hover": {
                         backgroundColor: "rgba(0, 0, 0, 0.6)",
                         transform: "scale(1.1)",
@@ -422,14 +710,14 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                       transition: "all 0.2s ease-in-out",
                     }}
                   >
-                    <PhoneIcon />
+                    <PhoneIcon fontSize="large" />
                   </IconButton>
                   <Typography
                     variant="caption"
                     sx={{
                       color: "white",
-                      mt: 0.5,
-                      fontSize: "10px",
+                      mt: 1,
+                      fontSize: "12px",
                       fontWeight: 600,
                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                     }}
@@ -438,38 +726,6 @@ export default function FullScreenVideoPlayer({ videos, initialIndex, onClose, o
                   </Typography>
                 </Box>
               </Stack>
-
-              <Box
-                sx={{
-                  position: "absolute",
-                  bottom: 20,
-                  left: 16,
-                  right: 80,
-                  color: "white",
-                  zIndex: 10,
-                }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 1,
-                    textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  {video.title}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    opacity: 0.9,
-                    textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {video.description || "Amazing video content"}
-                </Typography>
-              </Box>
             </Box>
           </Box>
         ))}

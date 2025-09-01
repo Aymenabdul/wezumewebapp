@@ -4,13 +4,13 @@ import {
   DialogContent,
   Box,
   Typography,
-  LinearProgress,
   Paper,
   IconButton,
   Chip,
   Grid,
   Card,
   CardContent,
+  Divider,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -19,30 +19,30 @@ import SentimentSatisfiedAltIcon from "@mui/icons-material/SentimentSatisfiedAlt
 
 export default function AnalyticsModal({ open, onClose, data }) {
   const getColorForScore = (score) => {
-    if (score >= 80) return "#4caf50"; // Green
-    if (score >= 60) return "#ff9800"; // Orange
-    return "#f44336"; // Red
+    if (score >= 80) return "#22c55e";
+    if (score >= 60) return "#f59e0b";
+    return "#ef4444";
   };
 
   const getIconForMetric = (name) => {
     switch (name.toLowerCase()) {
       case "confidence":
-        return <TrendingUpIcon sx={{ color: "#2196f3" }} />;
+        return <TrendingUpIcon sx={{ color: "#3b82f6" }} />;
       case "body language":
-        return <PsychologyIcon sx={{ color: "#9c27b0" }} />;
+        return <PsychologyIcon sx={{ color: "#8b5cf6" }} />;
       case "emotion":
-        return <SentimentSatisfiedAltIcon sx={{ color: "#ff5722" }} />;
+        return <SentimentSatisfiedAltIcon sx={{ color: "#f97316" }} />;
       default:
-        return <TrendingUpIcon sx={{ color: "#607d8b" }} />;
+        return <TrendingUpIcon sx={{ color: "#6b7280" }} />;
     }
   };
 
   const getGradeLabel = (score) => {
-    if (score >= 90) return { label: "Excellent", color: "#4caf50" };
-    if (score >= 80) return { label: "Good", color: "#8bc34a" };
-    if (score >= 70) return { label: "Average", color: "#ff9800" };
-    if (score >= 60) return { label: "Below Average", color: "#ff5722" };
-    return { label: "Poor", color: "#f44336" };
+    if (score >= 90) return { label: "Excellent", color: "#22c55e" };
+    if (score >= 80) return { label: "Good", color: "#65a30d" };
+    if (score >= 70) return { label: "Average", color: "#f59e0b" };
+    if (score >= 60) return { label: "Below Average", color: "#f97316" };
+    return { label: "Poor", color: "#ef4444" };
   };
 
   const averageScore = data.reduce((acc, item) => acc + item.score, 0) / data.length;
@@ -52,12 +52,18 @@ export default function AnalyticsModal({ open, onClose, data }) {
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="sm"
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "white",
+          borderRadius: 2,
+          backgroundColor: "#ffffff",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+        },
+      }}
+      sx={{
+        "& .MuiBackdrop-root": {
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          backdropFilter: "blur(4px)",
         },
       }}
     >
@@ -66,36 +72,39 @@ export default function AnalyticsModal({ open, onClose, data }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          pb: 1,
+          pb: 2,
+          borderBottom: "1px solid #e5e7eb",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Box
             sx={{
-              p: 1,
+              p: 1.5,
               borderRadius: 2,
-              background: "rgba(255, 255, 255, 0.1)",
-              backdropFilter: "blur(10px)",
+              backgroundColor: "#f3f4f6",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <TrendingUpIcon fontSize="large" />
+            <TrendingUpIcon sx={{ color: "#374151" }} />
           </Box>
           <Box>
-            <Typography variant="h5" fontWeight="bold">
-              Video Analytics
+            <Typography variant="h6" fontWeight="600" color="#111827">
+              Performance Analytics
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              Performance insights and metrics
+            <Typography variant="body2" color="#6b7280">
+              Video analysis results
             </Typography>
           </Box>
         </Box>
         <IconButton
           onClick={onClose}
           sx={{
-            color: "white",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            color: "#6b7280",
             "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              backgroundColor: "#f3f4f6",
+              color: "#374151",
             },
           }}
         >
@@ -103,144 +112,144 @@ export default function AnalyticsModal({ open, onClose, data }) {
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>
-        {/* Overall Score Card */}
+      <DialogContent sx={{ pt: 3, pb: 3 }}>
         <Card
           sx={{
             mb: 3,
-            background: "rgba(255, 255, 255, 0.1)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
+            backgroundColor: "#f9fafb",
+            border: "1px solid #e5e7eb",
+            boxShadow: "none",
           }}
         >
-          <CardContent sx={{ textAlign: "center", color: "white" }}>
-            <Typography variant="h6" gutterBottom>
-              Overall Performance
+          <CardContent sx={{ textAlign: "center", py: 3 }}>
+            <Typography variant="subtitle1" color="#6b7280" gutterBottom>
+              Overall Score
             </Typography>
-            <Box sx={{ position: "relative", display: "inline-flex", mb: 2 }}>
-              <Box
+            <Box sx={{ mb: 2 }}>
+              <Typography
+                variant="h2"
                 sx={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: "50%",
-                  background: `conic-gradient(${getColorForScore(averageScore)} ${
-                    averageScore * 3.6
-                  }deg, rgba(255,255,255,0.1) 0deg)`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
+                  fontWeight: "700",
+                  color: getColorForScore(averageScore),
+                  fontSize: "3.5rem",
+                  lineHeight: 1,
                 }}
               >
-                <Box
-                  sx={{
-                    width: 90,
-                    height: 90,
-                    borderRadius: "50%",
-                    backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Typography variant="h4" fontWeight="bold">
-                    {Math.round(averageScore)}
-                  </Typography>
-                  <Typography variant="caption">Score</Typography>
-                </Box>
-              </Box>
+                {Math.round(averageScore)}
+              </Typography>
+              <Typography variant="h6" color="#6b7280" sx={{ mt: 0.5 }}>
+                out of 100
+              </Typography>
             </Box>
             <Chip
               label={getGradeLabel(averageScore).label}
               sx={{
                 backgroundColor: getGradeLabel(averageScore).color,
                 color: "white",
-                fontWeight: "bold",
+                fontWeight: "600",
+                fontSize: "0.875rem",
+                px: 1,
               }}
             />
           </CardContent>
         </Card>
 
-        {/* Individual Metrics */}
+        <Divider sx={{ mb: 3, color: "#e5e7eb" }} />
+
+        <Typography variant="h6" color="#374151" sx={{ mb: 2, fontWeight: "600" }}>
+          Detailed Breakdown
+        </Typography>
+
         <Grid container spacing={2}>
           {data.map((item, idx) => (
-            <Grid item xs={12} key={idx}>
+            <Grid item size={{ xs: 12 }} key={idx}>
               <Paper
                 sx={{
                   p: 3,
-                  background: "rgba(255, 255, 255, 0.1)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e5e7eb",
                   borderRadius: 2,
-                  color: "white",
+                  boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+                  "&:hover": {
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  },
+                  transition: "box-shadow 0.2s ease-in-out",
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  {getIconForMetric(item.name)}
-                  <Typography variant="h6" sx={{ ml: 2, fontWeight: 600 }}>
+                  <Box
+                    sx={{
+                      p: 1,
+                      borderRadius: 1.5,
+                      backgroundColor: "#f3f4f6",
+                      mr: 2,
+                    }}
+                  >
+                    {getIconForMetric(item.name)}
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: "#374151", flex: 1 }}>
                     {item.name}
                   </Typography>
-                  <Box sx={{ ml: "auto" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: "700",
+                        color: getColorForScore(item.score),
+                      }}
+                    >
+                      {item.score}
+                    </Typography>
                     <Chip
-                      label={`${item.score}%`}
+                      label={getGradeLabel(item.score).label}
+                      size="small"
                       sx={{
                         backgroundColor: getColorForScore(item.score),
                         color: "white",
-                        fontWeight: "bold",
-                        minWidth: "60px",
+                        fontWeight: "500",
+                        minWidth: "80px",
                       }}
                     />
                   </Box>
                 </Box>
 
-                <Box sx={{ mb: 2 }}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={item.score}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: "rgba(255, 255, 255, 0.1)",
-                      "& .MuiLinearProgress-bar": {
-                        backgroundColor: getColorForScore(item.score),
-                        borderRadius: 4,
-                      },
-                    }}
-                  />
-                </Box>
-
                 {item.description && (
-                  <Typography
-                    variant="body2"
+                  <Box
                     sx={{
-                      opacity: 0.9,
-                      fontStyle: "italic",
-                      backgroundColor: "rgba(255, 255, 255, 0.05)",
-                      p: 1.5,
-                      borderRadius: 1,
-                      borderLeft: `3px solid ${getColorForScore(item.score)}`,
+                      mt: 2,
+                      p: 2,
+                      backgroundColor: "#f9fafb",
+                      borderRadius: 1.5,
+                      borderLeft: `4px solid ${getColorForScore(item.score)}`,
                     }}
                   >
-                    {item.description}
-                  </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#6b7280",
+                        lineHeight: 1.5,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {item.description}
+                    </Typography>
+                  </Box>
                 )}
               </Paper>
             </Grid>
           ))}
         </Grid>
 
-        {/* Summary */}
         <Box
           sx={{
             mt: 3,
-            p: 2,
+            p: 2.5,
             borderRadius: 2,
-            background: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid rgba(255, 255, 255, 0.1)",
+            backgroundColor: "#eff6ff",
+            border: "1px solid #dbeafe",
           }}
         >
-          <Typography variant="body2" sx={{ opacity: 0.8, textAlign: "center" }}>
+          <Typography variant="body2" sx={{ color: "#1e40af", textAlign: "center" }}>
             💡 <strong>Tip:</strong> Focus on improving your lowest scoring metrics for better overall performance
           </Typography>
         </Box>
