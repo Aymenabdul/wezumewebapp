@@ -202,7 +202,7 @@ export default function BaseLayout() {
                     position="fixed"
                     sx={{
                         width: '100%',
-                        background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", // ✅ gradient top bar
+                        background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", 
                         zIndex: theme.zIndex.drawer + 1,
                     }}
                     elevation={0}
@@ -232,7 +232,7 @@ export default function BaseLayout() {
                         '& .MuiDrawer-paper': {
                             width: drawerWidth,
                             boxSizing: 'border-box',
-                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", // ✅ gradient sidebar
+                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", 
                             color: "white",
                             display: 'flex',
                             flexDirection: 'column',
@@ -257,7 +257,7 @@ export default function BaseLayout() {
                         '& .MuiDrawer-paper': {
                             width: drawerWidth,
                             boxSizing: 'border-box',
-                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", // ✅ gradient mobile drawer
+                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
                             color: "white",
                             display: 'flex',
                             flexDirection: 'column',

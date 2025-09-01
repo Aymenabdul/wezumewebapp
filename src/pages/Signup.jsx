@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import {
     Button,
     Box,
@@ -10,14 +10,22 @@ import {
     MenuItem,
     Select,
     TextField,
-    Typography
+    Typography,
+    Skeleton
 } from "@mui/material";
 import { Link, useNavigate } from "react-router";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import profileSearchAnimation from "../assets/animations/profile-search.lottie";
-import freelancer from "../assets/animations/freelancer.lottie";
-import interview from "../assets/animations/interview.lottie";
+import { keyframes } from "@mui/system";
+
+const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
+
+const jelly = keyframes`
+    0% { transform: scale(1, 1); }
+    25% { transform: scale(1.1, 0.9); }
+    50% { transform: scale(0.9, 1.1); }
+    75% { transform: scale(1.05, 0.95); }
+    100% { transform: scale(1, 1); }
+`;
 
 export default function Signup() {
     const [formData, setFormData] = useState({
@@ -30,175 +38,220 @@ export default function Signup() {
         role: ""
     });
     const [showPassword, setShowPassword] = useState(false);
-    const [currentAnimation, setCurrentAnimation] = useState(0);
-    
-    const animations = [
-        freelancer,
-        profileSearchAnimation,
-        interview,
-    ];
+    const [isAnimationPaused, setIsAnimationPaused] = useState(false);
 
     const navigate = useNavigate();
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentAnimation((prev) => (prev + 1) % animations.length);
-        }, 3000);
+        let timeoutId;
+        const handleUserActivity = () => {
+            setIsAnimationPaused(true);
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => setIsAnimationPaused(false), 2000);
+        };
 
-        return () => clearInterval(interval);
-    }, [animations.length]);
+        document.addEventListener('keydown', handleUserActivity);
+        document.addEventListener('click', handleUserActivity);
 
-    const handleChange = (e) => {
+        return () => {
+            document.removeEventListener('keydown', handleUserActivity);
+            document.removeEventListener('click', handleUserActivity);
+            clearTimeout(timeoutId);
+        };
+    }, []);
+
+    const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [name]: value }));
-    };
+    }, []);
 
-    const handleDotClick = (index) => {
-        setCurrentAnimation(index);
-    };
+    const handleClickShowPassword = useCallback(() => {
+        setShowPassword(prev => !prev);
+    }, []);
 
-    const handleClickShowPassword = () => {
-        setShowPassword(!showPassword);
-    };
+    const handleRoleChange = useCallback((e) => {
+        setFormData((prevData) => ({ 
+            ...prevData, 
+            role: e.target.value 
+        }));
+    }, []);
+
+    const handleRegister = useCallback(() => {
+        navigate("/login");
+    }, [navigate]);
 
     return (
-        <Container 
+        <Container
           maxWidth={false}
           sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            background: "linear-gradient(135deg, #0087e0 0%, #005bb5 25%, #0099ff 50%, #006dd1 75%, #0087e0 100%)",
+            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
             minHeight: "100vh",
-            p: { xs: 0, lg: 2 }
+            p: { xs: 0, sm: 1, md: 2 },
+            overflow: { xs: "auto", md: "hidden" }
           }}
         >
             <Box
               sx={{
-                minHeight: { xs: "100vh", lg: "83vh" },
-                height: { xs: "auto", lg: "83vh" },
-                width: { xs: "100%", lg: "70%" },
+                height: { xs: "100vh", sm: "95vh", md: "95vh" },
+                width: { xs: "100%", sm: "95%", md: "85%", lg: "75%" },
                 maxWidth: "1200px",
                 bgcolor: "white",
                 display: "flex",
-                flexDirection: { xs: "column", lg: "row" },
-                borderRadius: { xs: 0, lg: 3 },
-                overflow: { xs: "visible", lg: "hidden" },
-                p: { md: 2 },
-                boxSizing: "border-box"
+                flexDirection: { xs: "column", md: "row" },
+                borderRadius: { xs: 0, sm: 2, md: 3 },
+                overflow: { xs: "auto", md: "hidden" },
+                boxSizing: "border-box",
+                filter: "drop-shadow(4px 4px 4px rgba(0,0,0,0.7))",
+                willChange: "transform",
               }}
             >   
                 <Box
                   sx={{
-                    minHeight: { xs: "250px", lg: "100%" },
-                    height: { xs: "auto", lg: "100%" },
-                    width: { xs: "100%", lg: "50%" },
-                    bgcolor: "#0087e0",
-                    borderRadius: { md: 3 },
-                    p: { xs: 2, md: 3 },
+                    height: { xs: "35%", sm: "40%", md: "100%" },
+                    width: { xs: "100%", md: "50%" },
+                    background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+                    p: { xs: 1.5, sm: 2, md: 3 },
                     boxSizing: "border-box",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
                     position: "relative",
-                    flexShrink: 0
                   }}
                 >
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: { xs: "200px", lg: "85%" },
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        overflow: "hidden"
-                      }}
-                    >
-                        <DotLottieReact 
-                            key={currentAnimation} 
-                            src={animations[currentAnimation]}
-                            loop
-                            autoplay
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                maxWidth: "350px",
-                                maxHeight: "350px"
-                            }}
-                        />
-                    </Box>
-                    
-                    <Box
-                      sx={{
+                  <Suspense
+                    fallback={
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: { xs: "250px", sm: "350px", md: "450px", lg: "550px" },
                           display: "flex",
+                          flexDirection: "column",
                           justifyContent: "center",
-                          gap: 1,
-                          mt: { xs: 1, lg: 2 }
-                      }}
-                    >
-                        {animations.map((_, index) => (
-                            <Box
-                            key={index}
-                            onClick={() => handleDotClick(index)}
-                            sx={{
-                                width: currentAnimation === index ? 16 : 8,
-                                height: 8,
-                                borderRadius: currentAnimation === index ? "4px" : "50%",
-                                bgcolor: currentAnimation === index ? "#ffffff" : "rgba(255, 255, 255, 0.5)",
-                                cursor: "pointer",
-                                transition: "all 0.4s ease",
-                                transform: currentAnimation === index ? "scale(1.1)" : "scale(1)",
-                                "&:hover": {
-                                bgcolor: currentAnimation === index ? "#ffffff" : "rgba(255, 255, 255, 0.8)",
-                                transform: currentAnimation === index ? "scale(1.15)" : "scale(1.1)"
-                                }
-                            }}
-                            />
-                        ))}
-                    </Box>
+                          alignItems: "center",
+                          mb: { xs: 1, sm: 1, md: 2 },
+                        }}
+                      >
+                        <Skeleton
+                          variant="rectangular"
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            maxWidth: "600px",
+                            borderRadius: 2,
+                            mb: 2,
+                          }}
+                        />
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          {[0, 1, 2].map((index) => (
+                            <Skeleton key={index} variant="circular" width={8} height={8} />
+                          ))}
+                        </Box>
+                      </Box>
+                    }
+                  >
+                    <AnimationCarousel
+                      autoPlay={true}
+                      interval={4000}
+                      showDots={true}
+                      containerHeight={{ xs: "250px", sm: "350px", md: "450px", lg: "550px" }}
+                      dotSpacing={1}
+                    />
+                  </Suspense>
                 </Box>
 
                 <Box
                   sx={{
-                    minHeight: { xs: "auto", lg: "100%" },
-                    height: { xs: "auto", lg: "100%" },
-                    width: { xs: "100%", lg: "50%" },
-                    p: { xs: 3, md: 2 },
-                    pb: { xs: 4, md: 2 },
+                    height: { xs: "65%", sm: "60%", md: "100%" },
+                    width: { xs: "100%", md: "50%" },
+                    p: { xs: 2, sm: 2.5, md: 3 },
                     boxSizing: "border-box",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "center",
+                    justifyContent: "flex-start",
                     alignItems: "center",
-                    gap: { xs: 3, md: 4 },
-                    overflowY: { xs: "visible", lg: "auto" },
                     bgcolor: "white",
-                    flex: 1
+                    position: "relative",
+                    my: 2,
+                    overflow: { md: "auto" }
                   }}
                 >
                     <Box
                       sx={{
-                        width: "100%",
-                        maxWidth: "400px"
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        mb: { xs: 0.5, sm: 0.5, md: 1 },
+                        flexShrink: 0,
                       }}
                     >
-                        <Typography variant="h4" fontWeight={600} sx={{ fontSize: { xs: "1.7rem", md: "2rem" } }}>
-                            Create Account
-                        </Typography>
-                        <Typography variant="caption" fontSize={{ xs: 13, md: 14 }} color="grey">
-                            Already have an account? <Link to="/login" style={{ color: "#0087e0" }}>Login</Link>
+                        <Box
+                          component="img"
+                          src="/wezumelogo.png"
+                          alt="Wezume Logo"
+                          loading="lazy"
+                          sx={{
+                            width: { xs: 100, sm: 120, md: 120, lg: 140 },
+                            height: "auto",
+                            objectFit: "contain",
+                            filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.2))",
+                          }}
+                        />
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        mb: { xs: 1.5, sm: 2, md: 3 },
+                        flexShrink: 0,
+                        height: { xs: "24px", sm: "28px", md: "28px" },
+                        overflow: "hidden",
+                      }}
+                    >
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: { xs: "16px", sm: "18px", md: "18px", lg: "20px" },
+                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            filter: "drop-shadow(0px 2px 2px rgba(0,0,0,0.1))",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            borderRight: "2px solid #1CA7EC",
+                            width: "0",
+                            animation: isAnimationPaused 
+                              ? "none" 
+                              : "typewriter 4s steps(18) infinite, blink 1s infinite",
+                            "@keyframes typewriter": {
+                              "0%": { width: "0" },
+                              "50%": { width: "100%" },
+                              "100%": { width: "0" },
+                            },
+                            "@keyframes blink": {
+                              "0%, 50%": { borderColor: "#1CA7EC" },
+                              "51%, 100%": { borderColor: "transparent" },
+                            },
+                          }}
+                        >
+                          Speak Up . Stand Out
                         </Typography>
                     </Box>
                     
                     <Box
                       sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: { xs: 2, md: 2.5 },
-                          width: "100%",
-                          maxWidth: "400px"
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: { xs: 1.5, md: 2 },
+                        width: "100%",
+                        maxWidth: "400px",
+                        flex: 1,
+                        pb: { xs: 2, md: 1 },
                       }}
                     >
                         <Box
@@ -214,7 +267,11 @@ export default function Signup() {
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 fullWidth
-                                size="small"
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                  },
+                                }}
                             />
                             <TextField 
                                 label="Last Name"
@@ -222,7 +279,11 @@ export default function Signup() {
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 fullWidth
-                                size="small"
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "8px",
+                                  },
+                                }}
                             />
                         </Box>
              
@@ -232,7 +293,11 @@ export default function Signup() {
                             value={formData.displayName}
                             onChange={handleChange}
                             fullWidth
-                            size="small"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                              },
+                            }}
                         />
                         
                         <TextField 
@@ -242,7 +307,11 @@ export default function Signup() {
                             value={formData.email}
                             onChange={handleChange}
                             fullWidth
-                            size="small"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                              },
+                            }}
                         />
                         
                         <TextField 
@@ -252,7 +321,11 @@ export default function Signup() {
                             value={formData.password}
                             onChange={handleChange}
                             fullWidth
-                            size="small"
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                              },
+                            }}
                             slotProps={{
                                 input: {
                                     endAdornment: (
@@ -270,7 +343,7 @@ export default function Signup() {
                             }}
                         />
                         
-                        <FormControl fullWidth size="small">
+                        <FormControl fullWidth>
                             <InputLabel id="role-label">Role</InputLabel>
                             <Select
                               labelId="role-label"
@@ -278,11 +351,9 @@ export default function Signup() {
                               name="role"
                               value={formData.role}
                               label="Role"
-                              onChange={(e) => {
-                                  setFormData((prevData) => ({ 
-                                      ...prevData, 
-                                      role: e.target.value 
-                                  }));
+                              onChange={handleRoleChange}
+                              sx={{
+                                borderRadius: "8px",
                               }}
                             >
                                 <MenuItem value="Employee">Employee</MenuItem>
@@ -295,21 +366,37 @@ export default function Signup() {
                             fullWidth
                             variant="contained" 
                             disableElevation 
-                            onClick={() => navigate("/login")}
+                            onClick={handleRegister}
                             sx={{
-                                bgcolor: "#0087e0",
-                                py: { xs: 1, md: 1.5 },
-                                fontSize: { xs: "0.9rem", md: "1rem" },
-                                "&:hover": {
-                                    bgcolor: "#0077c7"
-                                }
+                              background: "linear-gradient(135deg, #1CA7EC, #7BD5F5)",
+                              py: { xs: 1.2, md: 1.5 },
+                              fontSize: { xs: "16px", sm: "17px", md: "18px" },
+                              fontWeight: "700",
+                              borderRadius: "8px",
+                              textTransform: "none",
+                              transition: "all 0.2s ease",
+                              flexShrink: 0,
+                              mt: { xs: 1, md: 1.5 },
+                              "&:hover": {
+                                animation: `${jelly} 0.5s ease`,
+                                boxShadow: "0 8px 20px 0 rgba(28,167,236,0.6)",
+                                background: "linear-gradient(135deg, #7BD5F5, #1CA7EC)",
+                                transform: "translateY(-2px)",
+                              },
+                              "&:active": {
+                                transform: "scale(0.98)",
+                              },
                             }}
                         >
                             Register
                         </Button>
+
+                        <Typography variant="caption" fontSize={{ xs: 13, md: 14 }} color="grey">
+                            Already have an account? <Link to="/login" style={{ color: "#1CA7EC" }}>Login</Link>
+                        </Typography>
                     </Box>
                 </Box>
             </Box>
         </Container>
     );
-};
+}
