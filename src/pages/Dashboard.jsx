@@ -16,8 +16,8 @@ import CommentIcon from '@mui/icons-material/Comment';
 import WorkIcon from '@mui/icons-material/Work';
 import LaunchIcon from '@mui/icons-material/Launch';
 
-const LineGraph = lazy(() => import("../components/LineGraph"));
-const BarGraph = lazy(() => import("../components/BarGraph"));
+const LineGraph = lazy(() => import("../components/dashboard/LineGraph"));
+const BarGraph = lazy(() => import("../components/dashboard/BarGraph"));
 
 export default function Dashboard() {
     const [expandedSection, setExpandedSection] = useState(null);
