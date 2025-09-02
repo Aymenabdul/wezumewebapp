@@ -86,7 +86,7 @@ export default function Login() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+        background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
         minHeight: "100vh",
         p: { xs: 0, md: 2 },
         overflowY: { xs: "auto", md: "hidden" }
@@ -94,7 +94,7 @@ export default function Login() {
     >
       <Box
         sx={{
-          height: { xs: "100vh", sm: "100vh", md: "95vh" }, 
+          height: { xs: "100vh", sm: "100vh", md: "90vh" }, 
           width: { xs: "100%", md: "85%", lg: "75%" },
           maxWidth: "1200px",
           bgcolor: "white",
@@ -110,7 +110,7 @@ export default function Login() {
           sx={{
             height: { xs: "35%", sm: "40%", md: "100%" },
             width: { xs: "100%", md: "50%" },
-            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+            background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
             p: { xs: 1.5, sm: 2, md: 3 },
             boxSizing: "border-box",
             display: "flex",
@@ -325,8 +325,8 @@ export default function Login() {
                   loading="lazy"
                   sx={{
                     position: "absolute",
-                    right: { xs: "-40px", sm: "-70px" },
-                    top: "50%",
+                    right: { xs: "-40px", sm: "-60px" },
+                    top: "325%",
                     transform: "translateY(-50%)",
                     width: { xs: 40, sm: 60, md: 80 },
                     height: "auto",
@@ -397,8 +397,7 @@ export default function Login() {
               disableElevation
               onClick={() => navigate("/app/dashboard")}
               sx={{
-                background: "linear-gradient(135deg, #1CA7EC, #7BD5F5)",
-                py: { xs: 1.2, md: 1.5 },
+                background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73)",
                 fontSize: { xs: "16px", sm: "17px", md: "18px" },
                 fontWeight: "700",
                 borderRadius: "8px",
@@ -408,7 +407,7 @@ export default function Login() {
                 "&:hover": {
                   animation: `${jelly} 0.6s ease`,
                   boxShadow: "0 8px 20px 0 rgba(28,167,236,0.6)",
-                  background: "linear-gradient(135deg, #7BD5F5, #1CA7EC)",
+                  background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
                   transform: "translateY(-2px)",
                 },
                 "&:active": {

@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardActionArea, CardMedia, Typography, Box, Skeleton } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { Card, CardActionArea, CardMedia, Typography, Box, Skeleton, IconButton } from "@mui/material";
+import { ThumbUp, Star } from "@mui/icons-material";
 
 export default function VideoCard({ video, onClick }) {
   const [loaded, setLoaded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -12,12 +14,26 @@ export default function VideoCard({ video, onClick }) {
     return () => clearTimeout(timer);
   }, []);
 
+  const handleLikeClick = (e) => {
+    e.stopPropagation(); 
+    setIsLiked(!isLiked);
+  };
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Card
       variant="outlined"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       sx={{
-        height: { xs: 300, md: 450 },
+        height: "100%",
         width: "100%",
+        aspectRatio: "1/1", // Maintain square aspect ratio
         position: "relative",
         overflow: "hidden",
         cursor: "pointer",
@@ -26,10 +42,11 @@ export default function VideoCard({ video, onClick }) {
           transform: "scale(1.02)",
           boxShadow: "0 8px 25px rgba(0,0,0,0.3)",
         },
+        borderRadius: 3,
       }}
     >
       <CardActionArea
-        onClick={onClick}
+        onClick={handleCardClick}
         sx={{
           height: "100%",
           width: "100%",
@@ -42,7 +59,12 @@ export default function VideoCard({ video, onClick }) {
             variant="rectangular"
             width="100%"
             height="100%"
-            sx={{ position: "absolute", top: 0, left: 0 }}
+            sx={{ 
+              position: "absolute", 
+              top: 0, 
+              left: 0,
+              borderRadius: 3
+            }}
           />
         )}
         <CardMedia
@@ -59,45 +81,60 @@ export default function VideoCard({ video, onClick }) {
             display: loaded ? "block" : "none",
           }}
         />
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            bgcolor: "rgba(0,0,0,0.7)",
-            borderRadius: "50%",
-            p: 1.5,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            transition: "all 0.3s ease-in-out",
-            "&:hover": {
-              bgcolor: "rgba(0,0,0,0.9)",
-              transform: "translate(-50%, -50%) scale(1.1)",
-            },
-          }}
-        >
-          <PlayArrowIcon sx={{ fontSize: 40, color: "#fff" }} />
-        </Box>
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)",
-            p: 1,
-            color: "#fff",
-          }}
-        >
-          <Typography variant="body2" fontWeight="bold" noWrap>
-            {video.title}
-          </Typography>
-          <Typography variant="caption" noWrap sx={{ opacity: 0.9 }}>
-            {video.views} views
-          </Typography>
-        </Box>
+        
+        {isHovered && loaded && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              padding: 1,
+              color: "white",
+            }}
+          >
+            <Box />
+            
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <IconButton
+                  onClick={handleLikeClick}
+                  size="small"
+                  sx={{
+                    color: isLiked ? "#ff4444" : "white",
+                    padding: 0.5,
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                    },
+                  }}
+                >
+                  <ThumbUp fontSize="small" />
+                </IconButton>
+                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                  {video.views || "0"}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Star fontSize="small" sx={{ color: "#ffd700" }} />
+                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
+                  {video.score || "4.8"}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        )}
       </CardActionArea>
     </Card>
   );

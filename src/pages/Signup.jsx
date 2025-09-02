@@ -127,7 +127,7 @@ export default function Signup() {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+            background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
             minHeight: "100vh",
             p: { xs: 0, sm: 1, md: 2 },
             overflow: { xs: "auto", md: "hidden" }
@@ -152,7 +152,7 @@ export default function Signup() {
                   sx={{
                     height: { xs: "35%", sm: "40%", md: "100%" },
                     width: { xs: "100%", md: "50%" },
-                    background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+                    background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
                     p: { xs: 1.5, sm: 2, md: 3 },
                     boxSizing: "border-box",
                     display: "flex",
@@ -431,7 +431,7 @@ export default function Signup() {
                             disableElevation 
                             onClick={handleRegister}
                             sx={{
-                              background: "linear-gradient(135deg, #1CA7EC, #7BD5F5)",
+                              background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
                               py: { xs: 1.2, md: 1.5 },
                               fontSize: { xs: "16px", sm: "17px", md: "18px" },
                               fontWeight: "700",
@@ -443,7 +443,7 @@ export default function Signup() {
                               "&:hover": {
                                 animation: `${jelly} 0.5s ease`,
                                 boxShadow: "0 8px 20px 0 rgba(28,167,236,0.6)",
-                                background: "linear-gradient(135deg, #7BD5F5, #1CA7EC)",
+                                background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
                                 transform: "translateY(-2px)",
                               },
                               "&:active": {

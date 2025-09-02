@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Grid, Box, CircularProgress } from "@mui/material";
+import { Grid, Box, Card, Skeleton, } from "@mui/material";
 import VideoCard from "./VideoCard";
 import FullScreenVideoPlayer from "./FullScreenVideoPlayer";
 
@@ -110,12 +110,38 @@ const sampleVideos = [
     }
 ];
 
+const VideoCardSkeleton = () => ( 
+  <Card 
+    variant="outlined" 
+    sx={{ 
+      height: "100%", 
+      width: "100%", 
+      aspectRatio: "1/1", 
+      position: "relative", 
+      overflow: "hidden", 
+      borderRadius: 3, 
+    }}> 
+      <Skeleton variant="rectangular" width="100%" height="100%" sx={{ borderRadius: 3 }} /> 
+  </Card>
+  );
+
 export default function VideoGrid() {
   const [videos, setVideos] = useState(sampleVideos);
   const [loading, setLoading] = useState(false);
   const [loadCount, setLoadCount] = useState(0);
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(null);
   const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get('video');
+    if (videoId) {
+      const videoIndex = videos.findIndex(v => v.id === videoId);
+      if (videoIndex !== -1) {
+        setSelectedVideoIndex(videoIndex);
+      }
+    }
+  }, [videos]);
 
   const loadMore = () => {
     if (loading) return;
@@ -135,7 +161,6 @@ export default function VideoGrid() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          console.log("Sentinel intersected, loading more videos...");
           loadMore();
         }
       },
@@ -151,22 +176,58 @@ export default function VideoGrid() {
   }, [loadCount]);
 
   const handleVideoClick = (index) => {
+    const videoId = videos[index].id;
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('video', videoId);
+    window.history.pushState({}, '', newUrl);
+    
     setSelectedVideoIndex(index);
   };
 
-  const handleCloseFullScreen = () => {
+  const handleVideoChange = (newIndex) => {
+    const videoId = videos[newIndex].id;
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('video', videoId);
+    window.history.replaceState({}, '', newUrl);
+  };
+
+  const handleBack = () => {
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.delete('video');
+    window.history.pushState({}, '', newUrl);
+    
     setSelectedVideoIndex(null);
   };
 
+  if (selectedVideoIndex !== null) {
+    return (
+      <FullScreenVideoPlayer
+        videos={videos}
+        initialIndex={selectedVideoIndex}
+        onLoadMore={loadMore}
+        onBack={handleBack}
+        onVideoChange={handleVideoChange}
+      />
+    );
+  }
+
   return (
     <Box width="100%" minHeight="100vh" pb={10}>
-      <Grid container spacing={{ xs: 0.5, md: 1 }}>
+      <Grid container spacing={{ xs: 0.5 }}>
         {videos.map((v, index) => (
-          <Grid key={v.id} size={{ xs: 4 }}>
+          <Grid key={v.id} size={{ xs: 4, sm: 3 }}>
             <VideoCard video={v} onClick={() => handleVideoClick(index)} />
           </Grid>
         ))}
+
+        {loading &&
+          Array.from({ length: 8 }).map((_, index) => (
+            <Grid key={`skeleton-${index}`} size={{ xs: 4, sm: 3 }}>
+              <VideoCardSkeleton />
+            </Grid>
+          ))}
       </Grid>
+
       <Box
         ref={sentinelRef}
         display="flex"
@@ -174,17 +235,7 @@ export default function VideoGrid() {
         alignItems="center"
         py={2}
         minHeight={50}
-      >
-        {loading && <CircularProgress size={32} />}
-      </Box>
-      {selectedVideoIndex !== null && (
-        <FullScreenVideoPlayer
-          videos={videos}
-          initialIndex={selectedVideoIndex}
-          onClose={handleCloseFullScreen}
-          onLoadMore={loadMore}
-        />
-      )}
+      />
     </Box>
   );
 }

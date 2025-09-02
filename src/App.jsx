@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import BaseLayout from "./layouts/BaseLayout";
 import Dashboard from "./pages/Dashboard";
 import Videos from "./pages/Videos";
+import Trending from "./pages/Trending";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/app" element={<BaseLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="videos" element={<Videos />} />
+          <Route path="trending" element={<Trending />} />
           {/* <Route index element={<Navigate to="dashboard" replace />} /> */}
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
