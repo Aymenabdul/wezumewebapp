@@ -13,20 +13,14 @@ export default function Navbar() {
           <img
             src="whitelogo.png"
             alt="Wezume Logo"
-            className="h-10 w-auto hover:opacity-80 transition-opacity"
+            className="h-15 w-auto hover:opacity-80 transition-opacity"
           />
         </a>
 
         {/* Desktop Menu */}
         <div className="hidden md:flex space-x-8 text-white items-center font-medium">
-          <a href="#home" className="hover:text-blue-200 transition-colors">
-            Home
-          </a>
-          <a href="#about" className="hover:text-blue-200 transition-colors">
-            About Us
-          </a>
-          <a href="#contact" className="hover:text-blue-200 transition-colors">
-            Contact
+          <a href="/contact" className="hover:text-blue-200 transition-colors">
+            Get a Mandate
           </a>
           <a
             href="/login"

@@ -7,37 +7,38 @@ const testimonials = [
     role: "Placement Director",
     rating: 5,
     text: "Wezume has added real value to our placement efforts. The platform not only trained students on crafting impactful video resumes but also served as a litmus test for soft skills. Platform also helped students get job leads and offers beyond our existing network. Recruiters appreciated the visibility into key soft skills like clarity, confidence, and authenticity.",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://cdn-icons-png.flaticon.com/512/4140/4140047.png" // 👩 Female avatar
   },
   {
     name: "Keerthana",
     role: "Fresher",
     rating: 5,
     text: "Wezume takes job searching to a whole new level. Uploading a video resume let me express my passion and personality way beyond what a normal CV can do. It's smooth, modern, and got me real attention from employers. If you're serious about your career, this app is a must-have!",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://cdn-icons-png.flaticon.com/512/4140/4140048.png" // 👩 Female avatar
   },
   {
     name: "Gowshik",
     role: "Freelancer",
     rating: 5,
     text: "I love how Wezume lets me *speak* my resume. Literally! Recording a 60-second video helped me highlight my skills and energy in a way paper never could. The design is intuitive, and I started getting interview calls much quicker. A real confidence booster!",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://cdn-icons-png.flaticon.com/512/4140/4140037.png" // 👨 Male avatar
   },
   {
     name: "Jenifer",
     role: "Employee",
     rating: 4,
     text: "Traditional resumes feel outdated — Wezume gets it! Being able to upload a video introduction gave me a massive edge. Recruiters appreciated seeing the real me, not just a list of skills. It's ideal for job seekers who want to make an impression fast.",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://cdn-icons-png.flaticon.com/512/4140/4140051.png" // 👩 Female avatar
   },
   {
     name: "Lavanya",
     role: "Fresher",
     rating: 5,
     text: "As a fresher, I always struggled to stand out — until I found Wezume. The video resume feature let me share my story in my own voice, and that made all the difference. It's simple, smart, and gives you the spotlight you deserve.",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&crop=face"
+    avatar: "https://cdn-icons-png.flaticon.com/512/4140/4140047.png" // 👩 Female avatar
   }
 ];
+
 
 // Duplicate testimonials for seamless infinite scroll
 const duplicatedTestimonials = [...testimonials, ...testimonials];
