@@ -5,6 +5,7 @@ import Carousel from "../components/landing/Carousel";
 import FAQ from "../components/landing/FAQ";
 import Testimonials from "../components/landing/Testimonials";
 import Footer from "../components/landing/Footer";
+import ContactSection from "../components/landing/ContactSection";
 
 export default function Landing() {
   return (
@@ -15,6 +16,7 @@ export default function Landing() {
       <Carousel />
       <FAQ />
       <Testimonials />
+      <ContactSection />
       <Footer />
     </>
   );

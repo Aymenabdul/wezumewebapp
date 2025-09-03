@@ -11,12 +11,14 @@ import BaseLayout from "./layouts/BaseLayout";
 import Dashboard from "./pages/Dashboard";
 import Videos from "./pages/Videos";
 import Trending from "./pages/Trending";
+import Contact from "./pages/Contact";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/app" element={<BaseLayout />}>

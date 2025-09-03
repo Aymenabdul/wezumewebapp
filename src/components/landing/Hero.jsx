@@ -10,45 +10,48 @@ const Hero = () => {
       <div className="flex flex-col lg:flex-row justify-center min-h-screen p-6 lg:p-12 font-sans">
         {/* Phone Mockup - only visible on lg+ */}
         <motion.div
-          initial={{ x: -200, opacity: 0 }} // start off-screen right
-          animate={{ x: 0, opacity: 1 }} // slide into place
-          transition={{ duration: 2, ease: "easeOut" }}
-          className="
-            flex-shrink-0
-            w-full max-w-sm h-auto
-            lg:w-1/4 lg:max-w-md lg:mr-24
-            mb-12 lg:mb-0
-            items-center justify-center
-            cursor-pointer
-          "
-        >
-          <div
-            className="
-            relative
-            w-full h-[550px]
-            bg-gray-900 rounded-[40px] shadow-2xl
-            border-[10px] border-black
-            flex flex-col
-          "
-          >
-            {/* Phone Notch */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-gray-800 rounded-b-lg"></div>
+  initial={{ x: -200, opacity: 0 }} // start off-screen left
+  animate={{ x: 0, opacity: 1 }} // slide into place
+  transition={{ duration: 2, ease: "easeOut" }}
+  className="
+    flex-shrink-0
+    w-[320px] h-[580px]
+    mb-12 lg:mb-0 lg:mr-24
+    mx-auto lg:mx-0
+    flex items-center justify-center
+    cursor-pointer
+  "
+>
+  <div
+    className="
+    relative
+    w-[300px] h-[550px]
+    bg-gray-900 rounded-[40px] shadow-2xl
+    border-[10px] border-black
+    flex flex-col
+  "
+  >
+    {/* Phone Notch */}
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-5 bg-gray-800 rounded-b-lg"></div>
 
-            {/* Phone Screen */}
-            <div
-              className="
-              flex-grow
-              mt-5 mb-3 mx-2
-              bg-blue-500 rounded-[28px] overflow-hidden
-              flex flex-col
-            "
-            >
-              {/* Fake App UI */}
-              <img src="landing.jpeg" />
-            </div>
-          </div>
-        </motion.div>
-
+    {/* Phone Screen */}
+    <div
+      className="
+      flex-grow
+      mt-5 mb-3 mx-2
+      bg-blue-500 rounded-[28px] overflow-hidden
+      flex flex-col
+    "
+    >
+      {/* Image with proper fit */}
+      <img 
+        src="landing.jpeg" 
+        alt="App Screenshot"
+        className="w-full h-full object-cover object-center"
+      />
+    </div>
+  </div>
+</motion.div>
         {/* Content Container */}
         <motion.div
           initial={{ x: 200, opacity: 0 }} // start off-screen right
@@ -58,7 +61,7 @@ const Hero = () => {
         w-full lg:w-1/2 z-10
         flex flex-col items-center lg:items-start
         text-center lg:text-left
-        text-white
+        text-blue-600 lg:text-white
       "
         >
           <h1
