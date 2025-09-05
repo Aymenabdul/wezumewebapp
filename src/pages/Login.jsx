@@ -11,7 +11,6 @@ import {
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
 import { Link, useNavigate } from "react-router"; 
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import personPeeking from "../assets/images/person-peeking.png";
 
 const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
