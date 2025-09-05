@@ -1,6 +1,6 @@
 export default function ContactSection() {
   return (
-    <div id="contact" className="relative w-full p-20 overflow-hidden flex items-center justify-center">
+    <div id="contact" className="relative z-0 w-full p-20 overflow-hidden flex items-center justify-center">
       {/* Impressive Background - Same as FAQ */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800">
         {/* Animated geometric shapes */}

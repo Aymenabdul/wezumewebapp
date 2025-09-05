@@ -1,12 +1,13 @@
-import { motion, useAnimation } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { Briefcase, Users, Rocket, Handshake } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
-// Animated Counter Component - Fixed version
-function AnimatedCounter({ from = 0, to = 50, duration = 2 }) {
+// Animated Counter Component
+function AnimatedCounter({ from = 0, to = 50, duration = 2, trigger }) {
   const [count, setCount] = useState(from);
 
   useEffect(() => {
+    if (!trigger) return; // Only run when in view
     let startTime = null;
 
     const animate = (timestamp) => {
@@ -24,64 +25,20 @@ function AnimatedCounter({ from = 0, to = 50, duration = 2 }) {
     };
 
     requestAnimationFrame(animate);
-  }, [from, to, duration]);
+  }, [trigger, from, to, duration]);
 
   const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
 
   return <span>{count}</span>;
 }
 
-// Floating particles background
-function FloatingParticles() {
-  const particles = Array.from({ length: 25 });
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1.5 h-1.5 bg-white rounded-full opacity-30"
-          initial={{
-            x:
-              Math.random() *
-              (typeof window !== "undefined" ? window.innerWidth : 1200),
-            y: Math.random() * 400,
-          }}
-          animate={{
-            x:
-              Math.random() *
-              (typeof window !== "undefined" ? window.innerWidth : 1200),
-            y: Math.random() * 400,
-          }}
-          transition={{
-            duration: Math.random() * 15 + 10,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function Features() {
-  const [recruitersCount, setRecruitersCount] = useState(0);
-  const controls = useAnimation();
-
-  // Your original animation setup (preserved)
-  useEffect(() => {
-    controls.start({
-      count: 50,
-      transition: { duration: 2, ease: "easeOut" },
-    });
-  }, [controls]);
-
   const features = [
     {
       icon: <Users className="w-8 h-8 text-blue-600" />,
-      title: (
+      title: (trigger) => (
         <>
-          <AnimatedCounter from={0} to={50} duration={2} />+ Verified Recruiters
+          <AnimatedCounter from={0} to={50} duration={2} trigger={trigger} />+ Verified Recruiters
         </>
       ),
       description:
@@ -89,136 +46,68 @@ export default function Features() {
     },
     {
       icon: <Handshake className="w-8 h-8 text-blue-600" />,
-      title: "Investors",
+      title: () => "Investors",
       description:
         "Investors easily find and connect with businesses for funding opportunities.",
     },
     {
       icon: <Briefcase className="w-8 h-8 text-blue-600" />,
-      title: "Jobseekers",
+      title: () => "Jobseekers",
       description:
         "Pitch your 60 sec videos and discover the right opportunities.",
     },
     {
       icon: <Rocket className="w-8 h-8 text-blue-600" />,
-      title: "Freelancers / Entrepreneurs",
+      title: () => "Freelancers / Entrepreneurs",
       description:
         "Showcase your skills and pitch ideas to attract potential clients or investors.",
     },
   ];
 
   return (
-    <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 py-20 overflow-hidden">
-      {/* Background Animations */}
-      <FloatingParticles />
-
-      {/* Animated Background Shapes */}
-      <motion.div
-        className="absolute top-0 left-0 w-80 h-80 bg-gradient-to-br from-blue-100/20 to-transparent rounded-full blur-3xl"
-        animate={{
-          x: [0, 50, 0],
-          y: [0, -30, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      <motion.div
-        className="absolute bottom-0 right-0 w-72 h-72 bg-gradient-to-tl from-indigo-100/25 to-transparent rounded-full blur-3xl"
-        animate={{
-          x: [0, -40, 0],
-          y: [0, 40, 0],
-          scale: [1, 0.9, 1],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 5,
-        }}
-      />
-
-      <div className="container mx-auto px-6 lg:px-12 relative z-10">
-        {/* Divider Line Top - Enhanced */}
-        <motion.div
-          className="h-px w-full bg-gradient-to-r from-transparent via-white to-transparent"
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          viewport={{ once: true }}
-          style={{ transformOrigin: "left" }}
-        />
-
-        {/* Your original grid layout preserved */}
+    <section className="relative bg-transparent z-0">
+      {/* Wrapper that overlaps Hero */}
+      <div className="container mx-auto px-6 lg:px-12 -mt-32 relative">
+        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 py-12">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.2, duration: 0.6 }}
-              viewport={{ once: false }}
-              whileHover={{
-                y: -5,
-                transition: { duration: 0.3, ease: "easeOut" },
-              }}
-              className="text-center p-6 relative group bg-white rounded-lg"
-            >
-              {/* Card Background with Hover Effect */}
-              <motion.div
-                className="absolute inset-0 bg-white/40 backdrop-blur-sm rounded-xl border border-white/60 shadow-lg opacity-0 group-hover:opacity-100 -m-4"
-                transition={{ duration: 0.3 }}
-              />
+          {features.map((feature, index) => {
+            const ref = useRef(null);
+            const inView = useInView(ref, { once: false, margin: "-50px" });
 
-              {/* Icon with enhanced styling */}
+            return (
               <motion.div
-                className="flex justify-center mb-4 relative z-10"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ duration: 0.3 }}
+                ref={ref}
+                key={index}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.2, duration: 0.8, ease: "easeOut" }}
+                viewport={{ once: false }}
+                whileHover={{
+                  y: -8,
+                  transition: { duration: 0.25, ease: "easeOut" },
+                }}
+                className="text-center p-6 bg-white rounded-xl shadow-lg relative z-30 group"
               >
-                <div className="p-3 bg-white rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                  {feature.icon}
-                </div>
+                {/* Icon */}
+                <motion.div
+                  className="flex justify-center mb-4"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="p-3 bg-white rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                    {feature.icon}
+                  </div>
+                </motion.div>
+
+                {/* Title with Counter (if applicable) */}
+                <h3 className="text-xl font-bold text-blue-600">
+                  {feature.title(inView)}
+                </h3>
+                <p className="mt-2 text-gray-600">{feature.description}</p>
               </motion.div>
-
-              <h3 className="text-xl font-bold text-blue-600 relative z-10">
-                {feature.title}
-              </h3>
-              <p className="mt-2 text-gray-600 relative z-10">
-                {feature.description}
-              </p>
-
-              {/* Subtle shine effect */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 opacity-0 group-hover:opacity-100 pointer-events-none"
-                animate={{
-                  x: ["-100%", "100%"],
-                }}
-                transition={{
-                  duration: 1.5,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  repeatDelay: 4,
-                }}
-              />
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
-
-        {/* Divider Line Bottom - Enhanced */}
-        {/* Divider Line Top - Enhanced */}
-        <motion.div
-          className="h-px w-full bg-gradient-to-r from-transparent via-white to-transparent"
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          viewport={{ once: true }}
-          style={{ transformOrigin: "left" }}
-        />
       </div>
     </section>
   );

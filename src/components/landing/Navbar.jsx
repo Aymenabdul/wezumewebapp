@@ -1,19 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > window.innerHeight) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <>
       {/* Navbar */}
-      <nav className="relative z-50 flex justify-between items-center px-6 md:px-12 py-6 bg-transparent">
+      <nav
+        className={`fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-12 py-6 transition-colors duration-300 ${
+          scrolled ? "bg-blue-600 shadow-lg" : "bg-transparent"
+        }`}
+      >
         {/* Logo */}
         <a href="/" className="flex items-center">
           <img
             src="whitelogo.png"
             alt="Wezume Logo"
-            className="h-15 w-auto hover:opacity-80 transition-opacity"
+            className={`${scrolled?"h-10":"h-15"} w-auto hover:opacity-80 transition-opacity`}
           />
         </a>
 
@@ -71,7 +90,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       <div
-        className={`fixed top-0 left-0 w-full h-full bg-blue-600 bg-opacity-95 backdrop-blur-sm z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 w-full h-full ${scrolled?"bg-blue-600/95":"bg-transparent"} backdrop-blur-sm z-40 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-y-0" : "-translate-y-full"
         }`}
       >

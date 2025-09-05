@@ -11,8 +11,8 @@ export default function Landing() {
   return (
     <>
       <Hero />
-      <Video />
       <Features />
+      <Video />
       <Carousel />
       <FAQ />
       <Testimonials />

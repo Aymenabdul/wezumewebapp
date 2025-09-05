@@ -32,12 +32,12 @@ export default function Video() {
             className="bg-white/80 backdrop-blur-md border border-blue-100 hover:border-blue-300 transition-colors duration-300 rounded-2xl p-8 shadow-lg hover:shadow-2xl"
           >
             <h2 className="text-4xl font-extrabold text-blue-700 mb-6 leading-snug">
-              Why Wezume
+              Why Wezume ?
             </h2>
             <p className="text-gray-700 leading-relaxed text-lg font-medium">
-              Don&apos;t just apply - impress.
+              Don&apos;t just apply - <span className="text-blue-600">impress.</span>
               <br />
-              Don&apos;t just type - talk.
+              Don&apos;t just type - <span className="text-blue-600">talk.</span>
             </p>
             <p className="mt-4 text-gray-600 text-base leading-relaxed">
               In a world flooded with resumes, we offer something refreshingly
