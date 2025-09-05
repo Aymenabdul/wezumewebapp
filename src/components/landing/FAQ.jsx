@@ -1,9 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const sections = [
   {
     title: "Campus Placement Assist",
+    subtitle: "Empowering Colleges & Corporates",
     items: [
       {
         heading: "For Colleges",
@@ -21,6 +24,7 @@ const sections = [
   },
   {
     title: "Corporates Hire Assist",
+    subtitle: "Smarter Hiring with AI",
     items: [
       {
         heading: "Automate Initial Screening",
@@ -38,6 +42,7 @@ const sections = [
   },
   {
     title: "Platform User Analytics",
+    subtitle: "Actionable Talent Insights",
     items: [
       {
         heading: "Track Engagement in Real Time",
@@ -55,97 +60,79 @@ const sections = [
   },
 ];
 
-export default function FAQSections() {
-  const [openIndex, setOpenIndex] = useState(null);
+export default function HorizontalFAQ() {
+  const [openStates, setOpenStates] = useState(
+    Array(sections.length).fill(false)
+  );
 
   const toggleSection = (index) => {
-    setOpenIndex(openIndex === index ? null : index);
+    setOpenStates((prev) =>
+      prev.map((isOpen, i) => (i === index ? !isOpen : isOpen))
+    );
   };
 
   return (
-    <div className="relative w-full overflow-hidden">
-      {/* Impressive Background */}
+    <div className="relative w-full overflow-x-auto">
+      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800">
-        {/* Animated geometric shapes */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          {/* Large floating circles */}
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-white/5 rounded-full animate-pulse"></div>
-          <div className="absolute top-1/3 -right-32 w-80 h-80 bg-white/8 rounded-full animate-pulse delay-1000"></div>
-          <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-white/3 rounded-full animate-pulse delay-2000"></div>
-          
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 opacity-10">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="white" strokeWidth="1"/>
-              </pattern>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-
-          {/* Floating particles */}
-          <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-white/20 rounded-full animate-bounce delay-300"></div>
-          <div className="absolute top-3/4 left-3/4 w-3 h-3 bg-white/15 rounded-full animate-bounce delay-700"></div>
-          <div className="absolute top-1/2 left-1/5 w-1 h-1 bg-white/25 rounded-full animate-bounce delay-1200"></div>
-          <div className="absolute top-1/6 right-1/4 w-2 h-2 bg-white/10 rounded-full animate-bounce delay-500"></div>
-        </div>
-
-        {/* Gradient overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-blue-800/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 to-transparent"></div>
       </div>
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto py-16 px-6">
-        <h2 className="text-4xl md:text-5xl font-extrabold text-center text-white mb-14 tracking-tight drop-shadow-lg">
-          What We Offer
-        </h2>
+      <div className="relative z-0 max-w-7xl mx-auto py-12 px-6">
+        <div className="text-center mb-14">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">
+            What We Offer
+          </h2>
+        </div>
 
-        <div className="space-y-6">
+        {/* Horizontal FAQ Container */}
+        <div className="flex flex-row gap-6 overflow-x-auto pb-6">
           {sections.map((section, index) => (
             <div
               key={index}
-              className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl hover:shadow-2xl hover:bg-white transition-all duration-300 transform hover:scale-[1.02]"
+              className="relative min-w-[280px] sm:min-w-[320px] bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300"
             >
               {/* Header */}
               <button
                 onClick={() => toggleSection(index)}
-                className="flex items-center justify-between w-full px-8 py-6 text-left text-2xl font-bold text-blue-600 focus:outline-none hover:text-blue-700 transition-colors"
+                className="w-full flex flex-col items-center text-center px-6 py-6 focus:outline-none"
               >
-                {section.title}
-                {openIndex === index ? (
-                  <ChevronUp className="w-7 h-7 text-blue-600 transform transition-transform duration-300" />
-                ) : (
-                  <ChevronDown className="w-7 h-7 text-blue-600 transform transition-transform duration-300" />
-                )}
+                <span className="text-xl font-bold text-blue-600">
+                  {section.title}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {section.subtitle}
+                </span>
+                <div className="mt-3">
+                  {openStates[index] ? (
+                    <ChevronUp className="w-6 h-6 text-blue-600" />
+                  ) : (
+                    <ChevronDown className="w-6 h-6 text-blue-600" />
+                  )}
+                </div>
               </button>
 
-              {/* Expandable Content */}
+              {/* Expandable Content (slide out to right of card) */}
               <div
-                className={`grid transition-all duration-500 ease-in-out ${
-                  openIndex === index
-                    ? "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0"
-                }`}
+                className={`absolute top-0 left-full h-full w-[280px] sm:w-[320px] 
+                  bg-white shadow-2xl rounded-r-2xl border-l border-blue-200 
+                  transform transition-transform duration-500 ease-in-out
+                  ${openStates[index] ? "translate-x-0" : "translate-x-full"}
+                `}
               >
-                <div className="overflow-hidden">
-                  <ul className="px-8 pb-6 space-y-4">
-                    {section.items.map((item, i) => (
-                      <li
-                        key={i}
-                        className="relative border-l-4 border-blue-600 pl-5 bg-gradient-to-r from-blue-50 to-blue-25 rounded-lg py-4 hover:from-blue-100 hover:to-blue-50 transition-all duration-300 group overflow-hidden"
-                      >
-                        {/* Subtle hover effect background */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
-                        <div className="relative z-10">
-                          <p className="text-xl font-semibold text-blue-600 mb-1 group-hover:text-blue-700 transition-colors">
-                            {item.heading}
-                          </p>
-                          <p className="text-lg text-gray-700 leading-relaxed">{item.desc}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="px-6 py-6 space-y-4 overflow-y-auto h-full">
+                  {section.items.map((item, i) => (
+                    <div
+                      key={i}
+                      className="border-l-4 border-blue-600 pl-4 bg-gradient-to-b from-blue-50 to-blue-25 rounded-lg p-4 hover:from-blue-100 hover:to-blue-50 transition-all duration-300"
+                    >
+                      <p className="text-lg font-semibold text-blue-600 mb-2">
+                        {item.heading}
+                      </p>
+                      <p className="text-gray-700">{item.desc}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
