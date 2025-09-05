@@ -3,7 +3,6 @@ import {
   Button,
   Box,
   Container,
-  Skeleton,
   TextField,
   Typography,
   IconButton,
@@ -13,6 +12,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
 import { Link, useNavigate } from "react-router"; 
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import personPeeking from "../assets/images/person-peeking.png";
 
 const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
 
@@ -26,7 +26,7 @@ const jelly = keyframes`
 
 const slideIn = keyframes`
   0% {
-    transform: translateX(100px) translateY(-50%);
+    transform: translateX(25px) translateY(-50%);
     opacity: 0;
   }
   100% {
@@ -40,8 +40,12 @@ const slideOut = keyframes`
     transform: translateX(0) translateY(-50%);
     opacity: 1;
   }
+  50% {
+    transform: translateX(12.5px) translateY(-50%);
+    opacity: 0.5;
+  }
   100% {
-    transform: translateX(100px) translateY(-50%);
+    transform: translateX(25px) translateY(-50%);
     opacity: 0;
   }
 `;
@@ -87,19 +91,22 @@ export default function Login() {
         justifyContent: "center",
         alignItems: "center",
         background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
-        minHeight: "100vh",
+        minHeight: { xs: "100%", md: "100vh" },
         p: { xs: 0, md: 2 },
         overflowY: { xs: "auto", md: "hidden" }
       }}
     >
       <Box
         sx={{
-          height: { xs: "100vh", sm: "100vh", md: "90vh" }, 
+          // height: { xs: "90%", sm: "85%", md: "55%", lg: "65%" },
+          maxHeight: { xs: "100%", md: "600px" },
           width: { xs: "100%", md: "85%", lg: "75%" },
           maxWidth: "1200px",
           bgcolor: "white",
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
+          alignItems: "center",
+          justifyContent: "center",
           borderRadius: { xs: 0, sm: 2, md: 3 },
           overflow: "hidden",
           boxSizing: "border-box",
@@ -133,19 +140,36 @@ export default function Login() {
                   mb: { xs: 1, sm: 1, md: 2 },
                 }}
               >
-                <Skeleton
-                  variant="rectangular"
+                <Box
                   sx={{
                     width: "100%",
                     height: "100%",
                     maxWidth: "600px",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
                     borderRadius: 2,
                     mb: 2,
+                    opacity: 0.7,
+                    animation: "pulse 1.5s ease-in-out infinite",
+                    "@keyframes pulse": {
+                      "0%": { opacity: 0.7 },
+                      "50%": { opacity: 0.4 },
+                      "100%": { opacity: 0.7 },
+                    },
                   }}
                 />
                 <Box sx={{ display: "flex", gap: 1 }}>
                   {[0, 1, 2].map((index) => (
-                    <Skeleton key={index} variant="circular" width={8} height={8} />
+                    <Box
+                      key={index}
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(255, 255, 255, 0.3)",
+                      }}
+                    />
                   ))}
                 </Box>
               </Box>
@@ -155,7 +179,7 @@ export default function Login() {
               autoPlay={true}
               interval={4000}
               showDots={true}
-              containerHeight={{ xs: "230px", sm: "330px", md: "430px", lg: "530px" }}
+              containerHeight={{ xs: "230px", sm: "330px", md: "430px", lg: "480px" }}
               dotSpacing={1}
             />
           </Suspense>
@@ -174,6 +198,7 @@ export default function Login() {
             bgcolor: "white",
             position: "relative",
             overflow: "visible", 
+            mt: { xs: 5, md: 0}
           }}
         >
           <Box
@@ -181,7 +206,7 @@ export default function Login() {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              mb: { xs: 0.5, sm: 0.5, md: 1 },
+              mb: { xs: 2, sm: 2, md: 1 },
               flexShrink: 0,
             }}
           >
@@ -191,7 +216,7 @@ export default function Login() {
               alt="Wezume Logo"
               loading="lazy"
               sx={{
-                width: { xs: 100, sm: 120, md: 120, lg: 140 },
+                width: { xs: 110, sm: 120, md: 120, lg: 140 },
                 height: "auto",
                 objectFit: "contain",
                 filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.2))",
@@ -203,16 +228,16 @@ export default function Login() {
             sx={{
               display: "flex",
               justifyContent: "center",
-              mb: { xs: 1.5, sm: 2, md: 3 }, 
+              mb: { xs: 3, sm: 3, md: 3 },
               flexShrink: 0,
-              height: { xs: "24px", sm: "28px", md: "28px" }, 
+              height: { xs: "28px", sm: "30px", md: "28px" },
               overflow: "hidden",
             }}
           >
             <Typography
               sx={{
                 fontWeight: 600,
-                fontSize: { xs: "16px", sm: "18px", md: "18px", lg: "20px" }, 
+                fontSize: { xs: "17px", sm: "19px", md: "18px", lg: "20px" },
                 background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -246,62 +271,10 @@ export default function Login() {
               width: "100%",
               maxWidth: { xs: "90%", sm: "320px", md: "380px" },
               position: "relative",
-              flex: 1, 
-              justifyContent: "flex-start", 
+              flex: { xs: 0, md: 1 },
+              justifyContent: "center", 
             }}
           >
-            <Button
-              fullWidth
-              variant="contained"
-              sx={{
-                display: "flex",
-                gap: 1,
-                py: { xs: 1, md: 1.2 },
-                fontSize: { xs: "14px", sm: "15px", md: "16px" },
-                fontWeight: 600,
-                borderRadius: "8px",
-                textTransform: "none",
-                flexShrink: 0,
-              }}
-            >
-              <LinkedInIcon />
-              Login with LinkedIn
-            </Button>
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                my: { xs: 0.3, md: 1 },
-                flexShrink: 0,
-              }}
-            >
-              <Box
-                sx={{
-                  flex: 1,
-                  height: "1px",
-                  backgroundColor: "#ddd",
-                }}
-              />
-              <Typography
-                sx={{
-                  mx: 2,
-                  color: "#666",
-                  fontSize: { xs: "12px", sm: "13px", md: "14px" },
-                }}
-              >
-                Or Login With
-              </Typography>
-              <Box
-                sx={{
-                  flex: 1,
-                  height: "1px",
-                  backgroundColor: "#ddd",
-                }}
-              />
-            </Box>
-
             <Box sx={{ width: "100%", position: "relative", flexShrink: 0 }}>
               <TextField
                 label="Email"
@@ -320,19 +293,20 @@ export default function Login() {
               {showPerson && (
                 <Box
                   component="img"
-                  src="/person.png"
+                  src={personPeeking}
                   alt="Peeking Person"
                   loading="lazy"
                   sx={{
                     position: "absolute",
-                    right: { xs: "-40px", sm: "-60px" },
-                    top: "325%",
-                    transform: "translateY(-50%)",
-                    width: { xs: 40, sm: 60, md: 80 },
+                    left: { xs: "-37px", sm: "-100px", md: "-35px" },
+                    top: "50%",
+                    width: { xs: 55, sm: 100, md: 50 },
                     height: "auto",
-                    animation: `${isExiting ? slideOut : slideIn} 0.4s ease forwards`,
                     pointerEvents: "none",
                     zIndex: 10,
+                    animation: isExiting 
+                      ? `${slideOut} 0.4s ease-out forwards`
+                      : `${slideIn} 0.5s ease-out forwards`,
                   }}
                 />
               )}

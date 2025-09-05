@@ -11,33 +11,10 @@ import {
     Select,
     TextField,
     Typography,
-    Skeleton
 } from "@mui/material";
 import { Link, useNavigate } from "react-router";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
-
-const slideIn = keyframes`
-  0% {
-    transform: translateX(100px) translateY(-50%);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0) translateY(-50%);
-    opacity: 1;
-  }
-`;
-
-const slideOut = keyframes`
-  0% {
-    transform: translateX(0) translateY(-50%);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100px) translateY(-50%);
-    opacity: 0;
-  }
-`;
 
 const jelly = keyframes`
     0% { transform: scale(1, 1); }
@@ -61,8 +38,6 @@ export default function Signup() {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isAnimationPaused, setIsAnimationPaused] = useState(false);
-    const [showPerson, setShowPerson] = useState(false);
-    const [isExiting, setIsExiting] = useState(false);
 
     const navigate = useNavigate();
 
@@ -87,15 +62,6 @@ export default function Signup() {
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [name]: value }));
-        if (name === "email") {
-            if (value.length > 0) {
-                setShowPerson(true);
-                setIsExiting(false);
-            } else {
-                setIsExiting(true);
-                setTimeout(() => setShowPerson(false), 400);
-            }
-        }
     }, []);
 
     const handleClickShowPassword = useCallback(() => {
@@ -112,13 +78,6 @@ export default function Signup() {
     const handleRegister = useCallback(() => {
         navigate("/login");
     }, [navigate]);
-
-    const handleEmailBlur = useCallback(() => {
-        if (formData.email.length > 0) {
-            setIsExiting(true);
-            setTimeout(() => setShowPerson(false), 400);
-        }
-    }, [formData.email]);
 
     return (
         <Container
@@ -175,19 +134,36 @@ export default function Signup() {
                           mb: { xs: 1, sm: 1, md: 2 },
                         }}
                       >
-                        <Skeleton
-                          variant="rectangular"
+                        <Box
                           sx={{
                             width: "100%",
                             height: "100%",
                             maxWidth: "600px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
                             borderRadius: 2,
                             mb: 2,
+                            opacity: 0.7,
+                            animation: "pulse 1.5s ease-in-out infinite",
+                            "@keyframes pulse": {
+                              "0%": { opacity: 0.7 },
+                              "50%": { opacity: 0.4 },
+                              "100%": { opacity: 0.7 },
+                            },
                           }}
                         />
                         <Box sx={{ display: "flex", gap: 1 }}>
                           {[0, 1, 2].map((index) => (
-                            <Skeleton key={index} variant="circular" width={8} height={8} />
+                            <Box
+                              key={index}
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                bgcolor: "rgba(255, 255, 255, 0.3)",
+                              }}
+                            />
                           ))}
                         </Box>
                       </Box>
@@ -289,7 +265,7 @@ export default function Signup() {
                         alignItems: "center",
                         gap: { xs: 1.5, md: 2 },
                         width: "100%",
-                        maxWidth: { xs: "90%", sm: "320px", md: "350px" },
+                        maxWidth: { xs: "90%", sm: "320px", md: "380px" },
                         flex: 1,
                         pb: { xs: 2, md: 1 },
                         position: "relative",
@@ -341,41 +317,19 @@ export default function Signup() {
                             }}
                         />
                         
-                        <Box sx={{ width: "100%", position: "relative" }}>
-                            <TextField 
-                                label="Email"
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                onBlur={handleEmailBlur}
-                                fullWidth
-                                sx={{
-                                  "& .MuiOutlinedInput-root": {
-                                    borderRadius: "8px",
-                                  },
-                                }}
-                            />
-                            {showPerson && (
-                                <Box
-                                  component="img"
-                                  src="/person.png"
-                                  alt="Peeking Person"
-                                  loading="lazy"
-                                  sx={{
-                                    position: "absolute",
-                                    right: { xs: "-40px", sm: "-60px" },
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    width: { xs: 40, sm: 50, md: 70 },
-                                    height: "auto",
-                                    animation: `${isExiting ? slideOut : slideIn} 0.4s ease forwards`,
-                                    pointerEvents: "none",
-                                    zIndex: 10,
-                                  }}
-                                />
-                            )}
-                        </Box>
+                        <TextField 
+                            label="Email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            fullWidth
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: "8px",
+                              },
+                            }}
+                        />
                         
                         <TextField 
                             label="Password"

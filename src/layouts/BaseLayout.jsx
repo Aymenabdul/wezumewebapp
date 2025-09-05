@@ -336,7 +336,6 @@ export default function BaseLayout() {
 
     return (
         <Box sx={{ display: "flex", minHeight: "100vh", position: 'relative' }}>
-            {/* Toggle Button - Positioned between sidebar and main content */}
             {!isMobile && (
                 <IconButton
                     onClick={handleToggleCollapse}
@@ -366,7 +365,7 @@ export default function BaseLayout() {
                     position="fixed"
                     sx={{
                         width: '100%',
-                        background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", 
+                        background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);", 
                         zIndex: theme.zIndex.drawer + 1,
                     }}
                     elevation={0}
@@ -396,7 +395,7 @@ export default function BaseLayout() {
                         '& .MuiDrawer-paper': {
                             width: currentDrawerWidth,
                             boxSizing: 'border-box',
-                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)", 
+                            background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);", 
                             color: "white",
                             display: 'flex',
                             flexDirection: 'column',
@@ -423,7 +422,7 @@ export default function BaseLayout() {
                         '& .MuiDrawer-paper': {
                             width: drawerWidth,
                             boxSizing: 'border-box',
-                            background: "linear-gradient(135deg, #1CA7EC 0%, #7BD5F5 100%)",
+                            background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73);",
                             color: "white",
                             display: 'flex',
                             flexDirection: 'column',

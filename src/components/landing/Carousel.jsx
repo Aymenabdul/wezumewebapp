@@ -8,7 +8,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-// Mock image data with placeholder images
 const images = [
   "1.jpeg",
   "2.jpeg",

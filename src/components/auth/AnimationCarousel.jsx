@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Box, Skeleton } from "@mui/material";
+import { Box } from "@mui/material";
 
 const DotLottieReact = lazy(() =>
   import("@lottiefiles/dotlottie-react").then(module => ({
@@ -58,20 +58,44 @@ const AnimationCarousel = ({
           mb: { xs: 1, sm: 1, md: 2 },
         }}
       >
-        <Skeleton
-          variant="rectangular"
+        {/* Simple loading state without grey skeleton */}
+        <Box
           sx={{
             width: "100%",
             height: "100%",
             maxWidth: "600px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
             borderRadius: 2,
             mb: 2,
+            // Optional: add a subtle loading animation
+            opacity: 0.7,
+            animation: "pulse 1.5s ease-in-out infinite",
+            "@keyframes pulse": {
+              "0%": { opacity: 0.7 },
+              "50%": { opacity: 0.4 },
+              "100%": { opacity: 0.7 },
+            },
           }}
-        />
+        >
+          {/* You can add a custom loading spinner or text here if needed */}
+          <Box sx={{ color: "rgba(255, 255, 255, 0.6)", fontSize: "14px" }}>
+            Loading animations...
+          </Box>
+        </Box>
         {showDots && (
           <Box sx={{ display: "flex", gap: dotSpacing }}>
             {[0, 1, 2].map((index) => (
-              <Skeleton key={index} variant="circular" width={8} height={8} />
+              <Box
+                key={index}
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(255, 255, 255, 0.3)",
+                }}
+              />
             ))}
           </Box>
         )}
@@ -102,13 +126,16 @@ const AnimationCarousel = ({
       >
         <Suspense
           fallback={
-            <Skeleton
-              variant="rectangular"
+            <Box
               sx={{
                 width: "100%",
                 height: "100%",
                 maxWidth: "600px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
                 borderRadius: 2,
+                opacity: 0.7,
               }}
             />
           }
