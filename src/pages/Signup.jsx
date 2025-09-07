@@ -22,7 +22,6 @@ import {
   InsertDriveFile 
 } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
-// import axiosInstance from "../axios/axios";
 import axios from "axios";
 import successAnimation from "../assets/animations/success.lottie";
 
@@ -107,22 +106,22 @@ export default function Signup() {
         }
     }, [alert.show]);
 
-    const handleChange = useCallback((e) => {
+    const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({ ...prevData, [name]: value }));
         if (name === "email") setEmailError("");
-    }, []);
+    };
 
-    const handleFileChange = useCallback((e) => {
+    const handleFileChange = (e) => {
         const file = e.target.files[0];
         setFormData((prevData) => ({ ...prevData, profilePic: file }));
-    }, []);
+    };
 
-    const handleClickShowPassword = useCallback(() => {
+    const handleClickShowPassword = () => {
         setShowPassword(prev => !prev);
-    }, []);
+    };
 
-    const handleJobOptionChange = useCallback((e) => {
+    const handleJobOptionChange = (e) => {
         setFormData((prevData) => ({ 
             ...prevData, 
             jobOption: e.target.value,
@@ -135,14 +134,14 @@ export default function Signup() {
             branch: ""
         }));
         setEmailError("");
-    }, []);
+    };
 
     const checkRecruiterEmail = useCallback(async (email) => {
         if (!email || formData.jobOption !== "employer") return;
         setEmailValidating(true);
         setEmailError("");
         try {
-            const response = await axios.post('https://app.wezume.in/users/check-Recruteremail', { email });
+            const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/check-Recruteremail`, { email });
             console.log(response.data);
             if (response.data && response.data.exists === false) {
                 setEmailError("");
@@ -175,7 +174,7 @@ export default function Signup() {
     const isEmployerOrInvestor = formData.jobOption === "employer" || formData.jobOption === "investor";
     const isPlacementOrAcademy = formData.jobOption === "placementDrive" || formData.jobOption === "academy";
 
-    const handleRegister = useCallback(async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         if (emailError) {
             setAlert({
@@ -191,7 +190,7 @@ export default function Signup() {
             let payload = {};
 
             if (isEmployerOrInvestor) {
-                endpoint = "https://app.wezume.in/users/signup/user";
+                endpoint = `${import.meta.env.VITE_BASE_URL}/users/signup/user`;
                 payload = {
                     firstName: formData.firstName,
                     lastName: formData.lastName,
@@ -204,10 +203,8 @@ export default function Signup() {
                     city: formData.city
                 };
 
-                // Fixed FormData creation
                 if (formData.profilePic) {
                     const formDataWithFile = new FormData();
-                    // Only append non-empty values
                     Object.entries(payload).forEach(([key, value]) => {
                         if (value !== undefined && value !== null && value !== "") {
                             formDataWithFile.append(key, value);
@@ -217,7 +214,7 @@ export default function Signup() {
                     payload = formDataWithFile;
                 }
             } else if (isPlacementOrAcademy) {
-                endpoint = "https://app.wezume.in/api/auth/signup/placement";
+                endpoint = `${import.meta.env.VITE_BASE_URL}/api/auth/signup/placement`;
                 payload = {
                     firstname: formData.firstName,
                     lastname: formData.lastName,
@@ -240,9 +237,7 @@ export default function Signup() {
                 }
             }
 
-            const response = await axios.post(endpoint, payload, {
-                headers: payload instanceof FormData ? {} : { 'Content-Type': 'application/json' }
-            });
+            const response = await axios.post(endpoint, payload, );
 
             if (response.status === 200 || response.status === 201) {
                 setSuccess(true);
@@ -262,8 +257,7 @@ export default function Signup() {
         } finally {
             setLoading(false);
         }
-    }, [formData, isEmployerOrInvestor, isPlacementOrAcademy, emailError]);
-
+    };
 
     const renderConditionalFields = () => {
         if (isEmployerOrInvestor) {

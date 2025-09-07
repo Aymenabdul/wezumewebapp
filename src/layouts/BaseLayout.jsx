@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     AppBar,
     Box,
@@ -29,6 +29,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Outlet, useLocation, useNavigate } from 'react-router';
+import { useAppStore } from '../store/appStore';
 
 const drawerWidth = 240;
 const collapsedDrawerWidth = 70;
@@ -41,6 +42,13 @@ export default function BaseLayout() {
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const location = useLocation();
     const navigate = useNavigate();
+    const logout = useAppStore((state) => state.logout);
+
+    useEffect(() => {
+        if (location.pathname === '/app/videos') {
+            setIsCollapsed(true);
+        } 
+    }, [location.pathname]);
 
     const handleToggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
@@ -59,7 +67,7 @@ export default function BaseLayout() {
     };
 
     const handleLogout = () => {
-        navigate('/login');
+        logout();
         if (isMobile) handleDrawerToggle();
     };
 
@@ -67,7 +75,7 @@ export default function BaseLayout() {
         { label: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
         { label: "Videos", icon: <VideocamIcon />, path: "/app/videos" },
         { label: "Trending", icon: <WhatshotIcon />, path: "/app/trending" },
-        { label: "Profile", icon: <PersonIcon /> },
+        { label: "Profile", icon: <PersonIcon />, path: "/app/profile" },
     ];
 
     const moreMenuItems = [

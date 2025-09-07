@@ -5,4 +5,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   assetsInclude: ['**/*.lottie'],
+  server: {
+    proxy: {
+      // String shorthand for simple cases
+      '/api': {
+        target: 'http://wezume.in:8081',
+        changeOrigin: true,
+        secure: false,      
+      }
+    }
+  }
 })

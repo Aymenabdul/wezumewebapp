@@ -1,22 +1,69 @@
 import { useState, useEffect } from "react";
-import { Card, CardActionArea, CardMedia, Typography, Box, Skeleton, IconButton } from "@mui/material";
-import { ThumbUp, Star } from "@mui/icons-material";
+import { 
+  Card, 
+  CardActionArea, 
+  CardMedia, 
+  Typography, 
+  Box, 
+  Skeleton, 
+  IconButton,
+  Avatar,
+  Slide,
+  CircularProgress
+} from "@mui/material";
+import { ThumbUp, Analytics } from "@mui/icons-material";
 
-export default function VideoCard({ video, onClick }) {
+const AnimatedCounter = ({ value, duration = 300 }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    let startTime;
+    let animationId;
+    const startValue = displayValue;
+    const endValue = Number(value) || 0;
+    const difference = endValue - startValue;
+
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const currentValue = startValue + (difference * progress);
+      setDisplayValue(Math.floor(currentValue));
+
+      if (progress < 1) {
+        animationId = requestAnimationFrame(animate);
+      }
+    };
+
+    if (difference !== 0) {
+      animationId = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [value, duration]);
+
+  return <span>{displayValue}</span>;
+};
+
+export default function VideoCard({ video, likes, score, isLiked, onLike, loading, onClick }) {
   const [loaded, setLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoaded(true);
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
   const handleLikeClick = (e) => {
     e.stopPropagation(); 
-    setIsLiked(!isLiked);
+    onLike();
   };
 
   const handleCardClick = () => {
@@ -33,7 +80,7 @@ export default function VideoCard({ video, onClick }) {
       sx={{
         height: "100%",
         width: "100%",
-        aspectRatio: "1/1", // Maintain square aspect ratio
+        aspectRatio: "1/1", 
         position: "relative",
         overflow: "hidden",
         cursor: "pointer",
@@ -45,7 +92,7 @@ export default function VideoCard({ video, onClick }) {
         borderRadius: 3,
       }}
     >
-      <CardActionArea
+      <Box
         onClick={handleCardClick}
         sx={{
           height: "100%",
@@ -67,20 +114,49 @@ export default function VideoCard({ video, onClick }) {
             }}
           />
         )}
+        
         <CardMedia
           component="img"
-          image={video.thumb}
-          alt={`Thumbnail for ${video.title} video`}
+          image={video?.thumbnail}
+          alt={`${video.firstname}'s video thumbnail`}
           loading="lazy"
           onLoad={() => setLoaded(true)}
           onError={() => setLoaded(true)}
           sx={{
             width: "100%",
             height: "100%",
-            objectFit: "cover",
+            objectFit: "cover", 
             display: loaded ? "block" : "none",
           }}
         />
+        
+        {loaded && (
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: "linear-gradient(transparent, rgba(0,0,0,0.8))",
+              color: "white",
+              p: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 1
+            }}
+          >
+            <Avatar
+              src={video.profilepic}
+              alt={video.firstname}
+              sx={{ width: 24, height: 24 }}
+            >
+              {video.firstname?.charAt(0)}
+            </Avatar>
+            <Typography variant="caption" sx={{ fontSize: "0.7rem", fontWeight: 600 }}>
+              {video.firstname}
+            </Typography>
+          </Box>
+        )}
         
         {isHovered && loaded && (
           <Box
@@ -90,52 +166,74 @@ export default function VideoCard({ video, onClick }) {
               left: 0,
               right: 0,
               bottom: 0,
-              background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)",
+              background: "rgba(0,0,0,0.6)",
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              padding: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 2,
               color: "white",
             }}
           >
-            <Box />
-            
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Slide direction="right" in={isHovered} timeout={300}>
+              <Box 
+                sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 0.5,
+                  bgcolor: "rgba(0,0,0,0.8)",
+                  borderRadius: 2,
+                  px: 1,
+                  py: 0.5
+                }}
+              >
                 <IconButton
                   onClick={handleLikeClick}
                   size="small"
+                  disabled={loading}
                   sx={{
                     color: isLiked ? "#ff4444" : "white",
                     padding: 0.5,
                     "&:hover": {
                       backgroundColor: "rgba(255,255,255,0.1)",
                     },
+                    "&:disabled": {
+                      color: "grey.500"
+                    }
                   }}
                 >
-                  <ThumbUp fontSize="small" />
+                  {loading ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <ThumbUp fontSize="small" />
+                  )}
                 </IconButton>
-                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
-                  {video.views || "0"}
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", minWidth: 20 }}>
+                  <AnimatedCounter value={likes} />
                 </Typography>
               </Box>
-              
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Star fontSize="small" sx={{ color: "#ffd700" }} />
-                <Typography variant="caption" sx={{ fontSize: "0.7rem" }}>
-                  {video.score || "4.8"}
+            </Slide>
+            
+            <Slide direction="left" in={isHovered} timeout={300}>
+              <Box 
+                sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 0.5,
+                  bgcolor: "rgba(0,0,0,0.8)",
+                  borderRadius: 2,
+                  px: 1,
+                  py: 0.5
+                }}
+              >
+                <Analytics fontSize="small" sx={{ color: "#00bcd4" }} />
+                <Typography variant="caption" sx={{ fontSize: "0.7rem", minWidth: 20 }}>
+                  {score?.totalScore ? score.totalScore.toFixed(1) : 'N/A'}
                 </Typography>
               </Box>
-            </Box>
+            </Slide>
           </Box>
         )}
-      </CardActionArea>
+      </Box>
     </Card>
   );
 }

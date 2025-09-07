@@ -11,8 +11,8 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
-import { Link, useNavigate } from "react-router"; 
-import { useAppStore } from "../store/appStore";
+import { Link, useNavigate } from "react-router";
+import axios from "axios";
 
 const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
 
@@ -24,26 +24,16 @@ const jelly = keyframes`
   100% { transform: scale(1, 1); }
 `;
 
-export default function Login() {
+export default function ForgotPassword() {
   const [formData, setFormData] = useState({
     email: "",
-    password: "",
+    newPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [alert, setAlert] = useState({ show: false, message: "", severity: "success" });
+  const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({ show: false, message: "", severity: "info" });
 
-  const { login, isLoading, clearError, isAuthenticated, getUserDetails } = useAppStore();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated()) {
-      navigate("/app");
-    }
-  }, [navigate, isAuthenticated]);
-
-  useEffect(() => {
-    return () => clearError();
-  }, [clearError]);
 
   useEffect(() => {
     if (alert.show) {
@@ -54,11 +44,6 @@ export default function Login() {
     }
   }, [alert.show]);
 
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setFormData((prev) => ({ ...prev, email: value }));
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
@@ -68,28 +53,36 @@ export default function Login() {
     setShowPassword(!showPassword);
   };
 
-  const handleLogin = async (e) => {
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
+    setLoading(true);
     
     try {
-      await login(formData);
-      // This will now automatically persist userDetails
-      await getUserDetails();
-      setAlert({
-        show: true,
-        message: "Login successful! Redirecting...",
-        severity: "success"
+      const response = await axios.put("http://Wezume.in:8081/api/users/update-password", {
+        email: formData.email,
+        newPassword: formData.newPassword
       });
-      setTimeout(() => {
-        navigate("/app");
-      }, 1500);
+      
+      if (response.status === 200) {
+        setAlert({
+          show: true,
+          message: "Password updated successfully! Redirecting to login...",
+          severity: "success"
+        });
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
     } catch (error) {
+      console.log("Password update error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update password. Please try again.";
       setAlert({
         show: true,
-        message: error.message || "Login failed. Please check your credentials and try again.",
+        message: String(errorMessage),
         severity: "error"
       });
-      console.error("Login failed:", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -283,7 +276,7 @@ export default function Login() {
                 overflow: "hidden",
                 borderRight: "2px solid #1CA7EC",
                 width: "0",
-                animation: "typewriter 4s steps(18) infinite, blink 1s infinite",
+                animation: "typewriter 4s steps(16) infinite, blink 1s infinite",
                 "@keyframes typewriter": {
                   "0%": { width: "0" },
                   "50%": { width: "100%" },
@@ -295,13 +288,13 @@ export default function Login() {
                 },
               }}
             >
-              Speak Up . Stand Out
+              Reset . Recover
             </Typography>
           </Box>
 
           <Box
             component="form"
-            onSubmit={handleLogin}
+            onSubmit={handleUpdatePassword}
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -323,7 +316,7 @@ export default function Login() {
                 fullWidth
                 required
                 value={formData.email}
-                onChange={handleEmailChange}
+                onChange={handleChange}
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "8px",
@@ -334,10 +327,10 @@ export default function Login() {
 
             <Box sx={{ width: "100%", position: "relative", flexShrink: 0 }}>
               <TextField
-                label="Password"
-                name="password"
+                label="New Password"
+                name="newPassword"
                 type={showPassword ? "text" : "password"}
-                value={formData.password}
+                value={formData.newPassword}
                 onChange={handleChange}
                 fullWidth
                 required
@@ -363,27 +356,6 @@ export default function Login() {
                   },
                 }}
               />
-              
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-                <Button 
-                  variant="text"
-                  onClick={() => navigate("/forgot-password")}
-                  sx={{ 
-                    color: "#1CA7EC", 
-                    textDecoration: "none",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                    textTransform: "none",
-                    minHeight: "32px",
-                    padding: "6px 12px",
-                    "&:hover": {
-                      backgroundColor: "rgba(28, 167, 236, 0.08)",
-                    },
-                  }}
-                >
-                  Forgot Password?
-                </Button>
-              </Box>
             </Box>
 
             <Button
@@ -391,7 +363,7 @@ export default function Login() {
               type="submit"
               variant="contained"
               disableElevation
-              disabled={isLoading}
+              disabled={loading}
               sx={{
                 background: "radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73)",
                 fontSize: { xs: "16px", sm: "17px", md: "18px" },
@@ -414,7 +386,7 @@ export default function Login() {
                 },
               }}
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {loading ? "Updating Password..." : "Update Password"}
             </Button>
 
             <Box 
@@ -431,16 +403,16 @@ export default function Login() {
                   flexShrink: 0,
                 }}
               >
-                Don't have an account?{" "}
+                Remember your password?{" "}
                 <Link 
-                  to="/signup" 
+                  to="/login" 
                   style={{ 
                     color: "#1CA7EC", 
                     textDecoration: "none",
                     fontWeight: 500,
                   }}
                 >
-                  Sign Up
+                  Back to Login
                 </Link>
               </Typography>
             </Box>
