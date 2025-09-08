@@ -1,261 +1,240 @@
-/* eslint-disable no-unused-vars */
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import { 
   Box, 
-  Container, 
-  Typography, 
-  IconButton, 
-  Drawer, 
+  Grid, 
   Button, 
   TextField, 
-  Select, 
-  MenuItem, 
   FormControl, 
-  InputLabel 
-} from "@mui/material";
-import FilterListIcon from '@mui/icons-material/FilterList';
-import VideoGrid from "../components/videos/VideoGrid";
-import axiosInstance from "../axios/axios";
+  InputLabel, 
+  Select, 
+  MenuItem,
+  Paper,
+  Typography,
+  Collapse,
+  IconButton
+} from '@mui/material';
+import { FilterList, ExpandMore, ExpandLess } from '@mui/icons-material';
+import axiosInstance from '../axios/axios';
+import { useAppStore } from '../store/appStore';
+import VideoCard from '../components/videos/VideoCard';
+import VideoSkeleton from '../components/videos/VideoSkeleton';
 
-export default function Videos() {
+const Videos = () => {
   const [videos, setVideos] = useState([]);
+  const [filteredVideos, setFilteredVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
-    keywords: "",
-    keySkills: "",
-    industry: "",
-    city: "",
-    college: "",
-    jobId: "",
-    experience: ""
+    keyWords: '',
+    keyskills: '',
+    experience: '',
+    industry: '',
+    city: '',
+    college: '',
+    jobID: ''
   });
-  const [loading, setLoading] = useState(true); 
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState({});
+  const { userDetails } = useAppStore();
 
   useEffect(() => {
-    fetchAllVideos();
+    fetchVideos();
   }, []);
 
-  const fetchAllVideos = async () => {
-    setLoading(true);
+  useEffect(() => {
+    applyFilters();
+  }, [videos, filters]);
+
+  const fetchVideos = async () => {
     try {
-      console.log('Fetching all videos...'); 
-      const response = await axiosInstance.get('/api/videos/videos');
-      console.log('Videos response:', response.data);
-      setVideos(response.data || []);
+      setLoading(true);
+      const endpoint = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy' 
+        ? `/api/videos/job/${userDetails.jobId}`
+        : '/api/videos/videos';
+      
+      const response = await axiosInstance.get(endpoint);
+      setVideos(response.data);
+      setFilteredVideos(response.data);
     } catch (error) {
       console.error('Error fetching videos:', error);
-      setVideos([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
   };
 
-  // FIXED: Only use /api/videos/filter endpoint for all filtering
-  const fetchFilteredVideos = async () => {
-    setLoading(true);
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const applyFilters = async () => {
+    if (Object.values(filters).every(val => !val)) {
+      setFilteredVideos(videos);
+      return;
+    }
+
     try {
-      const hasFilters = Object.values(filters).some(value => value !== '');
-      
-      let response;
-      if (hasFilters) {
-        const filterData = Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => value !== '')
-        );
-        
-        // FIXED: Always use the filter endpoint, never the job endpoint for general filtering
-        response = await axiosInstance.post('/api/videos/filter', filterData);
-        console.log('Filtered videos response:', response.data);
-      } else {
-        response = await axiosInstance.get('/api/videos/videos');
-      }
-      
-      setVideos(response.data || []);
+      const response = await axiosInstance.post('/api/videos/filter', filters);
+      console.log(filters);
+      setFilteredVideos(response.data);
     } catch (error) {
-      console.error('Error filtering videos:', error);
-      setVideos([]);
-    } finally {
-      setLoading(false);
+      console.error('Error applying filters:', error);
+      setFilteredVideos(videos);
     }
-  };
-
-  const toggleFilter = () => setFilterOpen(!filterOpen);
-
-  const handleFilterChange = (field) => (event) => {
-    setFilters(prev => ({ ...prev, [field]: event.target.value }));
-  };
-
-  const applyFilters = () => {
-    fetchFilteredVideos();
-    setFilterOpen(false);
   };
 
   const clearFilters = () => {
     setFilters({
-      keywords: "",
-      keySkills: "",
-      industry: "",
-      city: "",
-      college: "",
-      jobId: "",
-      experience: ""
+      keyWords: '',
+      keyskills: '',
+      experience: '',
+      industry: '',
+      city: '',
+      college: '',
+      jobID: ''
     });
-    setTimeout(() => fetchAllVideos(), 100);
-    setFilterOpen(false);
-  };
-
-  const handleLikeToggle = async (videoId, userId, firstName, currentlyLiked) => {
-    if (actionLoading[videoId]) return;
-    
-    setActionLoading(prev => ({ ...prev, [videoId]: true }));
-    
-    try {
-      const endpoint = currentlyLiked ? 'dislike' : 'like';
-      await axiosInstance.post(`/api/videos/${videoId}/${endpoint}`, null, {
-        params: { userId, firstName }
-      });
-    } catch (error) {
-      console.error('Like toggle failed:', error);
-    } finally {
-      setActionLoading(prev => ({ ...prev, [videoId]: false }));
-    }
   };
 
   return (
-    <>
-      <IconButton
-        onClick={toggleFilter}
-        sx={{
-          position: 'fixed',
-          top: '50%',
-          right: 16,
-          transform: 'translateY(-50%)',
-          bgcolor: 'primary.main',
-          color: 'white',
-          zIndex: 1300,
-          boxShadow: 3,
-          '&:hover': {
-            bgcolor: 'primary.dark'
-          }
-        }}
-      >
-        <FilterListIcon />
-      </IconButton>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Button
+          startIcon={<FilterList />}
+          endIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          variant="outlined"
+          sx={{ mb: 2 }}
+        >
+          Filters
+        </Button>
 
-      <Drawer
-        anchor="right"
-        open={filterOpen}
-        onClose={() => setFilterOpen(false)}
-      >
-        <Box sx={{ width: 320, p: 3 }}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-            Filter Videos
+        <Collapse in={filtersOpen}>
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>Filter Videos</Typography>
+            
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Keywords"
+                  value={filters.keyWords}
+                  onChange={(e) => handleFilterChange('keyWords', e.target.value)}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Key Skills"
+                  value={filters.keyskills}
+                  onChange={(e) => handleFilterChange('keyskills', e.target.value)}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Experience</InputLabel>
+                  <Select
+                    value={filters.experience}
+                    onChange={(e) => handleFilterChange('experience', e.target.value)}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="0-1">0-1 years</MenuItem>
+                    <MenuItem value="1-3">1-3 years</MenuItem>
+                    <MenuItem value="3-5">3-5 years</MenuItem>
+                    <MenuItem value="5+">5+ years</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Industry</InputLabel>
+                  <Select
+                    value={filters.industry}
+                    onChange={(e) => handleFilterChange('industry', e.target.value)}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="tech">Technology</MenuItem>
+                    <MenuItem value="finance">Finance</MenuItem>
+                    <MenuItem value="healthcare">Healthcare</MenuItem>
+                    <MenuItem value="education">Education</MenuItem>
+                    <MenuItem value="manufacturing">Manufacturing</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 4 }}>
+                <FormControl fullWidth>
+                  <InputLabel>City</InputLabel>
+                  <Select
+                    value={filters.city}
+                    onChange={(e) => handleFilterChange('city', e.target.value)}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="bangalore">Bangalore</MenuItem>
+                    <MenuItem value="mumbai">Mumbai</MenuItem>
+                    <MenuItem value="delhi">Delhi</MenuItem>
+                    <MenuItem value="chennai">Chennai</MenuItem>
+                    <MenuItem value="pune">Pune</MenuItem>
+                    <MenuItem value="hyderabad">Hyderabad</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="College"
+                  value={filters.college}
+                  onChange={(e) => handleFilterChange('college', e.target.value)}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Job ID"
+                  value={filters.jobID}
+                  onChange={(e) => handleFilterChange('jobID', e.target.value)}
+                />
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+              <Button variant="contained" onClick={applyFilters}>
+                Apply Filters
+              </Button>
+              <Button variant="outlined" onClick={clearFilters}>
+                Clear All
+              </Button>
+            </Box>
+          </Paper>
+        </Collapse>
+      </Box>
+
+      <Grid container spacing={2}>
+        {loading ? (
+          Array(12).fill().map((_, index) => (
+            <Grid key={index} size={{ xs: 4, md: 3 }}>
+              <VideoSkeleton />
+            </Grid>
+          ))
+        ) : (
+          filteredVideos.map((video) => (
+            <Grid key={video.id} size={{ xs: 4, md: 3 }}>
+              <VideoCard video={video} />
+            </Grid>
+          ))
+        )}
+      </Grid>
+
+      {!loading && filteredVideos.length === 0 && (
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          <Typography variant="h6" color="text.secondary">
+            No videos found matching your filters
           </Typography>
-
-          <TextField
-            fullWidth
-            label="Keywords"
-            value={filters.keywords}
-            onChange={handleFilterChange('keywords')}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-
-          <TextField
-            fullWidth
-            label="Key Skills"
-            value={filters.keySkills}
-            onChange={handleFilterChange('keySkills')}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-
-          <TextField
-            fullWidth
-            label="City"
-            value={filters.city}
-            onChange={handleFilterChange('city')}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-
-          <TextField
-            fullWidth
-            label="College"
-            value={filters.college}
-            onChange={handleFilterChange('college')}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-
-          <TextField
-            fullWidth
-            label="Job ID (e.g., C191)"
-            value={filters.jobId}
-            onChange={handleFilterChange('jobId')}
-            sx={{ mb: 2 }}
-            size="small"
-            helperText="Note: This will filter through all videos, not use the job-specific endpoint"
-          />
-
-          <TextField
-            fullWidth
-            label="Experience"
-            value={filters.experience}
-            onChange={handleFilterChange('experience')}
-            sx={{ mb: 2 }}
-            size="small"
-          />
-
-          <FormControl fullWidth size="small" sx={{ mb: 3 }}>
-            <InputLabel>Industry</InputLabel>
-            <Select
-              value={filters.industry}
-              onChange={handleFilterChange('industry')}
-              label="Industry"
-            >
-              <MenuItem value="">All Industries</MenuItem>
-              <MenuItem value="Technology">Technology</MenuItem>
-              <MenuItem value="Finance">Finance</MenuItem>
-              <MenuItem value="Healthcare">Healthcare</MenuItem>
-              <MenuItem value="Education">Education</MenuItem>
-              <MenuItem value="Manufacturing">Manufacturing</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={applyFilters}
-            disabled={loading}
-            sx={{ mb: 1 }}
-          >
-            {loading ? 'Filtering...' : 'Apply Filters'}
-          </Button>
-
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={clearFilters}
-            disabled={loading}
-          >
-            Clear All
-          </Button>
         </Box>
-      </Drawer>
-
-      <Container maxWidth={false} sx={{ py: 3 }}>
-        <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-          Videos
-        </Typography>
-        
-        <VideoGrid 
-          videos={videos}
-          loading={loading}
-          onLikeToggle={handleLikeToggle}
-          actionLoading={actionLoading}
-        />
-      </Container>
-    </>
+      )}
+    </Box>
   );
-}
+};
+
+export default Videos;

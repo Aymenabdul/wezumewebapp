@@ -73,7 +73,6 @@ export default function Login() {
     
     try {
       await login(formData);
-      // This will now automatically persist userDetails
       await getUserDetails();
       setAlert({
         show: true,

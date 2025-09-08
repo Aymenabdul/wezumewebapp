@@ -85,6 +85,7 @@ export default function BaseLayout() {
 
     const isMoreOpen = Boolean(moreAnchor);
     const currentDrawerWidth = isCollapsed ? collapsedDrawerWidth : drawerWidth;
+    const shouldShowText = isMobile || !isCollapsed;
 
     const drawer = (
         <>
@@ -96,7 +97,7 @@ export default function BaseLayout() {
                     justifyContent: isCollapsed ? 'center' : 'flex-start',
                     width: isCollapsed ? '100%' : 'auto'
                 }}>
-                    {isCollapsed ? (
+                    {isCollapsed && !isMobile ? (
                         <img
                             src="/logo-favicon.png"
                             alt="Wezume Logo Collapsed"
@@ -120,7 +121,7 @@ export default function BaseLayout() {
             
             <List
                 sx={{
-                    px: isCollapsed ? 1 : 2,
+                    px: (isCollapsed && !isMobile) ? 1 : 2,
                     display: "flex",
                     flexDirection: "column",
                     gap: 1.5,
@@ -136,7 +137,7 @@ export default function BaseLayout() {
                                 borderRadius: 2,
                                 display: "flex",
                                 gap: 1.5,
-                                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                                justifyContent: (isCollapsed && !isMobile) ? 'center' : 'flex-start',
                                 minHeight: 48,
                                 bgcolor: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
                                 '&:hover': {
@@ -155,7 +156,7 @@ export default function BaseLayout() {
                             }}>
                                 {navLink.icon}
                             </ListItemIcon>
-                            {!isCollapsed && (
+                            {shouldShowText && (
                                 <ListItemText 
                                     primary={navLink.label}
                                     sx={{ 
@@ -169,7 +170,7 @@ export default function BaseLayout() {
 
                     return (
                         <ListItem key={index} disablePadding>
-                            {isCollapsed && !isMobile ? (
+                            {(isCollapsed && !isMobile) ? (
                                 <Tooltip title={navLink.label} placement="right" arrow>
                                     {NavButton}
                                 </Tooltip>
@@ -185,14 +186,14 @@ export default function BaseLayout() {
                 sx={{
                     marginTop: 'auto',
                     marginBottom: '3px',
-                    px: isCollapsed ? 1 : 2,
+                    px: (isCollapsed && !isMobile) ? 1 : 2,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 1.5,
                 }}
             >
                 <ListItem disablePadding>
-                    {isCollapsed && !isMobile ? (
+                    {(isCollapsed && !isMobile) ? (
                         <Tooltip title="Logout" placement="right" arrow>
                             <ListItemButton
                                 sx={{
@@ -234,13 +235,13 @@ export default function BaseLayout() {
                             }}>
                                 <LogoutIcon />
                             </ListItemIcon>
-                            {!isCollapsed && <ListItemText primary="Logout" sx={{ transition: 'opacity 0.2s ease' }} />}
+                            {shouldShowText && <ListItemText primary="Logout" sx={{ transition: 'opacity 0.2s ease' }} />}
                         </ListItemButton>
                     )}
                 </ListItem>
                 
                 <ListItem disablePadding>
-                    {isCollapsed && !isMobile ? (
+                    {(isCollapsed && !isMobile) ? (
                         <Tooltip title="More" placement="right" arrow>
                             <ListItemButton
                                 sx={{
@@ -292,7 +293,7 @@ export default function BaseLayout() {
                             }}>
                                 <MoreVertIcon />
                             </ListItemIcon>
-                            {!isCollapsed && <ListItemText primary="More" sx={{ transition: 'opacity 0.2s ease' }} />}
+                            {shouldShowText && <ListItemText primary="More" sx={{ transition: 'opacity 0.2s ease' }} />}
                         </ListItemButton>
                     )}
                 </ListItem>
@@ -317,7 +318,7 @@ export default function BaseLayout() {
                             color: 'white',
                             minWidth: 220,
                             boxShadow: 'none',
-                            ml: isCollapsed ? 1 : 2,
+                            ml: (isCollapsed && !isMobile) ? 1 : 2,
                             '& .MuiMenuItem-root': {
                                 gap: 1.5,
                                 py: 1.5,

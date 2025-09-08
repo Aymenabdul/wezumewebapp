@@ -12,6 +12,7 @@ import Landing from "./pages/Landing";
 import BaseLayout from "./layouts/BaseLayout";
 import Dashboard from "./pages/Dashboard";
 import Videos from "./pages/Videos";
+import VideoPlayer from "./components/videos/VideoPlayer";
 import Trending from "./pages/Trending";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
@@ -74,6 +75,7 @@ export default function App() {
         }>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="videos" element={<Videos />} />
+          <Route path="video/:videoId" element={<VideoPlayer />} />
           <Route path="trending" element={<Trending />} />
           <Route path="profile" element={<Profile />} />
           <Route index element={<Navigate to="dashboard" replace />} />

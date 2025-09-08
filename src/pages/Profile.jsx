@@ -24,7 +24,7 @@ export default function Profile() {
     const [editMode, setEditMode] = useState(false);
     const [editData, setEditData] = useState({});
     const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
-    
+    console.log(userDetails);
     if (isLoadingUserDetails) {
         return (
             <Container maxWidth="md" sx={{ py: 4 }}>

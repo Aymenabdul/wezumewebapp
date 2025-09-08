@@ -141,7 +141,7 @@ export default function Signup() {
         setEmailValidating(true);
         setEmailError("");
         try {
-            const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/check-Recruteremail`, { email });
+            const response = await axios.post(`http://wezume.in:8081/api/users/check-Recruteremail`, { email });
             console.log(response.data);
             if (response.data && response.data.exists === false) {
                 setEmailError("");
@@ -190,7 +190,7 @@ export default function Signup() {
             let payload = {};
 
             if (isEmployerOrInvestor) {
-                endpoint = `${import.meta.env.VITE_BASE_URL}/users/signup/user`;
+                endpoint = `http://wezume.in:8081/api/users/signup/user`;
                 payload = {
                     firstName: formData.firstName,
                     lastName: formData.lastName,
@@ -214,7 +214,7 @@ export default function Signup() {
                     payload = formDataWithFile;
                 }
             } else if (isPlacementOrAcademy) {
-                endpoint = `${import.meta.env.VITE_BASE_URL}/api/auth/signup/placement`;
+                endpoint = `http://wezume.in:8081/api/auth/signup/placement`;
                 payload = {
                     firstname: formData.firstName,
                     lastname: formData.lastName,

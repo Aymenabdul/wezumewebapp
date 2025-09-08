@@ -3,7 +3,6 @@ import {
     Container,
     Typography
 } from "@mui/material";
-import VideoGrid from "../components/videos/VideoGrid";
 
 export default function Trending() {
     return (
@@ -18,7 +17,7 @@ export default function Trending() {
             py: 2
           }}
         >
-            <VideoGrid />
+            
         </Container>
     )
 }

@@ -2,7 +2,7 @@ import axios from "axios";
 import Cookies from 'js-cookie';
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.VITE_BASE_URL
+    baseURL: "http://wezume.in:8081"
 });
 
 axiosInstance.interceptors.request.use(
