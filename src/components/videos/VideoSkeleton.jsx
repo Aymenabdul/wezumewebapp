@@ -1,12 +1,18 @@
-import { Card, Skeleton, CardContent, Box } from '@mui/material';
+import { Card, Skeleton } from '@mui/material';
 
 const VideoSkeleton = () => (
-  <Card>
-    <Skeleton variant="rectangular" height={200} />
-    <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-      <Skeleton variant="circular" width={40} height={40} sx={{ mr: 1 }} />
-      <Skeleton variant="text" width="60%" />
-    </CardContent>
+  <Card sx={{ 
+    height: { xs: 200, lg: 480 }, 
+    borderRadius: 2,
+    overflow: 'hidden',
+    width: '100%'
+  }}>
+    <Skeleton 
+      variant="rectangular" 
+      width="100%" 
+      height="100%" 
+      sx={{ borderRadius: 0 }} 
+    />
   </Card>
 );
 

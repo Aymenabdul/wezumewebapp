@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef } from 'react';
 import { 
   Box, 
@@ -8,7 +9,9 @@ import {
   Fab,
   CircularProgress,
   Modal,
-  Paper
+  Paper,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -48,7 +51,9 @@ const VideoPlayer = () => {
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [subtitles, setSubtitles] = useState({});
+  const [subtitlesFetched, setSubtitlesFetched] = useState(new Set());
   const [isScrolling, setIsScrolling] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const { userDetails } = useAppStore();
 
   let decodedVideoId;
@@ -67,7 +72,10 @@ const VideoPlayer = () => {
   };
 
   const fetchSubtitles = async (videoId) => {
-    if (!videoId || subtitles[videoId]) return;
+    if (!videoId || subtitlesFetched.has(videoId)) return;
+    
+    setSubtitlesFetched(prev => new Set(prev).add(videoId));
+    
     try {
       const response = await axiosInstance.get(`/api/videos/user/${videoId}/subtitles.srt`, {
         responseType: 'text',
@@ -82,12 +90,16 @@ const VideoPlayer = () => {
         setSubtitles(prev => ({ ...prev, [videoId]: subtitleUrl }));
       }
     } catch (error) {
-      console.warn('Subtitles not available for video:', videoId);
+      setSubtitlesFetched(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(videoId);
+        return newSet;
+      });
     }
   };
 
   const cleanupBlobs = () => {
-    Object.values(subtitles).forEach(url => {
+    Object.entries(subtitles).forEach(([videoId, url]) => {
       if (url && url.startsWith('blob:')) {
         try {
           URL.revokeObjectURL(url);
@@ -96,6 +108,12 @@ const VideoPlayer = () => {
         }
       }
     });
+    setSubtitles({});
+    setSubtitlesFetched(new Set());
+  };
+
+  const showSnackbar = (message, severity = 'info') => {
+    setSnackbar({ open: true, message, severity });
   };
 
   useEffect(() => {
@@ -133,47 +151,32 @@ const VideoPlayer = () => {
   }, [videos, decodedVideoId]);
 
   useEffect(() => {
-    if (!containerRef.current || !videos || videos.length === 0) return;
-    
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isScrolling) return;
-        
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.7) {
-            const idx = Number(entry.target.dataset.index);
-            if (idx !== currentIndex && videos[idx]) {
-              setCurrentIndex(idx);
-              const nextVideo = videos[idx];
-              if (nextVideo && nextVideo.id) {
-                loadVideo(nextVideo);
-                const hashedId = btoa(nextVideo.id.toString());
-                navigate(`/app/video/${hashedId}`, { replace: true });
-              }
-            }
-          }
-        });
-      },
-      { threshold: [0.5, 0.7, 0.8], rootMargin: "0px" }
-    );
+    const handleWheel = (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 50) {
+        e.preventDefault();
+        if (e.deltaX > 0) {
+          navigateVideo('next');
+        } else {
+          navigateVideo('prev');
+        }
+      }
+    };
 
-    const children = containerRef.current?.children || [];
-    Array.from(children).forEach((child) => observer.observe(child));
-    
-    return () => observer.disconnect();
-  }, [videos, currentIndex, isScrolling]);
+    if (containerRef.current) {
+      containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
+      return () => {
+        if (containerRef.current) {
+          containerRef.current.removeEventListener('wheel', handleWheel);
+        }
+      };
+    }
+  }, [videos, currentIndex]);
 
   useEffect(() => {
     return () => {
       cleanupBlobs();
     };
   }, []);
-
-  useEffect(() => {
-    return () => {
-      cleanupBlobs();
-    };
-  }, [subtitles]);
 
   const fetchVideos = async () => {
     try {
@@ -203,8 +206,8 @@ const VideoPlayer = () => {
     setVideo(videoData);
     setVideoLoading(false);
     
-    if (!subtitles[videoData.id]) {
-      await fetchSubtitles(videoData.id);
+    if (!subtitlesFetched.has(videoData.id)) {
+      fetchSubtitles(videoData.id);
     }
     
     try {
@@ -228,9 +231,14 @@ const VideoPlayer = () => {
   };
 
   const handleShare = () => {
-    if (!video || !video.videoUrl) return;
-    navigator.clipboard.writeText(video.videoUrl);
-    alert('Video URL copied to clipboard!');
+    if (!video) return;
+    
+    const currentPageUrl = window.location.href;
+    navigator.clipboard.writeText(currentPageUrl).then(() => {
+      showSnackbar('Page URL copied to clipboard!', 'success');
+    }).catch(() => {
+      showSnackbar('Failed to copy URL', 'error');
+    });
   };
 
   const handleCall = () => {
@@ -293,60 +301,43 @@ const VideoPlayer = () => {
     }
   };
 
-  const handleMouseMove = (e) => {
-    if (!isMobile && videoContainerRef.current) {
-      const rect = videoContainerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const width = rect.width;
-      
-      if (x < width * 0.15) {
-        videoContainerRef.current.style.cursor = 'w-resize';
-      } else if (x > width * 0.85) {
-        videoContainerRef.current.style.cursor = 'e-resize';
-      } else {
-        videoContainerRef.current.style.cursor = 'default';
-      }
-    }
-  };
-
   const handleVideoContainerClick = (e) => {
-    if (!isMobile && videoContainerRef.current) {
-      const rect = videoContainerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const width = rect.width;
-      const height = rect.height;
-      
-      if (y > height * 0.85 || (x > width * 0.15 && x < width * 0.85)) {
-        return;
-      }
-      
-      if (x < width * 0.15) {
-        navigateVideo('prev');
-      } else if (x > width * 0.85) {
-        navigateVideo('next');
-      }
+    const target = e.target;
+    const isButton = target.tagName === 'BUTTON' || target.closest('button') || target.closest('[role="button"]');
+    const isVideoControl = target.closest('video') || target.tagName === 'VIDEO';
+    
+    if (isButton || isVideoControl) {
+      e.stopPropagation();
+      return;
     }
+    
+    e.stopPropagation();
   };
 
   const enableSubtitles = (videoElement) => {
     if (videoElement && videoElement.textTracks && videoElement.textTracks.length > 0) {
-      Array.from(videoElement.textTracks).forEach((track) => {
-        if (track.kind === 'subtitles' || track.kind === 'captions') {
-          track.mode = 'showing';
-          track.addEventListener('load', () => {
+      setTimeout(() => {
+        Array.from(videoElement.textTracks).forEach((track) => {
+          if (track.kind === 'subtitles' || track.kind === 'captions') {
             track.mode = 'showing';
-          });
-        }
-      });
+          }
+        });
+      }, 500);
     }
   };
 
-  const handleVideoLoad = (videoElement) => {
+  const handleVideoLoad = (videoElement, videoId) => {
     setVideoLoading(false);
-    setTimeout(() => {
-      enableSubtitles(videoElement);
-    }, 300);
+    
+    const checkAndEnableSubtitles = () => {
+      if (subtitles[videoId]) {
+        enableSubtitles(videoElement);
+      } else {
+        setTimeout(checkAndEnableSubtitles, 200);
+      }
+    };
+    
+    setTimeout(checkAndEnableSubtitles, 100);
   };
 
   if (initialLoading) {
@@ -440,17 +431,12 @@ const VideoPlayer = () => {
                   playsInline
                   onLoadedMetadata={(e) => {
                     if (index === currentIndex) {
-                      handleVideoLoad(e.target);
+                      handleVideoLoad(e.target, vid.id);
                     }
                   }}
                   onCanPlay={(e) => {
                     if (index === currentIndex) {
-                      handleVideoLoad(e.target);
-                    }
-                  }}
-                  onLoadStart={() => {
-                    if (index === currentIndex && !subtitles[vid.id]) {
-                      fetchSubtitles(vid.id);
+                      handleVideoLoad(e.target, vid.id);
                     }
                   }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -598,7 +584,6 @@ const VideoPlayer = () => {
         <Box 
           ref={videoContainerRef}
           sx={{ flex: 1, position: 'relative' }}
-          onMouseMove={handleMouseMove}
           onClick={handleVideoContainerClick}
         >
           {videoLoading && (
@@ -619,13 +604,8 @@ const VideoPlayer = () => {
             controls
             autoPlay
             playsInline
-            onLoadedMetadata={(e) => handleVideoLoad(e.target)}
-            onCanPlay={(e) => handleVideoLoad(e.target)}
-            onLoadStart={() => {
-              if (!subtitles[video.id]) {
-                fetchSubtitles(video.id);
-              }
-            }}
+            onLoadedMetadata={(e) => handleVideoLoad(e.target, video.id)}
+            onCanPlay={(e) => handleVideoLoad(e.target, video.id)}
             style={{ width: '100%', height: '100%', pointerEvents: 'auto' }}
             crossOrigin="anonymous"
           >
@@ -663,42 +643,6 @@ const VideoPlayer = () => {
               <Email />
             </IconButton>
           </Box>
-
-          <Box sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '15%',
-            height: '85%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: 0,
-            bgcolor: 'rgba(0,0,0,0.1)',
-            transition: 'opacity 0.3s',
-            '&:hover': { opacity: 1 },
-            pointerEvents: 'none'
-          }}>
-            <NavigateBefore sx={{ color: 'white', fontSize: 40 }} />
-          </Box>
-
-          <Box sx={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            width: '15%',
-            height: '85%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: 0,
-            bgcolor: 'rgba(0,0,0,0.1)',
-            transition: 'opacity 0.3s',
-            '&:hover': { opacity: 1 },
-            pointerEvents: 'none'
-          }}>
-            <NavigateNext sx={{ color: 'white', fontSize: 40 }} />
-          </Box>
         </Box>
 
         <Box sx={{ flex: 1 }}>
@@ -713,13 +657,16 @@ const VideoPlayer = () => {
       <IconButton
         sx={{ 
           position: 'absolute', 
-          left: 20, 
+          left: 75, 
           top: '50%',
           bgcolor: 'rgba(0,0,0,0.5)',
           color: 'white',
           '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
         }}
-        onClick={() => navigateVideo('prev')}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigateVideo('prev');
+        }}
       >
         <NavigateBefore />
       </IconButton>
@@ -733,10 +680,28 @@ const VideoPlayer = () => {
           color: 'white',
           '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
         }}
-        onClick={() => navigateVideo('next')}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigateVideo('next');
+        }}
       >
         <NavigateNext />
       </IconButton>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

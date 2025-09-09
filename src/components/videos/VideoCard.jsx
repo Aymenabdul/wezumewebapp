@@ -1,6 +1,5 @@
-// components/videos/VideoCard.jsx
-import React, { useState } from 'react';
-import { Card, CardMedia, CardContent, Typography, Box, IconButton, Slide } from '@mui/material';
+import { useState } from 'react';
+import { Card, CardMedia, Box, IconButton, Slide, Typography } from '@mui/material';
 import { Favorite, FavoriteBorder, Assessment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../axios/axios';
@@ -15,15 +14,6 @@ const VideoCard = ({ video }) => {
   const [likesLoaded, setLikesLoaded] = useState(false);
   const { userDetails } = useAppStore();
   const navigate = useNavigate();
-
-  const decodeProfilePic = (pic) => {
-    if (pic && pic.startsWith('https://wezume')) return pic;
-    try {
-      return atob(pic);
-    } catch {
-      return pic;
-    }
-  };
 
   const hashVideoId = (id) => btoa(id.toString());
 
@@ -62,94 +52,113 @@ const VideoCard = ({ video }) => {
 
   return (
     <Card 
-      sx={{ cursor: 'pointer', position: 'relative', overflow: 'hidden', height: 280 }}
+      sx={{ 
+        cursor: 'pointer', 
+        position: 'relative', 
+        overflow: 'hidden', 
+        height: { xs: 200, lg: 480 },
+        borderRadius: 2,
+        width: '100%',
+        '&:hover .overlay': {
+          opacity: 0.6
+        }
+      }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
     >
-      <CardMedia
-        component="img"
-        height="200"
-        image={video.thumbnail}
-        alt="Video thumbnail"
-        sx={{ objectFit: 'cover' }}
-      />
-      
-      <Slide direction="right" in={hovered && likesLoaded}>
-        <Box sx={{ 
-          position: 'absolute', 
-          top: '35%', 
-          left: '10px', 
-          transform: 'translateY(-50%)',
-          display: 'flex', 
-          alignItems: 'center',
-          bgcolor: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          px: 1,
-          borderRadius: 1,
-          height: { xs: 35, md: 40 },
-          minWidth: { xs: 70, md: 80 },
-          fontSize: { xs: '0.8rem', md: '1rem' }
-        }}>
-          <IconButton 
-            size="small" 
-            onClick={handleLike} 
-            sx={{ 
-              color: 'white',
-              minWidth: { xs: 20, md: 24 },
-              p: { xs: 0.5, md: 1 }
-            }}
-          >
-            {isLiked ? <Favorite fontSize="small" /> : <FavoriteBorder fontSize="small" />}
-          </IconButton>
-          <CountUp end={likes} duration={1} style={{ fontSize: 'inherit' }} />
-        </Box>
-      </Slide>
-
-      <Slide direction="left" in={hovered && totalScore}>
-        <Box sx={{ 
-          position: 'absolute', 
-          top: '35%', 
-          right: '10px',
-          transform: 'translateY(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          bgcolor: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          px: 1,
-          borderRadius: 1,
-          height: { xs: 35, md: 40 },
-          minWidth: { xs: 70, md: 80 },
-          gap: 0.5,
-          fontSize: { xs: '0.8rem', md: '1rem' }
-        }}>
-          <Assessment fontSize="small" />
-          <span style={{ fontSize: 'inherit' }}>
-            {totalScore?.totalScore?.toFixed(1) || 'N/A'}
-          </span>
-        </Box>
-      </Slide>
-
-      <CardContent sx={{ display: 'flex', alignItems: 'center', height: 80, p: { xs: 1, md: 2 } }}>
-        <img 
-          src={decodeProfilePic(video.profilepic)} 
-          alt="Profile"
-          style={{ 
-            width: 40, 
-            height: 40, 
-            borderRadius: '50%', 
-            marginRight: 8,
-            objectFit: 'cover'
+      <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
+        <CardMedia
+          component="img"
+          height="100%"
+          image={video.thumbnail}
+          alt="Video thumbnail"
+          sx={{ 
+            objectFit: 'cover', 
+            width: '100%', 
+            height: '100%',
+            display: 'block'
           }}
         />
-        <Typography 
-          variant="subtitle1" 
-          noWrap
-          sx={{ fontSize: { xs: '0.9rem', md: '1rem' } }}
-        >
-          {video.firstname}
-        </Typography>
-      </CardContent>
+
+        <Box
+          className="overlay"
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            opacity: 0,
+            transition: 'opacity 0.3s ease',
+            zIndex: 1
+          }}
+        />
+        
+        <Slide direction="right" in={hovered && likesLoaded} mountOnEnter unmountOnExit>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '50%', 
+            left: '50%',
+            transform: 'translate(-200%, -50%)',
+            display: 'flex', 
+            alignItems: 'center',
+            color: 'white',
+            px: { xs: 1, md: 1.5 },
+            py: 0.5,
+            borderRadius: 2,
+            minWidth: { xs: 60, md: 70 },
+            height: { xs: 32, md: 36 },
+            fontSize: { xs: '0.8rem', md: '0.9rem' },
+            zIndex: 2,
+            gap: 0.5
+          }}>
+            <IconButton 
+              size="small" 
+              onClick={handleLike} 
+              sx={{ 
+                color: 'white',
+                p: 0.25,
+                minWidth: 'auto',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              {isLiked ? <Favorite sx={{ fontSize: 16 }} /> : <FavoriteBorder sx={{ fontSize: 16 }} />}
+            </IconButton>
+            <CountUp end={likes} duration={1} style={{ fontSize: 'inherit' }} />
+          </Box>
+        </Slide>
+
+        <Slide direction="left" in={hovered && totalScore} mountOnEnter unmountOnExit>
+          <Box sx={{ 
+            position: 'absolute', 
+            top: '50%', 
+            right: '50%',
+            transform: 'translate(200%, -50%)',
+            display: 'flex',
+            alignItems: 'center',
+            color: 'white',
+            px: { xs: 1, md: 1.5 },
+            py: 0.5,
+            borderRadius: 2,
+            minWidth: { xs: 60, md: 70 },
+            height: { xs: 32, md: 36 },
+            gap: 0.5,
+            fontSize: { xs: '0.8rem', md: '0.9rem' },
+            zIndex: 2
+          }}>
+            <Assessment sx={{ fontSize: 16 }} />
+            <Typography variant="body2" sx={{ fontSize: 'inherit', lineHeight: 1 }}>
+              {totalScore?.totalScore?.toFixed(1) || 'N/A'}
+            </Typography>
+          </Box>
+        </Slide>
+      </Box>
     </Card>
   );
 };
