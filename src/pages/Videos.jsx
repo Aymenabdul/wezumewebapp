@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react';
 import { 
   Box, 
@@ -21,9 +22,7 @@ import VideoCard from '../components/videos/VideoCard';
 import VideoSkeleton from '../components/videos/VideoSkeleton';
 
 const Videos = () => {
-  const [videos, setVideos] = useState([]);
   const [filteredVideos, setFilteredVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -34,38 +33,39 @@ const Videos = () => {
     industry: '',
     city: '',
     college: '',
-    jobId: ''
+    jobid: ''
   });
-  const { userDetails } = useAppStore();
+
+  const { 
+    userDetails, 
+    videos, 
+    isLoadingVideos, 
+    videoError, 
+    getVideos 
+  } = useAppStore();
 
   useEffect(() => {
-    fetchVideos();
-  }, []);
+    if (userDetails) {
+      fetchVideos();
+    }
+  }, [userDetails]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!isLoadingVideos && videos.length > 0) {
       const timeoutId = setTimeout(() => {
         applyFilters();
       }, 500);
       return () => clearTimeout(timeoutId);
     }
-  }, [filters]);
+  }, [filters, videos, isLoadingVideos]);
 
   const fetchVideos = async () => {
     try {
-      setLoading(true);
-      const endpoint = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy' 
-        ? `/api/videos/job/${userDetails.jobId}`
-        : '/api/videos/videos';
-      
-      const response = await axiosInstance.get(endpoint);
-      setVideos(response.data);
-      setFilteredVideos(response.data);
+      const videoData = await getVideos();
+      setFilteredVideos(videoData);
     } catch (error) {
       console.error('Error fetching videos:', error);
       showSnackbar('Failed to fetch videos', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -90,10 +90,10 @@ const Videos = () => {
         industry: filters.industry,
         city: filters.city,
         college: filters.college,
-        jobId: filters.jobId
+        jobid: filters.jobid
       };
 
-      const response = await axiosInstance.post('/api/videos/filter', filterData);
+      const response = await axiosInstance.post('/videos/filter', filterData);
       
       if (response.data && response.data.length > 0) {
         setFilteredVideos(response.data);
@@ -103,7 +103,6 @@ const Videos = () => {
         showSnackbar('No videos found matching your filters', 'warning');
       }
     } catch (error) {
-      console.error('Error applying filters:', error);
       setFilteredVideos(videos);
       showSnackbar('Error applying filters. Please try again.', 'error');
     } finally {
@@ -119,7 +118,7 @@ const Videos = () => {
       industry: '',
       city: '',
       college: '',
-      jobId: ''
+      jobid: ''
     });
     showSnackbar('Filters cleared', 'info');
   };
@@ -160,7 +159,6 @@ const Videos = () => {
                   onChange={(e) => handleFilterChange('keyWords', e.target.value)}
                 />
               </Grid>
-
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
@@ -170,7 +168,6 @@ const Videos = () => {
                   onChange={(e) => handleFilterChange('keyskills', e.target.value)}
                 />
               </Grid>
-
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Experience</InputLabel>
@@ -187,7 +184,6 @@ const Videos = () => {
                   </Select>
                 </FormControl>
               </Grid>
-
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Industry</InputLabel>
@@ -205,7 +201,6 @@ const Videos = () => {
                   </Select>
                 </FormControl>
               </Grid>
-
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>City</InputLabel>
@@ -224,7 +219,6 @@ const Videos = () => {
                   </Select>
                 </FormControl>
               </Grid>
-
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
@@ -234,14 +228,13 @@ const Videos = () => {
                   onChange={(e) => handleFilterChange('college', e.target.value)}
                 />
               </Grid>
-
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <TextField
                   fullWidth
                   size="small"
                   label="Job ID"
-                  value={filters.jobId}
-                  onChange={(e) => handleFilterChange('jobId', e.target.value)}
+                  value={filters.jobid}
+                  onChange={(e) => handleFilterChange('jobid', e.target.value)}
                 />
               </Grid>
             </Grid>
@@ -262,8 +255,8 @@ const Videos = () => {
         </Collapse>
       </Box>
 
-      <Grid container spacing={2}>
-        {loading ? (
+      <Grid container spacing={0.7}>
+        {isLoadingVideos ? (
           Array(12).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={index}>
               <VideoSkeleton />
@@ -278,7 +271,7 @@ const Videos = () => {
         )}
       </Grid>
 
-      {!loading && filteredVideos.length === 0 && (
+      {!isLoadingVideos && filteredVideos.length === 0 && (
         <Box sx={{ textAlign: 'center', mt: 4 }}>
           <Typography variant="h6" color="text.secondary">
             {Object.values(filters).some(val => val.trim() !== '') 

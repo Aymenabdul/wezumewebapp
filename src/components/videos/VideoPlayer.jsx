@@ -42,19 +42,23 @@ const VideoPlayer = () => {
   const videoContainerRef = useRef();
   
   const [video, setVideo] = useState(null);
-  const [videos, setVideos] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [scoreData, setScoreData] = useState(null);
   const [videoLoading, setVideoLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [subtitles, setSubtitles] = useState({});
   const [subtitlesFetched, setSubtitlesFetched] = useState(new Set());
   const [isScrolling, setIsScrolling] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const { userDetails } = useAppStore();
+
+  const { 
+    userDetails, 
+    videos, 
+    isLoadingVideos, 
+    getVideos 
+  } = useAppStore();
 
   let decodedVideoId;
   try {
@@ -77,7 +81,7 @@ const VideoPlayer = () => {
     setSubtitlesFetched(prev => new Set(prev).add(videoId));
     
     try {
-      const response = await axiosInstance.get(`/api/videos/user/${videoId}/subtitles.srt`, {
+      const response = await axiosInstance.get(`/videos/user/${videoId}/subtitles.srt`, {
         responseType: 'text',
         timeout: 10000
       });
@@ -117,8 +121,10 @@ const VideoPlayer = () => {
   };
 
   useEffect(() => {
-    fetchVideos();
-  }, []);
+    if (userDetails) {
+      fetchVideos();
+    }
+  }, [userDetails]);
 
   useEffect(() => {
     if (videos && videos.length > 0) {
@@ -180,23 +186,9 @@ const VideoPlayer = () => {
 
   const fetchVideos = async () => {
     try {
-      if (!userDetails) {
-        setInitialLoading(false);
-        return;
-      }
-
-      const endpoint = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy' 
-        ? `/api/videos/job/${userDetails.jobId}`
-        : '/api/videos/videos';
-      
-      const response = await axiosInstance.get(endpoint);
-      const videoData = response.data || [];
-      setVideos(videoData);
+      await getVideos();
     } catch (error) {
       console.error('Error fetching videos:', error);
-      setVideos([]);
-    } finally {
-      setInitialLoading(false);
     }
   };
 
@@ -211,7 +203,7 @@ const VideoPlayer = () => {
     }
     
     try {
-      const scoreRes = await axiosInstance.get(`/api/totalscore/${videoData.id}`);
+      const scoreRes = await axiosInstance.get(`/totalscore/${videoData.id}`);
       setScoreData(scoreRes.data);
     } catch (error) {
       console.error('Error fetching score data:', error);
@@ -223,7 +215,7 @@ const VideoPlayer = () => {
     
     try {
       const endpoint = isLiked ? 'dislike' : 'like';
-      await axiosInstance.post(`/api/videos/${video.id}/${endpoint}?userId=${userDetails.userId}&firstName=${userDetails.firstName}`);
+      await axiosInstance.post(`/videos/${video.id}/${endpoint}?userId=${userDetails.userId}&firstName=${userDetails.firstName}`);
       setIsLiked(!isLiked);
     } catch (error) {
       console.error('Error liking video:', error);
@@ -340,7 +332,7 @@ const VideoPlayer = () => {
     setTimeout(checkAndEnableSubtitles, 100);
   };
 
-  if (initialLoading) {
+  if (isLoadingVideos) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress size={60} />

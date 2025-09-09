@@ -36,6 +36,8 @@ const jelly = keyframes`
 const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+const URL = import.meta.env.VITE_API_URL;
+
 export default function Signup() {
     const [formData, setFormData] = useState({
         firstName: "",
@@ -48,7 +50,7 @@ export default function Signup() {
         industry: "",
         currOrganizationName: "",
         city: "",
-        jobId: "",
+        jobid: "",
         college: "",
         branch: ""
     });
@@ -129,7 +131,7 @@ export default function Signup() {
             industry: "",
             currOrganizationName: "",
             city: "",
-            jobId: "",
+            jobid: "",
             college: "",
             branch: ""
         }));
@@ -137,19 +139,17 @@ export default function Signup() {
     };
 
     const checkRecruiterEmail = useCallback(async (email) => {
-        if (!email || formData.jobOption !== "employer") return;
+        if (!email || formData.jobOption !== "Employer") return;
         setEmailValidating(true);
         setEmailError("");
         try {
-            const response = await axios.post(`http://wezume.in:8081/api/users/check-Recruteremail`, { email });
-            console.log(response.data);
+            const response = await axios.post(`${URL}/users/check-Recruteremail`, { email });
             if (response.data && response.data.exists === false) {
                 setEmailError("");
             } else if (response.data && response.data.error) {
                 setEmailError(String(response.data.error));
             }
         } catch (error) {
-          console.error("Error validating email:", error);
             if (error.response?.data?.error) {
                 setEmailError(String(error.response.data.error));
             } else if (error.response?.data?.message) {
@@ -163,7 +163,7 @@ export default function Signup() {
     }, [formData.jobOption]);
 
     useEffect(() => {
-        if (formData.jobOption === "employer" && formData.email) {
+        if (formData.jobOption === "Employer" && formData.email) {
             const timeoutId = setTimeout(() => {
                 checkRecruiterEmail(formData.email);
             }, 1000);
@@ -171,8 +171,8 @@ export default function Signup() {
         }
     }, [formData.email, formData.jobOption, checkRecruiterEmail]);
 
-    const isEmployerOrInvestor = formData.jobOption === "employer" || formData.jobOption === "investor";
-    const isPlacementOrAcademy = formData.jobOption === "placementDrive" || formData.jobOption === "academy";
+    const isEmployerOrInvestor = formData.jobOption === "Employer" || formData.jobOption === "Investor";
+    const isPlacementOrAcademy = formData.jobOption === "placementDrive" || formData.jobOption === "Academy";
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -190,7 +190,7 @@ export default function Signup() {
             let payload = {};
 
             if (isEmployerOrInvestor) {
-                endpoint = `http://wezume.in:8081/api/users/signup/user`;
+                endpoint = `${URL}/users/signup/user`;
                 payload = {
                     firstName: formData.firstName,
                     lastName: formData.lastName,
@@ -198,6 +198,7 @@ export default function Signup() {
                     email: formData.email,
                     password: formData.password,
                     jobOption: formData.jobOption,
+                    jobid: formData.jobid,
                     industry: formData.industry,
                     currOrganizationName: formData.currOrganizationName,
                     city: formData.city
@@ -214,30 +215,21 @@ export default function Signup() {
                     payload = formDataWithFile;
                 }
             } else if (isPlacementOrAcademy) {
-                endpoint = `http://wezume.in:8081/api/auth/signup/placement`;
+                endpoint = `${URL}/auth/signup/placement`;
                 payload = {
                     firstname: formData.firstName,
                     lastname: formData.lastName,
                     jobOption: formData.jobOption,
                     email: formData.email,
+                    password: formData.password,
                     phoneNumber: formData.phoneNumber,
-                    jobid: formData.jobId,
+                    jobid: formData.jobid,
                     college: formData.college,
                     branch: formData.branch
-                };
+                };   
             }
-
-            console.log("Payload being sent:", payload);
             
-            // For FormData objects, you can log entries like this:
-            if (payload instanceof FormData) {
-                console.log("FormData entries:");
-                for (let [key, value] of payload.entries()) {
-                    console.log(key, value);
-                }
-            }
-
-            const response = await axios.post(endpoint, payload, );
+            const response = await axios.post(endpoint, payload);
 
             if (response.status === 200 || response.status === 201) {
                 setSuccess(true);
@@ -339,6 +331,19 @@ export default function Signup() {
                     </FormControl>
 
                     <TextField 
+                        label="Job ID"
+                        name="jobid"
+                        value={formData.jobid}
+                        onChange={handleChange}
+                        fullWidth
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "8px",
+                          },
+                        }}
+                    />
+
+                    <TextField 
                         label="Current Organization"
                         name="currOrganizationName"
                         value={formData.currOrganizationName}
@@ -381,8 +386,8 @@ export default function Signup() {
                 <>
                     <TextField 
                         label="Job ID"
-                        name="jobId"
-                        value={formData.jobId}
+                        name="jobid"
+                        value={formData.jobid}
                         onChange={handleChange}
                         fullWidth
                         required
@@ -735,25 +740,27 @@ export default function Signup() {
                                     borderRadius: "8px",
                                   },
                                 }}
-                                InputProps={{
-                                    endAdornment: emailValidating && (
-                                        <InputAdornment position="end">
-                                            <Box
-                                                sx={{
-                                                    width: 16,
-                                                    height: 16,
-                                                    border: '2px solid #ccc',
-                                                    borderTop: '2px solid #1976d2',
-                                                    borderRadius: '50%',
-                                                    animation: 'spin 1s linear infinite',
-                                                    '@keyframes spin': {
-                                                        '0%': { transform: 'rotate(0deg)' },
-                                                        '100%': { transform: 'rotate(360deg)' },
-                                                    },
-                                                }}
-                                            />
-                                        </InputAdornment>
-                                    )
+                                slotProps={{
+                                    input: {
+                                        endAdornment: emailValidating && (
+                                            <InputAdornment position="end">
+                                                <Box
+                                                    sx={{
+                                                        width: 16,
+                                                        height: 16,
+                                                        border: '2px solid #ccc',
+                                                        borderTop: '2px solid #1976d2',
+                                                        borderRadius: '50%',
+                                                        animation: 'spin 1s linear infinite',
+                                                        '@keyframes spin': {
+                                                            '0%': { transform: 'rotate(0deg)' },
+                                                            '100%': { transform: 'rotate(360deg)' },
+                                                        },
+                                                    }}
+                                                />
+                                            </InputAdornment>
+                                        )
+                                    }
                                 }}
                             />
                             {emailError && (
@@ -815,10 +822,10 @@ export default function Signup() {
                                 borderRadius: "8px",
                               }}
                             >
-                                <MenuItem value="employer">Employer</MenuItem>
-                                <MenuItem value="investor">Investor</MenuItem>
+                                <MenuItem value="Employer">Employer</MenuItem>
+                                <MenuItem value="Investor">Investor</MenuItem>
                                 <MenuItem value="placementDrive">Placement Drive</MenuItem>
-                                <MenuItem value="academy">Academy</MenuItem>
+                                <MenuItem value="Academy">Academy</MenuItem>
                             </Select>
                         </FormControl>
 

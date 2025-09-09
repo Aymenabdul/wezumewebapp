@@ -13,13 +13,18 @@ export const useAppStore = create(
       userDetails: null,
       isLoadingUserDetails: false,
       isUpdatingUserDetails: false,
-
+      
+      videos: [],
+      isLoadingVideos: false,
+      videoError: null,
+      lastVideoEndpoint: null,
+      
       login: async (credentials) => {
         set({ isLoading: true, error: null })
         try {
-          const response = await axiosInstance.post('/api/login', credentials)
+          const response = await axiosInstance.post('/login', credentials)
+          
           const { token } = response.data
-
           Cookies.set('wezume_auth_token', token, {
             expires: 0.5, 
             sameSite: 'strict'
@@ -34,6 +39,7 @@ export const useAppStore = create(
           return { success: true }
         } catch (error) {
           const errorMessage = error.response?.data?.message || 'Login failed'
+          
           set({ 
             isLoading: false, 
             error: errorMessage 
@@ -41,17 +47,20 @@ export const useAppStore = create(
           throw new Error(errorMessage)
         }
       },
-
+      
       logout: () => {
         Cookies.remove('wezume_auth_token')
         set({ 
           token: null, 
           error: null, 
-          userDetails: null 
+          userDetails: null,
+          videos: [], 
+          videoError: null,
+          lastVideoEndpoint: null
         })
         window.location.href = '/login'
       },
-
+      
       initialize: () => {
         const token = Cookies.get('wezume_auth_token')
         set({ 
@@ -59,19 +68,19 @@ export const useAppStore = create(
           isInitialized: true 
         })
       },
-
+      
       clearError: () => set({ error: null }),
-
+      
       isAuthenticated: () => {
         const { token } = get()
         return !!token || !!Cookies.get('wezume_auth_token')
       },
-
+      
       getToken: () => {
         const { token } = get()
         return token || Cookies.get('wezume_auth_token')
       },
-
+      
       getUserDetails: async () => {
         const { isAuthenticated, userDetails, isLoadingUserDetails } = get()
         
@@ -79,21 +88,18 @@ export const useAppStore = create(
           console.error('User not authenticated')
           return null
         }
-
         if (isLoadingUserDetails) {
           return userDetails
         }
-
         if (userDetails) {
           return userDetails
         }
-
         set({ isLoadingUserDetails: true, error: null })
         
         try {
-          const response = await axiosInstance.get('/api/user-detail')
+          const response = await axiosInstance.get('/user-detail')
           const userData = response.data
-          
+          console.log(userData)
           set({ 
             userDetails: userData, 
             isLoadingUserDetails: false 
@@ -101,7 +107,7 @@ export const useAppStore = create(
           
           return userData
         } catch (error) {
-          console.error('Failed to fetch user details:', error)
+          
           set({ 
             isLoadingUserDetails: false,
             error: error.response?.data?.message || 'Failed to fetch user details'
@@ -109,50 +115,42 @@ export const useAppStore = create(
           throw error
         }
       },
-
+      
       updateUserDetails: async (updatedData) => {
         const { isAuthenticated, userDetails } = get()
         
         if (!isAuthenticated()) {
           throw new Error('User not authenticated')
         }
-
         if (!userDetails?.userId) {
           throw new Error('User ID not available')
         }
-
         const allowedFields = [
           'firstName', 'phoneNumber', 'email', 'jobOption', 'profilePic',
           'currentRole', 'industry', 'keySkills', 
           'college', 'currentEmployer', 'establishedYear'
         ]
-
         const filteredData = Object.keys(updatedData)
           .filter(key => allowedFields.includes(key) && updatedData[key] !== undefined)
           .reduce((obj, key) => {
             obj[key] = updatedData[key]
             return obj
           }, {})
-
         if (Object.keys(filteredData).length === 0) {
           throw new Error('No valid fields to update')
         }
-
         set({ isUpdatingUserDetails: true, error: null })
-
         try {
           const response = await axiosInstance.put(
             `/users/update/${userDetails.userId}`, 
             filteredData
           )
-
           const updatedUserDetails = { ...userDetails, ...response.data }
           
           set({ 
             userDetails: updatedUserDetails,
             isUpdatingUserDetails: false 
           })
-
           return updatedUserDetails
         } catch (error) {
           console.error('Failed to update user details:', error)
@@ -164,8 +162,66 @@ export const useAppStore = create(
           throw new Error(errorMessage)
         }
       },
+      
+      clearUserDetails: () => set({ userDetails: null }),
+      
+      getVideos: async (forceRefresh = false) => {
+        const { userDetails, videos, isLoadingVideos, lastVideoEndpoint } = get()
+        
+        if (!userDetails) {
+          console.error('User details not available')
+          return []
+        }
 
-      clearUserDetails: () => set({ userDetails: null })
+        const currentEndpoint = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy' 
+          ? `/videos/job/${userDetails.jobId}`
+          : '/videos/videos'
+        
+        if (!forceRefresh && videos.length > 0 && lastVideoEndpoint === currentEndpoint) {
+          return videos
+        }
+        
+        if (isLoadingVideos) {
+          return videos 
+        }
+        
+        set({ isLoadingVideos: true, videoError: null })
+        
+        try {
+          const response = await axiosInstance.get(currentEndpoint)
+          const videoData = response.data || []
+          
+          set({ 
+            videos: videoData,
+            isLoadingVideos: false,
+            lastVideoEndpoint: currentEndpoint,
+            videoError: null
+          })
+          
+          return videoData
+        } catch (error) {
+          console.error('Error fetching videos:', error)
+          const errorMessage = error.response?.data?.message || 'Failed to fetch videos'
+          
+          set({ 
+            isLoadingVideos: false,
+            videoError: errorMessage
+          })
+          
+          return videos 
+        }
+      },
+      
+      clearVideos: () => set({ 
+        videos: [], 
+        videoError: null, 
+        lastVideoEndpoint: null 
+      }),
+      
+      refreshVideos: () => {
+        const { getVideos } = get()
+        return getVideos(true)
+      }
     }),
     {
       name: 'wezume-app-storage', 
