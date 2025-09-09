@@ -67,7 +67,7 @@ export default function Features() {
   return (
     <section className="relative bg-transparent z-0">
       {/* Wrapper that overlaps Hero */}
-      <div className="container mx-auto px-6 lg:px-12 -mt-32 relative">
+      <div className="container mx-auto px-6 lg:px-12 -mt-28 relative">
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 py-12">
           {features.map((feature, index) => {

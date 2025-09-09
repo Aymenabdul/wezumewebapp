@@ -8,7 +8,7 @@ const testimonials = [
     rating: 5,
     text:
       "Wezume has added real value to our placement efforts. The platform not only trained students on crafting impactful video resumes but also served as a litmus test for soft skills. Platform also helped students get job leads and offers beyond our existing network. Recruiters appreciated the visibility into key soft skills like clarity, confidence, and authenticity.",
-    avatar: "avatar.jpg",
+    avatar: "nagarani.jpeg",
   },
   {
     name: "Keerthana",
@@ -123,13 +123,14 @@ export default function Testimonials() {
 
                   <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
                     <div className="relative">
-                      <img
-                        src={testimonial.avatar}
-                        alt={testimonial.name}
-                        className={`w-12 h-12 rounded-full object-cover border-2 transition-colors duration-300 ${
-                          isHovered ? "border-blue-300" : "border-blue-100"
-                        }`}
-                      />
+                     <img
+  src={testimonial.avatar}
+  alt={testimonial.name}
+  className={`w-12 h-12 rounded-full object-contain border-2 transition-colors duration-300 ${
+    isHovered ? "border-blue-300" : "border-blue-100"
+  }`}
+/>
+
                     </div>
                     <div>
                       <h4
