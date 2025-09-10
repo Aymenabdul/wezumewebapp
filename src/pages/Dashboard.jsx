@@ -1,35 +1,45 @@
 import { lazy, useState } from "react";
 import {
     Box,
-    Button,
     Card,
-    Collapse,
     Container,
     Grid,
     IconButton,
-    Typography
+    Typography,
+    Snackbar,
+    Alert
 } from "@mui/material";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CommentIcon from '@mui/icons-material/Comment';
 import WorkIcon from '@mui/icons-material/Work';
-import LaunchIcon from '@mui/icons-material/Launch';
+import { useAppStore } from "../store/appStore";
+import { useNavigate } from 'react-router-dom';
 
 const LineGraph = lazy(() => import("../components/dashboard/LineGraph"));
 const BarGraph = lazy(() => import("../components/dashboard/BarGraph"));
 
 export default function Dashboard() {
-    const [expandedSection, setExpandedSection] = useState(null);
-
-    const handleSectionToggle = (section) => {
-        setExpandedSection(expandedSection === section ? null : section);
+    const { likedVideos, userDetails } = useAppStore();
+    const navigate = useNavigate();
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+    
+    const handleJobPostingsClick = () => {
+        if (!userDetails?.jobid) {
+            setSnackbar({ 
+                open: true, 
+                message: 'You have no job ID assigned to your profile', 
+                severity: 'warning' 
+            });
+            return;
+        }
+        navigate(`/app/videos?jobid=${userDetails.jobid}`);
     };
 
-    const handleRedirect = (page) => {
-        console.log(`Redirecting to ${page}`);
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') return;
+        setSnackbar(prev => ({ ...prev, open: false }));
     };
-
+    
     return (
         <Container
           maxWidth={false}
@@ -142,408 +152,230 @@ export default function Dashboard() {
                 </Box>
 
                 <Box sx={{ px: 3, pb: 3 }}>
-                    {/* Liked Videos Section */}
-                    <Card
-                      sx={{
-                        mb: 2,
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        background: "#ffffff",
-                        boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
-                          transform: "translateY(-2px)"
-                        }
-                      }}
-                    >
-                        <Box
-                          onClick={() => handleSectionToggle('liked')}
-                          sx={{
-                            width: "100%",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            p: 3,
-                            cursor: "pointer",
-                            "&:hover": {
-                              backgroundColor: "#f8fafc"
-                            },
-                            transition: "background-color 0.2s ease"
-                          }}
-                        >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                <Box
-                                  sx={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: "12px",
-                                    background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)"
-                                  }}
-                                >
-                                    <FavoriteIcon sx={{ color: "white", fontSize: "1.5rem" }} />
-                                </Box>
-                                <Box>
-                                    <Typography
-                                      variant="h6"
-                                      sx={{
-                                        fontWeight: 600,
-                                        fontSize: { xs: '1rem', sm: '1.125rem' },
-                                        color: "#1e293b"
-                                      }}
-                                    >
-                                        Liked Videos
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        color: "#64748b",
-                                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                      }}
-                                    >
-                                        47 videos liked
-                                    </Typography>
-                                </Box>
-                            </Box>
-                            <IconButton 
-                              size="small"
+                    <Grid container spacing={3}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <Card
+                              component="a"
+                              href="/app/liked"
                               sx={{
-                                backgroundColor: "#f1f5f9",
-                                "&:hover": { backgroundColor: "#e2e8f0" }
+                                borderRadius: "12px",
+                                border: "1px solid #e2e8f0",
+                                background: "#ffffff",
+                                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                                transition: "all 0.3s ease",
+                                textDecoration: "none",
+                                display: "block",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
+                                  transform: "translateY(-2px)",
+                                  backgroundColor: "#f8fafc"
+                                }
                               }}
                             >
-                                {expandedSection === 'liked' ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                            </IconButton>
-                        </Box>
-                        <Collapse in={expandedSection === 'liked'}>
-                            <Box sx={{ px: 3, pb: 3, pt: 0 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  justifyContent: 'space-between', 
-                                  alignItems: 'center',
-                                  flexDirection: { xs: 'column', sm: 'row' },
-                                  gap: { xs: 2, sm: 0 },
-                                  p: 2,
-                                  backgroundColor: "#f8fafc",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e2e8f0"
-                                }}>
-                                    <Typography 
-                                      variant="body1"
-                                      sx={{ 
-                                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                                        color: "#374151",
-                                        fontWeight: 500
-                                      }}
-                                    >
-                                        View and manage all your liked content
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        size="medium"
-                                        endIcon={<LaunchIcon />}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRedirect('liked-videos');
-                                        }}
-                                        sx={{
-                                            background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
-                                            boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)",
-                                            color: "white",
-                                            fontWeight: 600,
-                                            textTransform: "none",
-                                            borderRadius: "10px",
-                                            px: 3,
-                                            py: 1,
-                                            fontSize: { xs: '0.875rem', sm: '1rem' },
-                                            minWidth: 'fit-content',
-                                            "&:hover": {
-                                                background: "linear-gradient(135deg, #be185d 0%, #9d174d 100%)",
-                                                transform: "translateY(-2px)",
-                                                boxShadow: "0 6px 16px rgba(236, 72, 153, 0.4)",
-                                            },
-                                            transition: "all 0.3s ease"
-                                        }}
-                                    >
-                                        View All
-                                    </Button>
-                                </Box>
-                            </Box>
-                        </Collapse>
-                    </Card>
-                    
-                    {/* Commented Videos Section */}
-                    <Card
-                      sx={{
-                        mb: 2,
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        background: "#ffffff",
-                        boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
-                          transform: "translateY(-2px)"
-                        }
-                      }}
-                    >
-                        <Box
-                          onClick={() => handleSectionToggle('commented')}
-                          sx={{
-                            width: "100%",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            p: 3,
-                            cursor: "pointer",
-                            "&:hover": {
-                              backgroundColor: "#f8fafc"
-                            },
-                            transition: "background-color 0.2s ease"
-                          }}
-                        >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                                 <Box
                                   sx={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: "12px",
-                                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                                    width: "100%",
                                     display: "flex",
+                                    flexDirection: "column",
                                     alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
+                                    p: 3,
+                                    gap: 2
                                   }}
                                 >
-                                    <CommentIcon sx={{ color: "white", fontSize: "1.5rem" }} />
-                                </Box>
-                                <Box>
-                                    <Typography
-                                      variant="h6"
+                                    <Box
                                       sx={{
-                                        fontWeight: 600,
-                                        fontSize: { xs: '1rem', sm: '1.125rem' },
-                                        color: "#1e293b"
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: "12px",
+                                        background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)"
                                       }}
                                     >
-                                        Commented Videos
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        color: "#64748b",
-                                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                      }}
-                                    >
-                                        23 videos commented
-                                    </Typography>
+                                        <FavoriteIcon sx={{ color: "white", fontSize: "1.5rem" }} />
+                                    </Box>
+                                    <Box sx={{ textAlign: "center" }}>
+                                        <Typography
+                                          variant="h6"
+                                          sx={{
+                                            fontWeight: 600,
+                                            fontSize: { xs: '1rem', sm: '1.125rem' },
+                                            color: "#1e293b"
+                                          }}
+                                        >
+                                            Liked Videos
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            color: "#64748b",
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                          }}
+                                        >
+                                            {likedVideos?.length || 0} videos liked
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                            </Box>
-                            <IconButton 
-                              size="small"
+                            </Card>
+                        </Grid>
+                        
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <Card
+                              component="a"
+                              href="#"
                               sx={{
-                                backgroundColor: "#f1f5f9",
-                                "&:hover": { backgroundColor: "#e2e8f0" }
+                                borderRadius: "12px",
+                                border: "1px solid #e2e8f0",
+                                background: "#ffffff",
+                                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                                transition: "all 0.3s ease",
+                                textDecoration: "none",
+                                display: "block",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
+                                  transform: "translateY(-2px)",
+                                  backgroundColor: "#f8fafc"
+                                }
                               }}
                             >
-                                {expandedSection === 'commented' ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                            </IconButton>
-                        </Box>
-                        <Collapse in={expandedSection === 'commented'}>
-                            <Box sx={{ px: 3, pb: 3, pt: 0 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  justifyContent: 'space-between', 
-                                  alignItems: 'center',
-                                  flexDirection: { xs: 'column', sm: 'row' },
-                                  gap: { xs: 2, sm: 0 },
-                                  p: 2,
-                                  backgroundColor: "#f8fafc",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e2e8f0"
-                                }}>
-                                    <Typography 
-                                      variant="body1"
-                                      sx={{ 
-                                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                                        color: "#374151",
-                                        fontWeight: 500
-                                      }}
-                                    >
-                                        Review your comments and discussions
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        size="medium"
-                                        endIcon={<LaunchIcon />}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRedirect('commented-videos');
-                                        }}
-                                        sx={{
-                                            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                                            boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
-                                            color: "white",
-                                            fontWeight: 600,
-                                            textTransform: "none",
-                                            borderRadius: "10px",
-                                            px: 3,
-                                            py: 1,
-                                            fontSize: { xs: '0.875rem', sm: '1rem' },
-                                            minWidth: 'fit-content',
-                                            "&:hover": {
-                                                background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
-                                                transform: "translateY(-2px)",
-                                                boxShadow: "0 6px 16px rgba(245, 158, 11, 0.4)",
-                                            },
-                                            transition: "all 0.3s ease"
-                                        }}
-                                    >
-                                        View All
-                                    </Button>
-                                </Box>
-                            </Box>
-                        </Collapse>
-                    </Card>
-                    
-                    {/* Job Postings Section */}
-                    <Card
-                      sx={{
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        background: "#ffffff",
-                        boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
-                          transform: "translateY(-2px)"
-                        }
-                      }}
-                    >
-                        <Box
-                          onClick={() => handleSectionToggle('jobs')}
-                          sx={{
-                            width: "100%",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            p: 3,
-                            cursor: "pointer",
-                            "&:hover": {
-                              backgroundColor: "#f8fafc"
-                            },
-                            transition: "background-color 0.2s ease"
-                          }}
-                        >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                                 <Box
                                   sx={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: "12px",
-                                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                                    width: "100%",
                                     display: "flex",
+                                    flexDirection: "column",
                                     alignItems: "center",
-                                    justifyContent: "center",
-                                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
+                                    p: 3,
+                                    gap: 2
                                   }}
                                 >
-                                    <WorkIcon sx={{ color: "white", fontSize: "1.5rem" }} />
-                                </Box>
-                                <Box>
-                                    <Typography
-                                      variant="h6"
+                                    <Box
                                       sx={{
-                                        fontWeight: 600,
-                                        fontSize: { xs: '1rem', sm: '1.125rem' },
-                                        color: "#1e293b"
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: "12px",
+                                        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
                                       }}
                                     >
-                                        Job Postings
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        color: "#64748b",
-                                        fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                      }}
-                                    >
-                                        12 job opportunities
-                                    </Typography>
+                                        <CommentIcon sx={{ color: "white", fontSize: "1.5rem" }} />
+                                    </Box>
+                                    <Box sx={{ textAlign: "center" }}>
+                                        <Typography
+                                          variant="h6"
+                                          sx={{
+                                            fontWeight: 600,
+                                            fontSize: { xs: '1rem', sm: '1.125rem' },
+                                            color: "#1e293b"
+                                          }}
+                                        >
+                                            Commented Videos
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            color: "#64748b",
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                          }}
+                                        >
+                                            23 videos commented
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                            </Box>
-                            <IconButton 
-                              size="small"
+                            </Card>
+                        </Grid>
+                        
+                        <Grid size={{ xs: 12, md: 4 }}>
+                            <Card
+                              onClick={handleJobPostingsClick}
                               sx={{
-                                backgroundColor: "#f1f5f9",
-                                "&:hover": { backgroundColor: "#e2e8f0" }
+                                borderRadius: "12px",
+                                border: "1px solid #e2e8f0",
+                                background: "#ffffff",
+                                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                                transition: "all 0.3s ease",
+                                textDecoration: "none",
+                                display: "block",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
+                                  transform: "translateY(-2px)",
+                                  backgroundColor: "#f8fafc"
+                                }
                               }}
                             >
-                                {expandedSection === 'jobs' ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                            </IconButton>
-                        </Box>
-                        <Collapse in={expandedSection === 'jobs'}>
-                            <Box sx={{ px: 3, pb: 3, pt: 0 }}>
-                                <Box sx={{ 
-                                  display: 'flex', 
-                                  justifyContent: 'space-between', 
-                                  alignItems: 'center',
-                                  flexDirection: { xs: 'column', sm: 'row' },
-                                  gap: { xs: 2, sm: 0 },
-                                  p: 2,
-                                  backgroundColor: "#f8fafc",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e2e8f0"
-                                }}>
-                                    <Typography 
-                                      variant="body1"
-                                      sx={{ 
-                                        fontSize: { xs: '0.875rem', sm: '1rem' },
-                                        color: "#374151",
-                                        fontWeight: 500
+                                <Box
+                                  sx={{
+                                    width: "100%",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    p: 3,
+                                    gap: 2
+                                  }}
+                                >
+                                    <Box
+                                      sx={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: "12px",
+                                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
                                       }}
                                     >
-                                        Manage your job listings and applications
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        size="medium"
-                                        endIcon={<LaunchIcon />}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRedirect('job-postings');
-                                        }}
-                                        sx={{
-                                            background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                                            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
-                                            color: "white",
+                                        <WorkIcon sx={{ color: "white", fontSize: "1.5rem" }} />
+                                    </Box>
+                                    <Box sx={{ textAlign: "center" }}>
+                                        <Typography
+                                          variant="h6"
+                                          sx={{
                                             fontWeight: 600,
-                                            textTransform: "none",
-                                            borderRadius: "10px",
-                                            px: 3,
-                                            py: 1,
-                                            fontSize: { xs: '0.875rem', sm: '1rem' },
-                                            minWidth: 'fit-content',
-                                            "&:hover": {
-                                                background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-                                                transform: "translateY(-2px)",
-                                                boxShadow: "0 6px 16px rgba(16, 185, 129, 0.4)",
-                                            },
-                                            transition: "all 0.3s ease"
-                                        }}
-                                    >
-                                        View All
-                                    </Button>
+                                            fontSize: { xs: '1rem', sm: '1.125rem' },
+                                            color: "#1e293b"
+                                          }}
+                                        >
+                                            Job Postings
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            color: "#64748b",
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                          }}
+                                        >
+                                            {userDetails?.jobid ? `Job ID: ${userDetails.jobid}` : 'No job assigned'}
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                            </Box>
-                        </Collapse>
-                    </Card>
+                            </Card>
+                        </Grid>
+                    </Grid>
                 </Box>
             </Card>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={handleSnackbarClose} 
+                    severity={snackbar.severity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Container>
     );
-};
+}

@@ -19,6 +19,10 @@ export const useAppStore = create(
       videoError: null,
       lastVideoEndpoint: null,
       
+      likedVideos: [],
+      isLoadingLikedVideos: false,
+      likedVideoError: null,
+      
       login: async (credentials) => {
         set({ isLoading: true, error: null })
         try {
@@ -56,7 +60,9 @@ export const useAppStore = create(
           userDetails: null,
           videos: [], 
           videoError: null,
-          lastVideoEndpoint: null
+          lastVideoEndpoint: null,
+          likedVideos: [],
+          likedVideoError: null
         })
         window.location.href = '/login'
       },
@@ -99,7 +105,7 @@ export const useAppStore = create(
         try {
           const response = await axiosInstance.get('/user-detail')
           const userData = response.data
-          console.log(userData)
+          
           set({ 
             userDetails: userData, 
             isLoadingUserDetails: false 
@@ -174,7 +180,7 @@ export const useAppStore = create(
         }
 
         const currentEndpoint = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy' 
-          ? `/videos/job/${userDetails.jobId}`
+          ? `/videos/job/${userDetails.jobid}`
           : '/videos/videos'
         
         if (!forceRefresh && videos.length > 0 && lastVideoEndpoint === currentEndpoint) {
@@ -221,6 +227,60 @@ export const useAppStore = create(
       refreshVideos: () => {
         const { getVideos } = get()
         return getVideos(true)
+      },
+
+      getLikedVideos: async (forceRefresh = false) => {
+        const { userDetails, likedVideos, isLoadingLikedVideos } = get()
+        
+        if (!userDetails) {
+          console.error('User details not available')
+          return []
+        }
+
+        if (!forceRefresh && likedVideos.length > 0) {
+          return likedVideos
+        }
+        
+        if (isLoadingLikedVideos) {
+          return likedVideos
+        }
+        
+        set({ isLoadingLikedVideos: true, likedVideoError: null })
+        
+        try {
+          const response = await axiosInstance.get('/videos/liked', {
+            params: { userId: userDetails.userId }
+          })
+          const likedVideoData = response.data || []
+          
+          set({ 
+            likedVideos: likedVideoData,
+            isLoadingLikedVideos: false,
+            likedVideoError: null
+          })
+          
+          return likedVideoData
+        } catch (error) {
+          console.error('Error fetching liked videos:', error)
+          const errorMessage = error.response?.data?.message || 'Failed to fetch liked videos'
+          
+          set({ 
+            isLoadingLikedVideos: false,
+            likedVideoError: errorMessage
+          })
+          
+          return likedVideos
+        }
+      },
+      
+      clearLikedVideos: () => set({ 
+        likedVideos: [], 
+        likedVideoError: null 
+      }),
+      
+      refreshLikedVideos: () => {
+        const { getLikedVideos } = get()
+        return getLikedVideos(true)
       }
     }),
     {

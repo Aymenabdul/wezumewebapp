@@ -58,7 +58,7 @@ export default function ForgotPassword() {
     setLoading(true);
     
     try {
-      const response = await axios.put("http://Wezume.in:8081/api/users/update-password", {
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/users/update-password`, {
         email: formData.email,
         newPassword: formData.newPassword
       });

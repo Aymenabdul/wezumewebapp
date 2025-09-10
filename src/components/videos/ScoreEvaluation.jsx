@@ -19,12 +19,14 @@ import {
   Favorite, 
   Visibility,
   EmojiEvents,
-  Assessment
+  Assessment,
+  Error
 } from '@mui/icons-material';
 
 export default function ScoreEvaluation({ scoreData, video }) {
   const decodeProfilePic = (pic) => {
-    if (pic && pic.startsWith('https://wezume')) return pic;
+    if (!pic) return null;
+    if (pic.startsWith('https://wezume')) return pic;
     try {
       return atob(pic);
     } catch {
@@ -32,19 +34,160 @@ export default function ScoreEvaluation({ scoreData, video }) {
     }
   };
 
+  const getFeedback = (Clarity, Confidence, Authenticity, emotional) => {
+    const scores = [
+      { key: 'Clarity', value: Number(Clarity) },
+      { key: 'Confidence', value: Number(Confidence) },
+      { key: 'Authenticity', value: Number(Authenticity) },
+      { key: 'Emotional', value: Number(emotional) },
+    ];
+    scores.sort((a, b) => a.value - b.value);
+    const weakest = scores[0]?.key;
+    if (!weakest) return { strength: 'Well-rounded performance!', improvement: 'Continue practicing all areas.' };
+    const feedbackMessages = {
+      Clarity: { strength: 'Shows potential to express ideas.', improvement: 'Needs structured thought and clearer articulation.' },
+      Confidence: { strength: 'Shows honesty and openness.', improvement: 'Work on tone, eye contact, and vocal steadiness.' },
+      Authenticity: { strength: 'Cautious and controlled.', improvement: 'Loosen up for better emotional engagement.' },
+      Emotional: { strength: 'Mindful and considered.', improvement: 'Vary pace and tone to match emotional context.' },
+    };
+    return feedbackMessages[weakest];
+  };
+
+  const getHashtags = score => {
+    const clarity = score?.Clarity ?? 0;
+    if (clarity < 4) {
+      const tags = ['#Fragmented', '#Unclear', '#Fuzzy'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (clarity >= 4 && clarity <= 6) {
+      const tags = ['#Improving', '#Understandable', '#Coherent'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (clarity > 6 && clarity <= 8) {
+      const tags = ['#Fluent', '#Clear', '#Articulate'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    return ['#Articulate'];
+  };
+
+  const getHashtags1 = score => {
+    const confidence = score?.Confidence ?? 0;
+    if (confidence < 4) {
+      const tags = ['#Hesitant', '#Unsteady', '#Reserved'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (confidence >= 4 && confidence <= 6) {
+      const tags = ['#Composed', '#Balanced', '#Steady'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (confidence > 6 && confidence <= 8) {
+      const tags = ['#Poised'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    return ['#Assured'];
+  };
+
+  const getHashtags2 = score => {
+    const authenticity = score?.Authenticity ?? 0;
+    if (authenticity < 4) {
+      const tags = ['#Guarded', '#Mechanical', '#Distant'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (authenticity >= 4 && authenticity <= 6) {
+      const tags = ['#Honest', '#Sincere', '#Natural'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (authenticity > 6 && authenticity <= 8) {
+      const tags = ['#Natural'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    return ['#Genuine'];
+  };
+
+  const getHashtags3 = score => {
+    const emotional = score?.EmotionalExpressiveness ?? 0;
+    if (emotional < 4) {
+      const tags = ['#Disconnected', '#Flat', '#Detached'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (emotional >= 4 && emotional <= 6) {
+      const tags = ['#In-Tune', '#Observant', '#Thoughtful'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    if (emotional > 6 && emotional <= 8) {
+      const tags = ['#Empathic'];
+      return [tags[Math.floor(Math.random() * tags.length)]];
+    }
+    return ['#Expressive'];
+  };
+
   if (!scoreData) {
     return (
       <Box sx={{ 
-        p: 4, 
         height: '100%', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        bgcolor: '#f8fafc'
+        overflow: 'auto',
+        p: 2
       }}>
-        <Typography variant="h6" color="text.secondary">
-          Loading evaluation...
-        </Typography>
+        <Paper sx={{ 
+          mb: 2, 
+          p: 2,
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Avatar 
+              src={decodeProfilePic(video?.profilepic)} 
+              sx={{ 
+                width: 60, 
+                height: 60,
+                border: '2px solid rgba(0,0,0,0.05)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
+              }}
+            >
+              {video?.firstname?.charAt(0)}
+            </Avatar>
+            
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 600, 
+                mb: 0.5, 
+                color: '#111827',
+                fontSize: '1.1rem'
+              }}>
+                {video?.firstname}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, opacity: 0.8, fontSize: '0.85rem' }}>
+                {video?.email}
+              </Typography>
+            </Box>
+          </Stack>
+        </Paper>
+
+        <Paper sx={{ 
+          p: 3,
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)',
+          textAlign: 'center'
+        }}>
+          <Box sx={{ mb: 2 }}>
+            <Error sx={{ fontSize: 48, color: '#ef4444', mb: 2 }} />
+            <Typography variant="h6" sx={{ 
+              color: '#ef4444',
+              fontWeight: 600,
+              mb: 1
+            }}>
+              No Score Available
+            </Typography>
+            <Typography variant="body2" sx={{ 
+              color: '#6b7280',
+              fontWeight: 500
+            }}>
+              Score evaluation is not available for this video
+            </Typography>
+          </Box>
+        </Paper>
       </Box>
     );
   }
@@ -58,11 +201,11 @@ export default function ScoreEvaluation({ scoreData, video }) {
 
   const getScoreIcon = (label) => {
     switch (label.toLowerCase()) {
-      case 'clarity': return <Visibility />;
-      case 'confidence': return <TrendingUp />;
-      case 'authenticity': return <Star />;
-      case 'emotional': return <Favorite />;
-      default: return <EmojiEvents />;
+      case 'clarity': return <Visibility fontSize="small" />;
+      case 'confidence': return <TrendingUp fontSize="small" />;
+      case 'authenticity': return <Star fontSize="small" />;
+      case 'emotional': return <Favorite fontSize="small" />;
+      default: return <EmojiEvents fontSize="small" />;
     }
   };
 
@@ -83,28 +226,39 @@ export default function ScoreEvaluation({ scoreData, video }) {
 
   const totalPerformance = getPerformanceLabel(scoreData.totalScore);
 
+  const clarityHashtag = getHashtags({ Clarity: scoreData.clarityScore })[0];
+  const confidenceHashtag = getHashtags1({ Confidence: scoreData.confidenceScore })[0];
+  const authenticityHashtag = getHashtags2({ Authenticity: scoreData.authenticityScore })[0];
+  const emotionalHashtag = getHashtags3({ EmotionalExpressiveness: scoreData.emotionalScore })[0];
+  
+  const feedback = getFeedback(
+    scoreData.clarityScore, 
+    scoreData.confidenceScore, 
+    scoreData.authenticityScore, 
+    scoreData.emotionalScore
+  );
+
   return (
     <Box sx={{ 
       height: '100%', 
       overflow: 'auto',
-      bgcolor: '#f8fafc',
-      p: 3
+      p: 2
     }}>
       <Paper sx={{ 
-        mb: 3, 
-        p: 3,
+        mb: 2, 
+        p: 2,
         borderRadius: 3,
-        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        border: '1px solid #e5e7eb'
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        border: '1px solid rgba(0,0,0,0.05)'
       }}>
-        <Stack direction="row" spacing={3} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center">
           <Badge
             overlap="circular"
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             badgeContent={
               <Box sx={{
-                width: 28,
-                height: 28,
+                width: 24,
+                height: 24,
                 borderRadius: '50%',
                 bgcolor: getScoreColor(scoreData.totalScore),
                 display: 'flex',
@@ -115,7 +269,7 @@ export default function ScoreEvaluation({ scoreData, video }) {
               }}>
                 <Typography variant="caption" sx={{ 
                   color: 'white', 
-                  fontSize: '12px', 
+                  fontSize: '10px', 
                   fontWeight: 700 
                 }}>
                   {scoreData.totalScore}
@@ -126,10 +280,10 @@ export default function ScoreEvaluation({ scoreData, video }) {
             <Avatar 
               src={decodeProfilePic(video.profilepic)} 
               sx={{ 
-                width: 80, 
-                height: 80,
-                border: '3px solid #e5e7eb',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                width: 60, 
+                height: 60,
+                border: '2px solid rgba(0,0,0,0.05)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
               }}
             >
               {video.firstname?.charAt(0)}
@@ -137,24 +291,26 @@ export default function ScoreEvaluation({ scoreData, video }) {
           </Badge>
           
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" sx={{ 
+            <Typography variant="h6" sx={{ 
               fontWeight: 600, 
-              mb: 1, 
-              color: '#111827'
+              mb: 0.5, 
+              color: '#111827',
+              fontSize: '1.1rem'
             }}>
               {video.firstname}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, opacity: 0.8, fontSize: '0.85rem' }}>
               {video.email}
             </Typography>
             <Chip 
               label={totalPerformance.label}
+              size="small"
               sx={{ 
                 bgcolor: totalPerformance.color,
                 color: 'white',
                 fontWeight: 600,
-                fontSize: '0.875rem',
-                height: 32
+                fontSize: '0.75rem',
+                height: 24
               }}
             />
           </Box>
@@ -162,25 +318,25 @@ export default function ScoreEvaluation({ scoreData, video }) {
       </Paper>
 
       <Paper sx={{ 
-        mb: 4,
-        p: 4,
+        mb: 3,
+        p: 3,
         borderRadius: 3,
-        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        border: '1px solid #e5e7eb',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        border: '1px solid rgba(0,0,0,0.05)',
         textAlign: 'center'
       }}>
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h2" sx={{ 
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h3" sx={{ 
             fontWeight: 700, 
             color: getScoreColor(scoreData.totalScore),
             mb: 1
           }}>
             {scoreData.totalScore}
-            <Typography component="span" variant="h4" color="text.secondary">
+            <Typography component="span" variant="h5" sx={{ color: 'text.secondary', opacity: 0.6 }}>
               /10
             </Typography>
           </Typography>
-          <Typography variant="h6" sx={{ 
+          <Typography variant="body1" sx={{ 
             color: '#6b7280',
             fontWeight: 500
           }}>
@@ -188,14 +344,14 @@ export default function ScoreEvaluation({ scoreData, video }) {
           </Typography>
         </Box>
         
-        <Box sx={{ maxWidth: 400, mx: 'auto' }}>
+        <Box sx={{ maxWidth: 300, mx: 'auto' }}>
           <LinearProgress 
             variant="determinate" 
             value={(scoreData.totalScore / 10) * 100} 
             sx={{ 
               height: 12, 
               borderRadius: 6,
-              bgcolor: '#f3f4f6',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
               '& .MuiLinearProgress-bar': {
                 bgcolor: getScoreColor(scoreData.totalScore),
                 borderRadius: 6
@@ -206,53 +362,54 @@ export default function ScoreEvaluation({ scoreData, video }) {
       </Paper>
 
       <Box sx={{ mb: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-          <Assessment sx={{ color: '#6b7280' }} />
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+          <Assessment sx={{ color: '#6b7280', fontSize: 20 }} />
           <Typography variant="h6" sx={{ 
             color: '#111827', 
-            fontWeight: 600
+            fontWeight: 600,
+            fontSize: '1.1rem'
           }}>
-            Detailed Breakdown
+            Breakdown
           </Typography>
         </Stack>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={1.5}>
           {scores.map((score, index) => (
             <Grid size={{ xs: 12 }} key={index}>
               <Paper sx={{ 
-                p: 3,
+                p: 2,
                 borderRadius: 2,
-                border: '1px solid #e5e7eb',
-                boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
-                transition: 'all 0.2s ease-in-out',
+                border: '1px solid rgba(0,0,0,0.05)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   transform: 'translateY(-1px)'
                 }
               }}>
-                <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+                <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1.5 }}>
                   <Box sx={{ 
-                    p: 1.5, 
+                    p: 1, 
                     borderRadius: 2, 
-                    bgcolor: '#f3f4f6',
+                    bgcolor: `${getScoreColor(score.value)}15`,
                     color: getScoreColor(score.value),
                     display: 'flex'
                   }}>
                     {getScoreIcon(score.label)}
                   </Box>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" sx={{ 
+                    <Typography variant="subtitle2" sx={{ 
                       fontWeight: 600, 
                       color: '#111827',
                       mb: 0.5
                     }}>
                       {score.label}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: 'text.secondary', opacity: 0.8 }}>
                       {score.description}
                     </Typography>
                   </Box>
-                  <Typography variant="h5" sx={{ 
+                  <Typography variant="h6" sx={{ 
                     color: getScoreColor(score.value),
                     fontWeight: 700
                   }}>
@@ -264,12 +421,12 @@ export default function ScoreEvaluation({ scoreData, video }) {
                   variant="determinate" 
                   value={(score.value / 10) * 100} 
                   sx={{ 
-                    height: 8, 
-                    borderRadius: 4,
-                    bgcolor: '#f3f4f6',
+                    height: 6, 
+                    borderRadius: 3,
+                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
                     '& .MuiLinearProgress-bar': {
                       bgcolor: getScoreColor(score.value),
-                      borderRadius: 4
+                      borderRadius: 3
                     }
                   }}
                 />
@@ -280,38 +437,85 @@ export default function ScoreEvaluation({ scoreData, video }) {
       </Box>
 
       <Paper sx={{ 
-        p: 3,
+        p: 2.5,
         borderRadius: 2,
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)'
+        border: '1px solid rgba(0,0,0,0.05)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
       }}>
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-          <Psychology sx={{ color: '#6b7280' }} />
-          <Typography variant="h6" sx={{ color: '#111827', fontWeight: 600 }}>
-            Performance Summary
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+          <Psychology sx={{ color: '#6b7280', fontSize: 20 }} />
+          <Typography variant="h6" sx={{ 
+            color: '#111827', 
+            fontWeight: 600,
+            fontSize: '1.1rem'
+          }}>
+            Analysis
           </Typography>
         </Stack>
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ mb: 2 }} />
         
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-          {scores.map((score, index) => (
-            <Chip 
-              key={index}
-              label={`${score.label}: ${getPerformanceLabel(score.value).label}`}
-              sx={{ 
-                bgcolor: getPerformanceLabel(score.value).color,
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                height: 32,
-                '&:hover': {
-                  bgcolor: getPerformanceLabel(score.value).color,
-                  opacity: 0.9
-                }
-              }}
-            />
-          ))}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          <Chip 
+            label={clarityHashtag}
+            size="small"
+            sx={{ 
+              bgcolor: getScoreColor(scoreData.clarityScore),
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: 24
+            }}
+          />
+          <Chip 
+            label={confidenceHashtag}
+            size="small"
+            sx={{ 
+              bgcolor: getScoreColor(scoreData.confidenceScore),
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: 24
+            }}
+          />
+          <Chip 
+            label={authenticityHashtag}
+            size="small"
+            sx={{ 
+              bgcolor: getScoreColor(scoreData.authenticityScore),
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: 24
+            }}
+          />
+          <Chip 
+            label={emotionalHashtag}
+            size="small"
+            sx={{ 
+              bgcolor: getScoreColor(scoreData.emotionalScore),
+              color: 'white',
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: 24
+            }}
+          />
         </Box>
+
+        <Typography variant="body2" sx={{ 
+          color: 'text.secondary', 
+          mb: 1,
+          fontWeight: 500,
+          fontSize: '0.85rem'
+        }}>
+          💪 <strong>Strength:</strong> {feedback.strength}
+        </Typography>
+        <Typography variant="body2" sx={{ 
+          color: 'text.secondary',
+          fontWeight: 500,
+          fontSize: '0.85rem'
+        }}>
+          🎯 <strong>Improvement:</strong> {feedback.improvement}
+        </Typography>
       </Paper>
     </Box>
   );

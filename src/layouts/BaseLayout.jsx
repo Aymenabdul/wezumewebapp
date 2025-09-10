@@ -20,6 +20,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import VideocamIcon from '@mui/icons-material/Videocam';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PersonIcon from '@mui/icons-material/Person';
@@ -45,7 +46,7 @@ export default function BaseLayout() {
     const logout = useAppStore((state) => state.logout);
 
     useEffect(() => {
-        if (location.pathname === '/app/videos') {
+        if (location.pathname === '/app/videos' || location.pathname === '/app/liked') {
             setIsCollapsed(true);
         } 
     }, [location.pathname]);
@@ -74,7 +75,7 @@ export default function BaseLayout() {
     const navLinks = [
         { label: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
         { label: "Videos", icon: <VideocamIcon />, path: "/app/videos" },
-        { label: "Trending", icon: <WhatshotIcon />, path: "/app/trending" },
+        { label: "Liked", icon: <FavoriteIcon />, path: "/app/liked" },
         { label: "Profile", icon: <PersonIcon />, path: "/app/profile" },
     ];
 

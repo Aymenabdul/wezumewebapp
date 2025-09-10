@@ -1,4 +1,5 @@
-import { useState } from 'react';
+/* eslint-disable no-unused-vars */
+import { useState, useEffect } from 'react';
 import { Card, CardMedia, Box, IconButton, Slide, Typography } from '@mui/material';
 import { Favorite, FavoriteBorder, Assessment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -6,16 +7,38 @@ import axiosInstance from '../../axios/axios';
 import { useAppStore } from '../../store/appStore';
 import CountUp from 'react-countup';
 
-const VideoCard = ({ video }) => {
+export default function VideoCard({ video }) {
   const [hovered, setHovered] = useState(false);
   const [likes, setLikes] = useState(0);
   const [totalScore, setTotalScore] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likesLoaded, setLikesLoaded] = useState(false);
+  const [userLikedVideos, setUserLikedVideos] = useState({});
   const { userDetails } = useAppStore();
   const navigate = useNavigate();
 
   const hashVideoId = (id) => btoa(id.toString());
+
+  useEffect(() => {
+    const fetchUserLikedVideos = async () => {
+      try {
+        const response = await axiosInstance.get(`/videos/likes/status?userId=${userDetails.userId}`);
+        const likedVideosMap = {};
+        Object.entries(response.data).forEach(([videoId, liked]) => {
+          likedVideosMap[videoId] = liked;
+        });
+        setUserLikedVideos(likedVideosMap);
+        
+        setIsLiked(likedVideosMap[video.id] || false);
+      } catch (error) {
+        console.error('Error fetching user liked videos:', error);
+      }
+    };
+
+    if (userDetails?.userId) {
+      fetchUserLikedVideos();
+    }
+  }, [userDetails.userId, video.id]);
 
   const handleMouseEnter = async () => {
     setHovered(true);
@@ -39,8 +62,15 @@ const VideoCard = ({ video }) => {
     try {
       const endpoint = isLiked ? 'dislike' : 'like';
       await axiosInstance.post(`/videos/${video.id}/${endpoint}?userId=${userDetails.userId}&firstName=${userDetails.firstName}`);
-      setIsLiked(!isLiked);
+      
+      const newLikedState = !isLiked;
+      setIsLiked(newLikedState);
       setLikes(prev => isLiked ? prev - 1 : prev + 1);
+      
+      setUserLikedVideos(prev => ({
+        ...prev,
+        [video.id]: newLikedState
+      }));
     } catch (error) {
       console.error('Error liking video:', error);
     }
@@ -105,33 +135,43 @@ const VideoCard = ({ video }) => {
             left: '50%',
             transform: { xs: 'translate(-120%, -50%)', lg: 'translate(-200%, -50%)' },
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center',
             color: 'white',
-            px: { xs: 1.5, md: 2 },
-            py: { xs: 1, md: 1.5 },
-            borderRadius: 2,
-            minWidth: { xs: 80, md: 90 },
-            height: { xs: 40, md: 45 },
-            fontSize: { xs: '1rem', md: '1.1rem' },
             zIndex: 2,
-            gap: 0.5,
-            bgcolor: 'rgba(0, 0, 0, 0.7)'
+            gap: 1
           }}>
-            <IconButton 
-              size="small" 
-              onClick={handleLike} 
-              sx={{ 
-                color: 'white',
-                p: 0.5,
-                minWidth: 'auto',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                }
-              }}
-            >
-              {isLiked ? <Favorite sx={{ fontSize: { xs: 18, md: 20 } }} /> : <FavoriteBorder sx={{ fontSize: { xs: 18, md: 20 } }} />}
-            </IconButton>
-            <CountUp end={likes} duration={1} style={{ fontSize: 'inherit', fontWeight: 'bold' }} />
+            <Box sx={{
+              width: { xs: 50, md: 60 },
+              height: { xs: 50, md: 60 },
+              borderRadius: '50%',
+              bgcolor: 'rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              border: '2px solid rgba(255, 255, 255, 0.3)'
+            }}>
+              <IconButton 
+                onClick={handleLike} 
+                sx={{ 
+                  color: isLiked ? '#ff1744' : 'white', 
+                  p: 0,
+                  '&:hover': {
+                    backgroundColor: 'transparent'
+                  }
+                }}
+              >
+                {isLiked ? <Favorite sx={{ fontSize: { xs: 20, md: 24 } }} /> : <FavoriteBorder sx={{ fontSize: { xs: 20, md: 24 } }} />}
+              </IconButton>
+            </Box>
+            <Typography variant="caption" sx={{ 
+              fontSize: { xs: '0.75rem', md: '0.85rem' }, 
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              <CountUp end={likes} duration={1} />
+            </Typography>
           </Box>
         </Slide>
 
@@ -142,20 +182,29 @@ const VideoCard = ({ video }) => {
             right: '50%',
             transform: { xs: 'translate(120%, -50%)', lg: 'translate(200%, -50%)' },
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             color: 'white',
-            px: { xs: 1 },
-            py: { xs: 1 },
-            borderRadius: 2,
-            minWidth: { xs: 80, md: 90 },
-            height: { xs: 40, md: 45 },
-            gap: 0.5,
-            fontSize: { xs: '1rem', md: '1.1rem' },
             zIndex: 2,
-            bgcolor: 'rgba(0, 0, 0, 0.7)'
+            gap: 1
           }}>
-            <Assessment sx={{ fontSize: { xs: 18, md: 20 } }} />
-            <Typography variant="body2" sx={{ fontSize: 'inherit', lineHeight: 1, fontWeight: 'bold' }}>
+            <Box sx={{
+              width: { xs: 50, md: 60 },
+              height: { xs: 50, md: 60 },
+              borderRadius: '50%',
+              bgcolor: 'rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid rgba(255, 255, 255, 0.3)'
+            }}>
+              <Assessment sx={{ fontSize: { xs: 20, md: 24 } }} />
+            </Box>
+            <Typography variant="caption" sx={{ 
+              fontSize: { xs: '0.75rem', md: '0.85rem' }, 
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
               {totalScore?.totalScore?.toFixed(1) || 'N/A'}
             </Typography>
           </Box>
@@ -164,5 +213,3 @@ const VideoCard = ({ video }) => {
     </Card>
   );
 };
-
-export default VideoCard;

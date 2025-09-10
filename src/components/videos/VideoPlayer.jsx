@@ -25,20 +25,21 @@ import {
   Assessment,
   Comment
 } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import axiosInstance from '../../axios/axios';
 import { useAppStore } from '../../store/appStore';
 import ScoreEvaluation from './ScoreEvaluation';
 import CommentsSection from './CommentsSection';
 
-const VideoPlayer = () => {
+export default function VideoPlayer() {
   const { videoId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const videoRef = useRef();
   const containerRef = useRef();
-  const scrollContainerRef = useRef();
+  const mobileContainerRef = useRef();
   const videoContainerRef = useRef();
   
   const [video, setVideo] = useState(null);
@@ -120,6 +121,57 @@ const VideoPlayer = () => {
     setSnackbar({ open: true, message, severity });
   };
 
+  const handleBackNavigation = () => {
+    // Check if there's a previous history entry
+    if (location.key !== 'default' && window.history.length > 1) {
+      // There's a previous page in history, go back
+      navigate(-1);
+    } else {
+      // No previous history or came from external link
+      // Check if there's a specific return URL in location state
+      const returnUrl = location.state?.from || '/app/videos';
+      navigate(returnUrl);
+    }
+  };
+
+  useEffect(() => {
+    if (!isMobile || !mobileContainerRef.current) return;
+
+    let startY = 0;
+    let startTime = 0;
+    const minSwipeDistance = 80;
+    const maxSwipeTime = 300;
+
+    const handleTouchStart = (e) => {
+      startY = e.touches[0].clientY;
+      startTime = Date.now();
+    };
+
+    const handleTouchEnd = (e) => {
+      const endY = e.changedTouches[0].clientY;
+      const endTime = Date.now();
+      const distance = startY - endY;
+      const duration = endTime - startTime;
+
+      if (Math.abs(distance) > minSwipeDistance && duration < maxSwipeTime) {
+        if (distance > 0) {
+          navigateVideo('next');
+        } else {
+          navigateVideo('prev');
+        }
+      }
+    };
+
+    const container = mobileContainerRef.current;
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile, videos, currentIndex]);
+
   useEffect(() => {
     if (userDetails) {
       fetchVideos();
@@ -144,20 +196,13 @@ const VideoPlayer = () => {
       if (videos[foundIndex]) {
         loadVideo(videos[foundIndex]);
       }
-      
-      if (isMobile && scrollContainerRef.current) {
-        setTimeout(() => {
-          scrollContainerRef.current.scrollTo({
-            top: foundIndex * window.innerHeight,
-            behavior: 'smooth'
-          });
-        }, 100);
-      }
     }
   }, [videos, decodedVideoId]);
 
   useEffect(() => {
     const handleWheel = (e) => {
+      if (isMobile) return;
+
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 50) {
         e.preventDefault();
         if (e.deltaX > 0) {
@@ -165,10 +210,17 @@ const VideoPlayer = () => {
         } else {
           navigateVideo('prev');
         }
+      } else if (Math.abs(e.deltaY) > 50 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        if (e.deltaY > 0) {
+          navigateVideo('next');
+        } else {
+          navigateVideo('prev');
+        }
       }
     };
 
-    if (containerRef.current) {
+    if (containerRef.current && !isMobile) {
       containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
       return () => {
         if (containerRef.current) {
@@ -176,7 +228,7 @@ const VideoPlayer = () => {
         }
       };
     }
-  }, [videos, currentIndex]);
+  }, [videos, currentIndex, isMobile]);
 
   useEffect(() => {
     return () => {
@@ -266,31 +318,9 @@ const VideoPlayer = () => {
         left: scrollDirection * containerRef.current.offsetWidth, 
         behavior: 'smooth' 
       });
-    } else if (isMobile && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: newIndex * window.innerHeight,
-        behavior: 'smooth'
-      });
     }
 
     setTimeout(() => setIsScrolling(false), 1000);
-  };
-
-  const handleMobileScroll = (e) => {
-    if (!isMobile || !scrollContainerRef.current || isScrolling || !videos || videos.length === 0) return;
-    
-    const scrollTop = e.target.scrollTop;
-    const videoHeight = window.innerHeight;
-    const newIndex = Math.round(scrollTop / videoHeight);
-    
-    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < videos.length && videos[newIndex]) {
-      setCurrentIndex(newIndex);
-      const nextVideo = videos[newIndex];
-      loadVideo(nextVideo);
-      
-      const hashedId = btoa(nextVideo.id.toString());
-      navigate(`/app/video/${hashedId}`, { replace: true });
-    }
   };
 
   const handleVideoContainerClick = (e) => {
@@ -343,27 +373,33 @@ const VideoPlayer = () => {
   if (!video || !videos || videos.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Button onClick={() => navigate('/app/videos')}>No videos available - Go back</Button>
+        <Button onClick={handleBackNavigation}>No videos available - Go back</Button>
       </Box>
     );
   }
 
   if (isMobile) {
     return (
-      <Box sx={{ 
-        height: '100vh', 
-        width: '100vw',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        bgcolor: 'black',
-        zIndex: 1300
-      }}>
+      <Box 
+        ref={mobileContainerRef}
+        sx={{ 
+          height: '100vh', 
+          width: '100vw',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bgcolor: 'black',
+          zIndex: 1300,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}
+      >
         <IconButton
           sx={{ 
-            position: 'fixed', 
+            position: 'absolute', 
             top: 20, 
             left: 20, 
             color: 'white', 
@@ -371,137 +407,107 @@ const VideoPlayer = () => {
             bgcolor: 'rgba(0,0,0,0.5)',
             '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
           }}
-          onClick={() => navigate('/app/videos')}
+          onClick={handleBackNavigation}
         >
           <ArrowBack />
         </IconButton>
 
-        <Box 
-          ref={scrollContainerRef}
-          sx={{ 
-            height: '100vh', 
-            width: '100vw',
-            overflow: 'auto',
-            scrollSnapType: 'y mandatory'
-          }}
-          onScroll={handleMobileScroll}
-        >
-          {videos.map((vid, index) => {
-            if (!vid || !vid.id) return null;
-            
-            return (
-              <Box 
-                key={vid.id} 
-                data-index={index}
-                ref={index === 0 ? containerRef : null}
-                sx={{ 
-                  height: '100vh', 
-                  width: '100vw',
-                  position: 'relative',
-                  scrollSnapAlign: 'start'
-                }}
-              >
-                {videoLoading && index === currentIndex && (
-                  <Box sx={{ 
-                    position: 'absolute', 
-                    top: '50%', 
-                    left: '50%', 
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 2
-                  }}>
-                    <CircularProgress sx={{ color: 'white' }} />
-                  </Box>
-                )}
-                
-                <video
-                  key={`${vid.id}-${index}`}
-                  ref={index === currentIndex ? videoRef : null}
-                  src={vid.videoUrl}
-                  controls
-                  autoPlay={index === currentIndex}
-                  muted={index !== currentIndex}
-                  playsInline
-                  onLoadedMetadata={(e) => {
-                    if (index === currentIndex) {
-                      handleVideoLoad(e.target, vid.id);
-                    }
-                  }}
-                  onCanPlay={(e) => {
-                    if (index === currentIndex) {
-                      handleVideoLoad(e.target, vid.id);
-                    }
-                  }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  crossOrigin="anonymous"
-                >
-                  {subtitles[vid.id] && (
-                    <track
-                      key={`subtitle-${vid.id}`}
-                      kind="subtitles"
-                      src={subtitles[vid.id]}
-                      srcLang="en"
-                      label="English"
-                      default
-                    />
-                  )}
-                </video>
-                
-                {index === currentIndex && (
-                  <>
-                    <Box sx={{ 
-                      position: 'absolute', 
-                      left: 20, 
-                      top: '50%', 
-                      transform: 'translateY(-50%)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 2,
-                      zIndex: 10
-                    }}>
-                      <Fab 
-                        size="small" 
-                        onClick={() => setScoreModalOpen(true)}
-                        sx={{ bgcolor: 'rgba(255,255,255,0.8)' }}
-                      >
-                        <Assessment />
-                      </Fab>
-                    </Box>
-                    
-                    <Box sx={{ 
-                      position: 'absolute', 
-                      right: 20, 
-                      top: '50%', 
-                      transform: 'translateY(-50%)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 2,
-                      zIndex: 10
-                    }}>
-                      <Fab size="small" onClick={handleLike}>
-                        {isLiked ? <Favorite /> : <FavoriteBorder />}
-                      </Fab>
-                      <Fab size="small" onClick={handleShare}>
-                        <Share />
-                      </Fab>
-                      <Fab size="small" onClick={handleCall}>
-                        <Phone />
-                      </Fab>
-                      <Fab size="small" onClick={handleEmail}>
-                        <Email />
-                      </Fab>
-                      <Fab 
-                        size="small" 
-                        onClick={() => setCommentsModalOpen(true)}
-                        sx={{ bgcolor: 'rgba(255,255,255,0.8)' }}
-                      >
-                        <Comment />
-                      </Fab>
-                    </Box>
-                  </>
-                )}
-              </Box>
-            );
-          })}
+        <Box sx={{ 
+          flex: 1, 
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {videoLoading && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              zIndex: 2
+            }}>
+              <CircularProgress sx={{ color: 'white' }} />
+            </Box>
+          )}
+          
+          <video
+            ref={videoRef}
+            src={video.videoUrl}
+            controls
+            autoPlay
+            muted={false}
+            playsInline
+            onLoadedMetadata={(e) => handleVideoLoad(e.target, video.id)}
+            onCanPlay={(e) => handleVideoLoad(e.target, video.id)}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'contain'
+            }}
+            crossOrigin="anonymous"
+          >
+            {subtitles[video.id] && (
+              <track
+                key={`subtitle-${video.id}`}
+                kind="subtitles"
+                src={subtitles[video.id]}
+                srcLang="en"
+                label="English"
+                default
+              />
+            )}
+          </video>
+          
+          <Box sx={{ 
+            position: 'absolute', 
+            left: 20, 
+            top: '50%', 
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            zIndex: 10
+          }}>
+            <Fab 
+              size="small" 
+              onClick={() => setScoreModalOpen(true)}
+              sx={{ bgcolor: 'rgba(255,255,255,0.8)' }}
+            >
+              <Assessment />
+            </Fab>
+          </Box>
+          
+          <Box sx={{ 
+            position: 'absolute', 
+            right: 20, 
+            top: '50%', 
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            zIndex: 10
+          }}>
+            <Fab size="small" onClick={handleLike}>
+              {isLiked ? <Favorite /> : <FavoriteBorder />}
+            </Fab>
+            <Fab size="small" onClick={handleShare}>
+              <Share />
+            </Fab>
+            <Fab size="small" onClick={handleCall}>
+              <Phone />
+            </Fab>
+            <Fab size="small" onClick={handleEmail}>
+              <Email />
+            </Fab>
+            <Fab 
+              size="small" 
+              onClick={() => setCommentsModalOpen(true)}
+              sx={{ bgcolor: 'rgba(255,255,255,0.8)' }}
+            >
+              <Comment />
+            </Fab>
+          </Box>
         </Box>
 
         <Modal
@@ -556,7 +562,7 @@ const VideoPlayer = () => {
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
         <Button 
           startIcon={<ArrowBack />} 
-          onClick={() => navigate('/app/videos')}
+          onClick={handleBackNavigation}
         >
           Back to Videos
         </Button>
@@ -697,5 +703,3 @@ const VideoPlayer = () => {
     </Box>
   );
 };
-
-export default VideoPlayer;
