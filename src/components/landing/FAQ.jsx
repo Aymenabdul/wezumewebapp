@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -54,7 +52,7 @@ const sections = [
       },
       {
         heading: "Make Smarter Decisions",
-        desc: "Optimize your platform with data-driven AI insights.",
+        desc: "Optimize your platform with data-driven AI insights.",  
       },
     ],
   },
@@ -111,7 +109,7 @@ export default function HorizontalFAQ() {
   };
 
   return (
-    <div className="relative w-full mt-20"> {/* Added mt-20 to push content below navbar */}
+    <div className="relative w-full mt-20 overflow-visible"> {/* Changed to overflow-visible */}
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800">
         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 to-transparent"></div>
@@ -120,7 +118,7 @@ export default function HorizontalFAQ() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto py-12 px-6">
+      <div className="relative z-0 max-w-7xl mx-auto py-12 px-6">
         <div className="text-center mb-14">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">
             What We Offer
@@ -132,7 +130,9 @@ export default function HorizontalFAQ() {
           {sections.map((section, index) => (
             <div
               key={index}
-              className="flex flex-col"
+              className={`flex flex-col relative ${
+                openStates[index] ? 'z-50' : 'z-10'
+              }`} // Dynamic z-index for expanded sections
             >
               {/* Header Box */}
               <div className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 relative overflow-hidden">
@@ -153,43 +153,52 @@ export default function HorizontalFAQ() {
                   </span>
                   <div className="mt-3">
                     {openStates[index] ? (
-                      <ChevronUp className="w-6 h-6 text-blue-600" />
+                      <ChevronUp className="w-6 h-6 text-blue-600 transform transition-transform duration-300" />
                     ) : (
-                      <ChevronDown className="w-6 h-6 text-blue-600" />
+                      <ChevronDown className="w-6 h-6 text-blue-600 transform transition-transform duration-300" />
                     )}
                   </div>
                 </button>
               </div>
 
-              {/* Expandable Content Below */}
+              {/* Expandable Content Below - Fixed with grid-based animation */}
               <div
-                className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                  openStates[index] ? "max-h-96 opacity-100 mt-4" : "max-h-0 opacity-0"
-                }`}
+                className={`transition-all duration-500 ease-in-out ${
+                  openStates[index] 
+                    ? "grid-rows-[1fr] opacity-100 mt-4" 
+                    : "grid-rows-[0fr] opacity-0"
+                } grid`} // Grid-based animation prevents cutting
               >
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 relative overflow-hidden">
-                  {/* Content card doodles */}
-                  <div className="absolute top-1 right-4 w-2 h-2 bg-blue-100 rounded-full animate-bounce" 
-                       style={{ animationDelay: '1s', animationDuration: '4s' }}></div>
-                  
-                  <div className="space-y-4 relative z-10">
-                    {section.items.map((item, i) => (
-                      <div
-                        key={i}
-                        className="border-l-4 border-blue-600 pl-4 bg-gradient-to-r from-blue-50 to-blue-25 rounded-lg p-4 hover:from-blue-100 hover:to-blue-50 transition-all duration-300 relative overflow-hidden"
-                      >
-                        {/* Item doodles */}
-                        <div className="absolute top-1 right-2 w-1 h-1 bg-blue-300 rounded-full animate-pulse" 
-                             style={{ animationDelay: `${i * 0.5}s` }}></div>
-                        
-                        <p className="text-lg font-semibold text-blue-600 mb-2">
-                          {item.heading}
-                        </p>
-                        <p className="text-gray-700 text-sm leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-                    ))}
+                <div className="overflow-hidden"> {/* This wrapper prevents content cutting */}
+                  <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 relative">
+                    {/* Content card doodles */}
+                    <div className="absolute top-1 right-4 w-2 h-2 bg-blue-100 rounded-full animate-bounce" 
+                         style={{ animationDelay: '1s', animationDuration: '4s' }}></div>
+                    
+                    <div className="space-y-4 relative z-10">
+                      {section.items.map((item, i) => (
+                        <div
+                          key={i}
+                          className="border-l-4 border-blue-600 pl-4 bg-gradient-to-r from-blue-50 to-blue-25 rounded-lg p-4 hover:from-blue-100 hover:to-blue-50 transition-all duration-300 relative overflow-hidden group"
+                        >
+                          {/* Item doodles */}
+                          <div className="absolute top-1 right-2 w-1 h-1 bg-blue-300 rounded-full animate-pulse" 
+                               style={{ animationDelay: `${i * 0.5}s` }}></div>
+                          
+                          {/* Subtle hover effect background */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          
+                          <div className="relative z-10">
+                            <p className="text-lg font-semibold text-blue-600 mb-2 group-hover:text-blue-700 transition-colors">
+                              {item.heading}
+                            </p>
+                            <p className="text-gray-700 text-sm leading-relaxed">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

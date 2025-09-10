@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const Hero = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-blue-600">
+    <div id="home" className="relative min-h-screen overflow-hidden bg-blue-600">
       {/* Background */}
       <HeroBackground />
 

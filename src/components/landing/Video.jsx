@@ -20,7 +20,7 @@ export default function Video() {
   ];
 
   return (
-    <section className="bg-gradient-to-b from-white via-blue-50 to-white py-20">
+    <section className="bg-gradient-to-b from-white via-blue-50 to-white py-20 mb-20">
       <div className="container mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
           
