@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Box, 
   IconButton, 
@@ -11,7 +11,8 @@ import {
   Modal,
   Paper,
   Snackbar,
-  Alert
+  Alert,
+  Typography
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -45,6 +46,7 @@ export default function VideoPlayer() {
   const [video, setVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [scoreData, setScoreData] = useState(null);
   const [videoLoading, setVideoLoading] = useState(false);
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
@@ -122,55 +124,103 @@ export default function VideoPlayer() {
   };
 
   const handleBackNavigation = () => {
-    // Check if there's a previous history entry
     if (location.key !== 'default' && window.history.length > 1) {
-      // There's a previous page in history, go back
       navigate(-1);
     } else {
-      // No previous history or came from external link
-      // Check if there's a specific return URL in location state
       const returnUrl = location.state?.from || '/app/videos';
       navigate(returnUrl);
     }
   };
 
   useEffect(() => {
+    if (!videos || videos.length === 0 || !videos[currentIndex]) return;
+    
+    const currentVideo = videos[currentIndex];
+    setIsLiked(currentVideo.isLiked || currentVideo.liked || false);
+    setLikeCount(currentVideo.likeCount || 0);
+  }, [videos, currentIndex]);
+
+  const navigateVideo = useCallback((direction) => {
+    if (!videos || videos.length === 0) return;
+    
+    const newIndex = direction === 'next' 
+      ? (currentIndex + 1) % videos.length 
+      : (currentIndex - 1 + videos.length) % videos.length;
+    
+    if (!videos[newIndex]) return;
+    
+    setIsScrolling(true);
+    setCurrentIndex(newIndex);
+    const nextVideo = videos[newIndex];
+    loadVideo(nextVideo);
+    
+    const hashedId = btoa(nextVideo.id.toString());
+    navigate(`/app/video/${hashedId}`, { replace: true });
+
+    if (!isMobile && containerRef.current) {
+      const scrollDirection = direction === 'next' ? 1 : -1;
+      containerRef.current.scrollBy({ 
+        left: scrollDirection * containerRef.current.offsetWidth, 
+        behavior: 'smooth' 
+      });
+    }
+
+    setTimeout(() => setIsScrolling(false), 1000);
+  }, [videos, currentIndex, navigate, isMobile]);
+
+  useEffect(() => {
     if (!isMobile || !mobileContainerRef.current) return;
 
-    let startY = 0;
-    let startTime = 0;
+    let touchStartY = null;
+    let touchStartX = null;
+    let touchStartTime = null;
     const minSwipeDistance = 80;
-    const maxSwipeTime = 300;
+    const maxSwipeTime = 500;
 
     const handleTouchStart = (e) => {
-      startY = e.touches[0].clientY;
-      startTime = Date.now();
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      touchStartTime = Date.now();
     };
 
     const handleTouchEnd = (e) => {
-      const endY = e.changedTouches[0].clientY;
-      const endTime = Date.now();
-      const distance = startY - endY;
-      const duration = endTime - startTime;
+      if (!touchStartY || !touchStartX || !touchStartTime) return;
 
-      if (Math.abs(distance) > minSwipeDistance && duration < maxSwipeTime) {
-        if (distance > 0) {
+      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndTime = Date.now();
+
+      const deltaY = touchStartY - touchEndY;
+      const deltaX = touchStartX - touchEndX;
+      const duration = touchEndTime - touchStartTime;
+
+      if (duration > maxSwipeTime) return;
+
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
+        e.preventDefault();
+        if (deltaY > 0) {
           navigateVideo('next');
         } else {
           navigateVideo('prev');
         }
       }
+
+      touchStartY = null;
+      touchStartX = null;
+      touchStartTime = null;
     };
 
     const container = mobileContainerRef.current;
     container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchend', handleTouchEnd);
+      if (container) {
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchend', handleTouchEnd);
+      }
     };
-  }, [isMobile, videos, currentIndex]);
+  }, [isMobile, navigateVideo]);
 
   useEffect(() => {
     if (userDetails) {
@@ -210,13 +260,6 @@ export default function VideoPlayer() {
         } else {
           navigateVideo('prev');
         }
-      } else if (Math.abs(e.deltaY) > 50 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
-        if (e.deltaY > 0) {
-          navigateVideo('next');
-        } else {
-          navigateVideo('prev');
-        }
       }
     };
 
@@ -228,7 +271,7 @@ export default function VideoPlayer() {
         }
       };
     }
-  }, [videos, currentIndex, isMobile]);
+  }, [videos, currentIndex, isMobile, navigateVideo]);
 
   useEffect(() => {
     return () => {
@@ -249,6 +292,8 @@ export default function VideoPlayer() {
     
     setVideo(videoData);
     setVideoLoading(false);
+    setIsLiked(videoData.isLiked || videoData.liked || false);
+    setLikeCount(videoData.likeCount || 0);
     
     if (!subtitlesFetched.has(videoData.id)) {
       fetchSubtitles(videoData.id);
@@ -268,20 +313,30 @@ export default function VideoPlayer() {
     try {
       const endpoint = isLiked ? 'dislike' : 'like';
       await axiosInstance.post(`/videos/${video.id}/${endpoint}?userId=${userDetails.userId}&firstName=${userDetails.firstName}`);
-      setIsLiked(!isLiked);
+      
+      const newLikedStatus = !isLiked;
+      setIsLiked(newLikedStatus);
+      setLikeCount(prev => newLikedStatus ? prev + 1 : prev - 1);
+      
+      if (videos && videos[currentIndex]) {
+        videos[currentIndex].isLiked = newLikedStatus;
+        videos[currentIndex].liked = newLikedStatus;
+        videos[currentIndex].likeCount = newLikedStatus ? (videos[currentIndex].likeCount || 0) + 1 : Math.max(0, (videos[currentIndex].likeCount || 0) - 1);
+      }
     } catch (error) {
       console.error('Error liking video:', error);
+      showSnackbar('Failed to update like status', 'error');
     }
   };
 
   const handleShare = () => {
     if (!video) return;
     
-    const currentPageUrl = window.location.href;
-    navigator.clipboard.writeText(currentPageUrl).then(() => {
-      showSnackbar('Page URL copied to clipboard!', 'success');
+    const videoUrl = `${window.location.origin}/app/video/${btoa(video.id.toString())}`;
+    navigator.clipboard.writeText(videoUrl).then(() => {
+      showSnackbar('Video link copied to clipboard!', 'success');
     }).catch(() => {
-      showSnackbar('Failed to copy URL', 'error');
+      showSnackbar('Failed to copy video link', 'error');
     });
   };
 
@@ -293,34 +348,6 @@ export default function VideoPlayer() {
   const handleEmail = () => {
     if (!video || !video.email) return;
     window.open(`mailto:${video.email}`);
-  };
-
-  const navigateVideo = (direction) => {
-    if (!videos || videos.length === 0) return;
-    
-    const newIndex = direction === 'next' 
-      ? (currentIndex + 1) % videos.length 
-      : (currentIndex - 1 + videos.length) % videos.length;
-    
-    if (!videos[newIndex]) return;
-    
-    setIsScrolling(true);
-    setCurrentIndex(newIndex);
-    const nextVideo = videos[newIndex];
-    loadVideo(nextVideo);
-    
-    const hashedId = btoa(nextVideo.id.toString());
-    navigate(`/app/video/${hashedId}`, { replace: true });
-
-    if (!isMobile && containerRef.current) {
-      const scrollDirection = direction === 'next' ? 1 : -1;
-      containerRef.current.scrollBy({ 
-        left: scrollDirection * containerRef.current.offsetWidth, 
-        behavior: 'smooth' 
-      });
-    }
-
-    setTimeout(() => setIsScrolling(false), 1000);
   };
 
   const handleVideoContainerClick = (e) => {
@@ -394,7 +421,8 @@ export default function VideoPlayer() {
           zIndex: 1300,
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          transition: 'transform 0.3s ease-in-out'
         }}
       >
         <IconButton
@@ -459,6 +487,17 @@ export default function VideoPlayer() {
             )}
           </video>
           
+          <style>
+            {`
+              video::cue {
+                font-size: 14px !important;
+                line-height: 1.2 !important;
+                background-color: rgba(0, 0, 0, 0.6) !important;
+                color: white !important;
+              }
+            `}
+          </style>
+          
           <Box sx={{ 
             position: 'absolute', 
             left: 20, 
@@ -472,7 +511,7 @@ export default function VideoPlayer() {
             <Fab 
               size="small" 
               onClick={() => setScoreModalOpen(true)}
-              sx={{ bgcolor: 'rgba(255,255,255,0.8)' }}
+              sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#1976d2' }}
             >
               <Assessment />
             </Fab>
@@ -488,22 +527,47 @@ export default function VideoPlayer() {
             gap: 2,
             zIndex: 10
           }}>
-            <Fab size="small" onClick={handleLike}>
-              {isLiked ? <Favorite /> : <FavoriteBorder />}
-            </Fab>
-            <Fab size="small" onClick={handleShare}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Fab 
+                size="small" 
+                onClick={handleLike}
+                sx={{ 
+                  bgcolor: isLiked ? '#e91e63' : 'rgba(255,255,255,0.9)', 
+                  color: isLiked ? 'white' : '#e91e63',
+                  '&:hover': { bgcolor: isLiked ? '#c2185b' : 'rgba(255,255,255,1)' }
+                }}
+              >
+                {isLiked ? <Favorite /> : <FavoriteBorder />}
+              </Fab>
+              <Typography variant="caption" sx={{ display: 'block', color: 'white', mt: 0.5, fontSize: '10px' }}>
+                {likeCount}
+              </Typography>
+            </Box>
+            <Fab 
+              size="small" 
+              onClick={handleShare}
+              sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#1976d2' }}
+            >
               <Share />
             </Fab>
-            <Fab size="small" onClick={handleCall}>
+            <Fab 
+              size="small" 
+              onClick={handleCall}
+              sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#4caf50' }}
+            >
               <Phone />
             </Fab>
-            <Fab size="small" onClick={handleEmail}>
+            <Fab 
+              size="small" 
+              onClick={handleEmail}
+              sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#ff9800' }}
+            >
               <Email />
             </Fab>
             <Fab 
               size="small" 
               onClick={() => setCommentsModalOpen(true)}
-              sx={{ bgcolor: 'rgba(255,255,255,0.8)' }}
+              sx={{ bgcolor: 'rgba(255,255,255,0.9)', color: '#607d8b' }}
             >
               <Comment />
             </Fab>
@@ -520,7 +584,8 @@ export default function VideoPlayer() {
             height: '80vh', 
             p: 2, 
             overflow: 'auto',
-            position: 'relative'
+            position: 'relative',
+            borderRadius: 2
           }}>
             <IconButton
               onClick={() => setScoreModalOpen(false)}
@@ -542,7 +607,8 @@ export default function VideoPlayer() {
             height: '80vh', 
             p: 2, 
             overflow: 'auto',
-            position: 'relative'
+            position: 'relative',
+            borderRadius: 2
           }}>
             <IconButton
               onClick={() => setCommentsModalOpen(false)}
@@ -559,10 +625,21 @@ export default function VideoPlayer() {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', bgcolor: '#f5f5f5', borderBottom: '1px solid #e0e0e0' }}>
         <Button 
           startIcon={<ArrowBack />} 
           onClick={handleBackNavigation}
+          sx={{ 
+            borderRadius: 2, 
+            px: 3, 
+            py: 1,
+            bgcolor: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            '&:hover': { 
+              bgcolor: '#f5f5f5',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+            }
+          }}
         >
           Back to Videos
         </Button>
@@ -576,12 +653,20 @@ export default function VideoPlayer() {
           gap: 2, 
           p: 2,
           overflowX: 'hidden',
-          position: 'relative'
+          position: 'relative',
+          bgcolor: '#fafafa'
         }}
       >
         <Box 
           ref={videoContainerRef}
-          sx={{ flex: 1, position: 'relative' }}
+          sx={{ 
+            flex: 1, 
+            position: 'relative',
+            bgcolor: 'black',
+            borderRadius: 2,
+            overflow: 'hidden',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+          }}
           onClick={handleVideoContainerClick}
         >
           {videoLoading && (
@@ -592,7 +677,7 @@ export default function VideoPlayer() {
               transform: 'translate(-50%, -50%)',
               zIndex: 2
             }}>
-              <CircularProgress />
+              <CircularProgress sx={{ color: 'white' }} />
             </Box>
           )}
           
@@ -619,6 +704,17 @@ export default function VideoPlayer() {
             )}
           </video>
           
+          <style>
+            {`
+              video::cue {
+                font-size: 16px !important;
+                line-height: 1.3 !important;
+                background-color: rgba(0, 0, 0, 0.7) !important;
+                color: white !important;
+              }
+            `}
+          </style>
+          
           <Box sx={{ 
             position: 'absolute', 
             right: 20, 
@@ -626,28 +722,85 @@ export default function VideoPlayer() {
             transform: 'translateY(-50%)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 1
+            gap: 2
           }}>
-            <IconButton onClick={handleLike}>
-              {isLiked ? <Favorite /> : <FavoriteBorder />}
-            </IconButton>
-            <IconButton onClick={handleShare}>
+            <Box sx={{ textAlign: 'center' }}>
+              <IconButton 
+                onClick={handleLike}
+                sx={{ 
+                  bgcolor: 'rgba(255,255,255,0.9)', 
+                  color: isLiked ? '#e91e63' : '#666',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  '&:hover': { 
+                    bgcolor: 'white',
+                    transform: 'scale(1.1)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {isLiked ? <Favorite /> : <FavoriteBorder />}
+              </IconButton>
+              <Typography variant="caption" sx={{ display: 'block', color: 'white', mt: 1, fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                {likeCount}
+              </Typography>
+            </Box>
+            <IconButton 
+              onClick={handleShare}
+              sx={{ 
+                bgcolor: 'rgba(255,255,255,0.9)', 
+                color: '#1976d2',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                '&:hover': { 
+                  bgcolor: 'white',
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
               <Share />
             </IconButton>
-            <IconButton onClick={handleCall}>
+            <IconButton 
+              onClick={handleCall}
+              sx={{ 
+                bgcolor: 'rgba(255,255,255,0.9)', 
+                color: '#4caf50',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                '&:hover': { 
+                  bgcolor: 'white',
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
               <Phone />
             </IconButton>
-            <IconButton onClick={handleEmail}>
+            <IconButton 
+              onClick={handleEmail}
+              sx={{ 
+                bgcolor: 'rgba(255,255,255,0.9)', 
+                color: '#ff9800',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                '&:hover': { 
+                  bgcolor: 'white',
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
               <Email />
             </IconButton>
           </Box>
         </Box>
 
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           <ScoreEvaluation scoreData={scoreData} video={video} />
         </Box>
 
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           <CommentsSection videoId={video.id} />
         </Box>
       </Box>
@@ -655,18 +808,25 @@ export default function VideoPlayer() {
       <IconButton
         sx={{ 
           position: 'absolute', 
-          left: 75, 
+          left: 20, 
           top: '50%',
-          bgcolor: 'rgba(0,0,0,0.5)',
+          bgcolor: 'rgba(0,0,0,0.7)',
           color: 'white',
-          '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          '&:hover': { 
+            bgcolor: 'rgba(0,0,0,0.9)',
+            transform: 'scale(1.1)',
+            boxShadow: '0 6px 16px rgba(0,0,0,0.4)'
+          },
+          transition: 'all 0.2s ease',
+          zIndex: 10
         }}
         onClick={(e) => {
           e.stopPropagation();
           navigateVideo('prev');
         }}
       >
-        <NavigateBefore />
+        <NavigateBefore sx={{ fontSize: 32 }} />
       </IconButton>
 
       <IconButton
@@ -674,16 +834,23 @@ export default function VideoPlayer() {
           position: 'absolute', 
           right: 20, 
           top: '50%',
-          bgcolor: 'rgba(0,0,0,0.5)',
+          bgcolor: 'rgba(0,0,0,0.7)',
           color: 'white',
-          '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          '&:hover': { 
+            bgcolor: 'rgba(0,0,0,0.9)',
+            transform: 'scale(1.1)',
+            boxShadow: '0 6px 16px rgba(0,0,0,0.4)'
+          },
+          transition: 'all 0.2s ease',
+          zIndex: 10
         }}
         onClick={(e) => {
           e.stopPropagation();
           navigateVideo('next');
         }}
       >
-        <NavigateNext />
+        <NavigateNext sx={{ fontSize: 32 }} />
       </IconButton>
 
       <Snackbar

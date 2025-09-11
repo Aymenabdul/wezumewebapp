@@ -159,9 +159,11 @@ export default function Videos() {
         college: filters.college,
         jobid: filters.jobid
       };
+      
+      console.log(filters);
 
       const response = await axiosInstance.post('/videos/filter', filterData);
-      
+
       if (response.data && response.data.length > 0) {
         setFilteredVideos(response.data);
         showSnackbar(`Found ${response.data.length} videos matching your filters`, 'success');
