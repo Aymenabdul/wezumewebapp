@@ -221,7 +221,7 @@ export default function Videos() {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3}}>
       {jobid && (
         <Box sx={{ mb: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #90caf9' }}>
           <Typography variant="h6" color="primary">
