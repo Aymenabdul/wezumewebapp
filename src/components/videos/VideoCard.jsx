@@ -20,6 +20,7 @@ export default function VideoCard({ video }) {
   const hashVideoId = (id) => btoa(id.toString());
 
   useEffect(() => {
+    // ... (rest of the logic is unchanged)
     const fetchUserLikedVideos = async () => {
       try {
         const response = await axiosInstance.get(`/videos/likes/status?userId=${userDetails.userId}`);
@@ -41,6 +42,7 @@ export default function VideoCard({ video }) {
   }, [userDetails.userId, video.id]);
 
   const handleMouseEnter = async () => {
+    // ... (rest of the logic is unchanged)
     setHovered(true);
     if (!likesLoaded) {
       try {
@@ -58,6 +60,7 @@ export default function VideoCard({ video }) {
   };
 
   const handleLike = async (e) => {
+    // ... (rest of the logic is unchanged)
     e.stopPropagation();
     try {
       const endpoint = isLiked ? 'dislike' : 'like';
@@ -79,6 +82,8 @@ export default function VideoCard({ video }) {
   const handleClick = () => {
     navigate(`/app/video/${hashVideoId(video.id)}`);
   };
+
+  // The check for the thumbnail has been removed from here.
 
   return (
     <Card 
@@ -110,7 +115,6 @@ export default function VideoCard({ video }) {
             display: 'block'
           }}
         />
-
         <Box
           className="overlay"
           sx={{
@@ -127,8 +131,7 @@ export default function VideoCard({ video }) {
             zIndex: 1
           }}
         />
-        
-        <Slide direction="right" in={hovered && likesLoaded} mountOnEnter unmountOnExit>
+        <Slide direction="right" in={hovered && likesLoaded} mountOnEnter unmountOnExit timeout={600}>
           <Box sx={{ 
             position: 'absolute', 
             top: '50%', 
@@ -139,7 +142,6 @@ export default function VideoCard({ video }) {
             alignItems: 'center',
             color: 'white',
             zIndex: 2,
-            gap: 1
           }}>
             <Box sx={{
               width: { xs: 50, md: 60 },
@@ -149,7 +151,6 @@ export default function VideoCard({ video }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 1,
               border: '2px solid rgba(255, 255, 255, 0.3)'
             }}>
               <IconButton 
@@ -174,8 +175,7 @@ export default function VideoCard({ video }) {
             </Typography>
           </Box>
         </Slide>
-
-        <Slide direction="left" in={hovered && totalScore} mountOnEnter unmountOnExit>
+        <Slide direction="left" in={hovered && totalScore} mountOnEnter unmountOnExit timeout={600}>
           <Box sx={{ 
             position: 'absolute', 
             top: '50%', 
@@ -186,7 +186,6 @@ export default function VideoCard({ video }) {
             alignItems: 'center',
             color: 'white',
             zIndex: 2,
-            gap: 1
           }}>
             <Box sx={{
               width: { xs: 50, md: 60 },

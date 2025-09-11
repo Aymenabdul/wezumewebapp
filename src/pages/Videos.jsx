@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Grid, 
-  Button, 
-  TextField, 
-  FormControl, 
-  InputLabel, 
-  Select, 
+import {
+  Box,
+  Grid,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
   MenuItem,
   Paper,
   Typography,
@@ -24,7 +24,7 @@ import VideoSkeleton from '../components/videos/VideoSkeleton';
 export default function Videos() {
   const [searchParams] = useSearchParams();
   const jobid = searchParams.get('jobid');
-  
+
   const [filteredVideos, setFilteredVideos] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
@@ -32,7 +32,7 @@ export default function Videos() {
   const [customCity, setCustomCity] = useState('');
   const [customIndustry, setCustomIndustry] = useState('');
   const [filters, setFilters] = useState({
-    keyWords: '',
+    transcriptionKeywords: '',
     keyskills: '',
     experience: '',
     industry: '',
@@ -41,11 +41,11 @@ export default function Videos() {
     jobid: jobid || ''
   });
 
-  const { 
-    userDetails, 
-    videos, 
-    isLoadingVideos, 
-    videoError, 
+  const {
+    userDetails,
+    videos,
+    isLoadingVideos,
+    videoError,
     getVideos,
     refreshVideos
   } = useAppStore();
@@ -120,7 +120,7 @@ export default function Videos() {
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
-    
+
     if (field === 'city' && value !== 'Other') {
       setCustomCity('');
     }
@@ -140,8 +140,9 @@ export default function Videos() {
   };
 
   const applyFilters = async () => {
-    const hasFilters = Object.values(filters).some(val => val.trim() !== '');
-    
+    // This initial check remains the same
+    const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
+
     if (!hasFilters) {
       setFilteredVideos(videos);
       showSnackbar('No filters applied - showing all videos', 'info');
@@ -150,19 +151,34 @@ export default function Videos() {
 
     try {
       setFilterLoading(true);
-      const filterData = {
-        keyWords: filters.keyWords,
+
+      // --- MODIFICATION START ---
+
+      // 1. First, create an object with the final values for each filter.
+      const finalFilterValues = {
+        transcriptionKeywords: filters.transcriptionKeywords,
         keyskills: filters.keyskills,
         experience: filters.experience,
         industry: filters.industry === 'Other' ? customIndustry : filters.industry,
         city: filters.city === 'Other' ? customCity : filters.city,
         college: filters.college,
-        jobid: filters.jobid
+        jobId: filters.jobid // Corrected key to match backend (jobId)
       };
-      
-      console.log(filters);
 
-      const response = await axiosInstance.post('/videos/filter', filterData);
+      // 2. Build the payload with only the keys that have a non-empty value.
+      const payload = {};
+      for (const [key, value] of Object.entries(finalFilterValues)) {
+        // The condition checks for null, undefined, and empty strings
+        if (value && value.toString().trim() !== '') {
+          payload[key] = value;
+        }
+      }
+
+      // --- MODIFICATION END ---
+
+      console.log("Sending to backend:", payload); // Log the dynamically built payload
+
+      const response = await axiosInstance.post('/videos/filter', payload); // Send the new payload
 
       if (response.data && response.data.length > 0) {
         setFilteredVideos(response.data);
@@ -181,7 +197,7 @@ export default function Videos() {
 
   const clearFilters = () => {
     setFilters({
-      keyWords: '',
+      transcriptionKeywords: '',
       keyskills: '',
       experience: '',
       industry: '',
@@ -226,7 +242,7 @@ export default function Videos() {
         >
           Filters
         </Button>
-        
+
         <Button
           startIcon={<Refresh />}
           variant="outlined"
@@ -240,18 +256,18 @@ export default function Videos() {
       <Collapse in={filtersOpen}>
         <Paper sx={{ p: 2, mb: 3 }}>
           <Typography variant="h6" gutterBottom>Filter Videos</Typography>
-          
+
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
                 size="small"
                 label="Keywords"
-                value={filters.keyWords}
-                onChange={(e) => handleFilterChange('keyWords', e.target.value)}
+                value={filters.transcriptionKeywords}
+                onChange={(e) => handleFilterChange('transcriptionKeywords', e.target.value)}
               />
             </Grid>
-            
+
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
@@ -261,7 +277,7 @@ export default function Videos() {
                 onChange={(e) => handleFilterChange('keyskills', e.target.value)}
               />
             </Grid>
-            
+
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Experience</InputLabel>
@@ -278,7 +294,7 @@ export default function Videos() {
                 </Select>
               </FormControl>
             </Grid>
-            
+
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>Industry</InputLabel>
@@ -309,7 +325,7 @@ export default function Videos() {
                 />
               </Grid>
             )}
-            
+
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth size="small">
                 <InputLabel>City</InputLabel>
@@ -340,7 +356,7 @@ export default function Videos() {
                 />
               </Grid>
             )}
-            
+
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
@@ -350,7 +366,7 @@ export default function Videos() {
                 onChange={(e) => handleFilterChange('college', e.target.value)}
               />
             </Grid>
-            
+
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <TextField
                 fullWidth
@@ -363,8 +379,8 @@ export default function Videos() {
           </Grid>
 
           <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={applyFilters}
               disabled={filterLoading}
             >
@@ -404,8 +420,8 @@ export default function Videos() {
       {!isLoadingVideos && filteredVideos.length === 0 && (
         <Box sx={{ textAlign: 'center', mt: 4 }}>
           <Typography variant="h6" color="text.secondary">
-            {Object.values(filters).some(val => val.trim() !== '') 
-              ? 'No videos found matching your filters' 
+            {Object.values(filters).some(val => val.trim() !== '')
+              ? 'No videos found matching your filters'
               : jobid ? 'No videos available for this job' : 'No videos available'
             }
           </Typography>
@@ -427,8 +443,8 @@ export default function Videos() {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleSnackbarClose} 
+        <Alert
+          onClose={handleSnackbarClose}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
