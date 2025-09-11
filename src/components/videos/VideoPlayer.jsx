@@ -808,7 +808,7 @@ export default function VideoPlayer() {
       <IconButton
         sx={{ 
           position: 'absolute', 
-          left: 20, 
+          left: 70, 
           top: '50%',
           bgcolor: 'rgba(0,0,0,0.7)',
           color: 'white',

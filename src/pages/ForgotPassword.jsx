@@ -58,10 +58,7 @@ export default function ForgotPassword() {
     setLoading(true);
     
     try {
-      const response = await axios.put(`${import.meta.env.VITE_API_URL}/users/update-password`, {
-        email: formData.email,
-        newPassword: formData.newPassword
-      });
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/users/update-password?email=${formData.email}&newPassword=${formData.newPassword}`);
       
       if (response.status === 200) {
         setAlert({
@@ -75,7 +72,7 @@ export default function ForgotPassword() {
       }
     } catch (error) {
       console.log("Password update error:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to update password. Please try again.";
+      const errorMessage = error.response?.data || "Failed to update password. Please try again.";
       setAlert({
         show: true,
         message: String(errorMessage),

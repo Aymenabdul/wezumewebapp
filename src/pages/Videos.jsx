@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react';
 import {
   Box,
@@ -140,7 +141,6 @@ export default function Videos() {
   };
 
   const applyFilters = async () => {
-    // This initial check remains the same
     const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
 
     if (!hasFilters) {
@@ -152,9 +152,6 @@ export default function Videos() {
     try {
       setFilterLoading(true);
 
-      // --- MODIFICATION START ---
-
-      // 1. First, create an object with the final values for each filter.
       const finalFilterValues = {
         transcriptionKeywords: filters.transcriptionKeywords,
         keyskills: filters.keyskills,
@@ -162,23 +159,17 @@ export default function Videos() {
         industry: filters.industry === 'Other' ? customIndustry : filters.industry,
         city: filters.city === 'Other' ? customCity : filters.city,
         college: filters.college,
-        jobId: filters.jobid // Corrected key to match backend (jobId)
+        jobId: filters.jobid 
       };
 
-      // 2. Build the payload with only the keys that have a non-empty value.
       const payload = {};
       for (const [key, value] of Object.entries(finalFilterValues)) {
-        // The condition checks for null, undefined, and empty strings
         if (value && value.toString().trim() !== '') {
           payload[key] = value;
         }
       }
 
-      // --- MODIFICATION END ---
-
-      console.log("Sending to backend:", payload); // Log the dynamically built payload
-
-      const response = await axiosInstance.post('/videos/filter', payload); // Send the new payload
+      const response = await axiosInstance.post('/videos/filter', payload); 
 
       if (response.data && response.data.length > 0) {
         setFilteredVideos(response.data);

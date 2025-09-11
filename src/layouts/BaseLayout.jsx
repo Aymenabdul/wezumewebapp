@@ -43,8 +43,12 @@ export default function BaseLayout() {
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const location = useLocation();
     const navigate = useNavigate();
-    const logout = useAppStore((state) => state.logout);
+    const { logout, getLikedVideos } = useAppStore();
 
+    useEffect(() => {
+        getLikedVideos();
+    }, []);
+    
     useEffect(() => {
         if (location.pathname === '/app/videos' || location.pathname === '/app/liked') {
             setIsCollapsed(true);
@@ -355,7 +359,7 @@ export default function BaseLayout() {
                         top: '50%',
                         transform: 'translateY(-50%)',
                         zIndex: theme.zIndex.drawer + 1,
-                        backgroundColor: '#1CA7EC',
+                        backgroundColor: '#0066FF',
                         color: 'white',
                         width: 30,
                         height: 30,
@@ -363,7 +367,7 @@ export default function BaseLayout() {
                         boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                         transition: 'left 0.3s ease, background-color 0.2s ease',
                         '&:hover': {
-                            backgroundColor: '#1590D3',
+                            backgroundColor: '#004ECC',
                         }
                     }}
                 >

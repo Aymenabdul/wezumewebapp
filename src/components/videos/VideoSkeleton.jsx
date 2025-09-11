@@ -2,8 +2,8 @@ import { Card, Skeleton } from '@mui/material';
 
 const VideoSkeleton = () => (
   <Card sx={{ 
-    height: { xs: 200, md: 500 }, 
-    borderRadius: 2,
+    aspectRatio: '1 / 1',
+    borderRadius: 4,
     overflow: 'hidden',
     width: '100%'
   }}>

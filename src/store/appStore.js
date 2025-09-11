@@ -42,7 +42,7 @@ export const useAppStore = create(
           
           return { success: true }
         } catch (error) {
-          const errorMessage = error.response?.data?.message || 'Login failed'
+          const errorMessage = error.response?.data || 'Login failed'
           
           set({ 
             isLoading: false, 
@@ -122,8 +122,8 @@ export const useAppStore = create(
         }
       },
       
-      updateUserDetails: async (updatedData) => {
-        const { isAuthenticated, userDetails } = get()
+      updateUserDetails: async (updatedData, isFormData = false) => {
+        const { isAuthenticated, userDetails, getToken } = get()
         
         if (!isAuthenticated()) {
           throw new Error('User not authenticated')
@@ -131,32 +131,34 @@ export const useAppStore = create(
         if (!userDetails?.userId) {
           throw new Error('User ID not available')
         }
-        const allowedFields = [
-          'firstName', 'phoneNumber', 'email', 'jobOption', 'profilePic',
-          'currentRole', 'industry', 'keySkills', 
-          'college', 'currentEmployer', 'establishedYear'
-        ]
-        const filteredData = Object.keys(updatedData)
-          .filter(key => allowedFields.includes(key) && updatedData[key] !== undefined)
-          .reduce((obj, key) => {
-            obj[key] = updatedData[key]
-            return obj
-          }, {})
-        if (Object.keys(filteredData).length === 0) {
-          throw new Error('No valid fields to update')
-        }
+
         set({ isUpdatingUserDetails: true, error: null })
+        
         try {
+          const token = getToken()
+          const config = {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+
+          if (!isFormData) {
+            config.headers['Content-Type'] = 'application/json'
+          }
+
           const response = await axiosInstance.put(
             `/users/update/${userDetails.userId}`, 
-            filteredData
+            updatedData,
+            config
           )
+          
           const updatedUserDetails = { ...userDetails, ...response.data }
           
           set({ 
             userDetails: updatedUserDetails,
             isUpdatingUserDetails: false 
           })
+          
           return updatedUserDetails
         } catch (error) {
           console.error('Failed to update user details:', error)
@@ -196,7 +198,7 @@ export const useAppStore = create(
         try {
           const response = await axiosInstance.get(currentEndpoint)
           const videoData = response.data || []
-          
+          console.log(response.data);
           set({ 
             videos: videoData,
             isLoadingVideos: false,

@@ -1,5 +1,3 @@
-// components/videos/CommentsSection.jsx
-import React from 'react';
 import { Box, Typography, Paper, Avatar, Divider } from '@mui/material';
 
 const CommentsSection = ({ videoId }) => {

@@ -1,9 +1,7 @@
-/* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react';
-// Import Avatar component from MUI
 import { Card, CardMedia, Box, IconButton, Slide, Typography, Avatar } from '@mui/material';
-import { Favorite, FavoriteBorder, Assessment, PlayArrow } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Favorite, FavoriteBorder, Assessment, PlayArrow, Person } from '@mui/icons-material';
+import { useNavigate } from 'react-router';
 import axiosInstance from '../../axios/axios';
 import { useAppStore } from '../../store/appStore';
 import CountUp from 'react-countup';
@@ -14,7 +12,6 @@ export default function VideoCard({ video }) {
   const [totalScore, setTotalScore] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likesLoaded, setLikesLoaded] = useState(false);
-  const [userLikedVideos, setUserLikedVideos] = useState({});
   const { userDetails } = useAppStore();
   const navigate = useNavigate();
 
@@ -28,8 +25,6 @@ export default function VideoCard({ video }) {
         Object.entries(response.data).forEach(([videoId, liked]) => {
           likedVideosMap[videoId] = liked;
         });
-        setUserLikedVideos(likedVideosMap);
-        
         setIsLiked(likedVideosMap[video.id] || false);
       } catch (error) {
         console.error('Error fetching user liked videos:', error);
@@ -67,11 +62,6 @@ export default function VideoCard({ video }) {
       const newLikedState = !isLiked;
       setIsLiked(newLikedState);
       setLikes(prev => isLiked ? prev - 1 : prev + 1);
-      
-      setUserLikedVideos(prev => ({
-        ...prev,
-        [video.id]: newLikedState
-      }));
     } catch (error) {
       console.error('Error liking video:', error);
     }
@@ -89,17 +79,9 @@ export default function VideoCard({ video }) {
         overflow: 'hidden',
         aspectRatio: '1 / 1',
         borderRadius: 4,
-        transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+        transition: 'box-shadow 0.3s ease-in-out',
         '&:hover': {
-          transform: 'scale(1.05)',
           boxShadow: (theme) => theme.shadows[10],
-        },
-        '& .play-icon-overlay': {
-          opacity: 0,
-          transition: 'opacity 0.3s ease-in-out',
-        },
-        '&:hover .play-icon-overlay': {
-          opacity: 1,
         },
       }}
       onMouseEnter={handleMouseEnter}
@@ -108,17 +90,16 @@ export default function VideoCard({ video }) {
     >
       <CardMedia
         component="img"
-        image={video.thumbnail}
+        image={video?.thumbnail}
         alt="Video thumbnail"
         sx={{ 
-          objectFit: 'center',
+          objectFit: 'cover',
           width: '100%', 
           height: '100%',
         }}
       />
 
       <Box
-        className="play-icon-overlay"
         sx={{
           position: 'absolute',
           top: 0,
@@ -149,51 +130,57 @@ export default function VideoCard({ video }) {
             zIndex: 2,
           }}
         >
-            {/* --- MODIFICATION START --- */}
-            {/* Replaced Title with Avatar and User Name */}
-            {/* Make sure your `video` object has `userProfilePic` and `userName` properties */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <Avatar 
-                    src={video.userProfilePic} 
-                    alt={video.userName || 'Uploader'} 
-                    sx={{ width: 32, height: 32 }} 
-                />
-                <Typography variant="subtitle2" fontWeight="bold" noWrap>
-                    {video.userName || 'Uploader Name'}
-                </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Avatar 
+                src={video?.profilepic || video?.profilePic} 
+                alt={video?.firstname || video?.firstName} 
+                sx={{ width: 32, height: 32 }} 
+              >
+                {(!video?.profilepic || !video?.profilePic) && <Person />}
+              </Avatar>
+              <Typography variant="subtitle2" fontWeight="bold" noWrap>
+                {video?.firstname || video?.firstName}
+              </Typography>
             </Box>
-            {/* --- MODIFICATION END --- */}
+            <Box
+              component="img"
+              src="/logo-favicon.png"
+              alt="Wezume Logo"
+              sx={{ height: 24, width: 24 }}
+            />
+          </Box>
 
-            <Box sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <IconButton 
-                  onClick={handleLike} 
-                  size="small"
-                  sx={{ 
-                    color: isLiked ? 'error.main' : 'white',
-                    '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
-                  }}
-                >
-                  {isLiked ? <Favorite sx={{ fontSize: 20 }} /> : <FavoriteBorder sx={{ fontSize: 20 }} />}
-                </IconButton>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {likesLoaded ? <CountUp end={likes} duration={1} /> : '...'}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Assessment sx={{ fontSize: 20 }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {totalScore?.totalScore?.toFixed(1) || '...'}
-                </Typography>
-              </Box>
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton 
+                onClick={handleLike} 
+                size="small"
+                sx={{ 
+                  color: isLiked ? 'error.main' : 'white',
+                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' }
+                }}
+              >
+                {isLiked ? <Favorite sx={{ fontSize: 20 }} /> : <FavoriteBorder sx={{ fontSize: 20 }} />}
+              </IconButton>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {likesLoaded ? <CountUp end={likes} duration={1} /> : '...'}
+              </Typography>
             </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Assessment sx={{ fontSize: 20 }} />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {totalScore?.totalScore?.toFixed(1) || '...'}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </Slide>
     </Card>
   );
-};
+}

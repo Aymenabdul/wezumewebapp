@@ -1,7 +1,8 @@
+/* eslint-disable no-unused-vars */
 import {
     Box, Container, Avatar, Typography, Paper, Grid, Chip, Button, TextField,
     Dialog, DialogTitle, DialogContent, DialogActions, Alert, Skeleton, Fade,
-    Slide, Card, CardContent
+    Slide, Card, CardContent, Snackbar
 } from '@mui/material';
 import { useState, useRef } from 'react';
 import { useAppStore } from '../store/appStore';
@@ -12,7 +13,6 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import WorkIcon from '@mui/icons-material/Work';
 import SchoolIcon from '@mui/icons-material/School';
 import BusinessIcon from '@mui/icons-material/Business';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import StarIcon from '@mui/icons-material/Star';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import UploadIcon from '@mui/icons-material/Upload';
@@ -21,8 +21,9 @@ export default function Profile() {
     const { userDetails, isLoadingUserDetails, updateUserDetails, isUpdatingUserDetails } = useAppStore();
     const [editMode, setEditMode] = useState(false);
     const [editData, setEditData] = useState({});
-    const [alert, setAlert] = useState({ show: false, message: '', severity: 'success' });
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [fileData, setFileData] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
     const fileInputRef = useRef();
     
     if (isLoadingUserDetails) {
@@ -67,8 +68,13 @@ export default function Profile() {
         if (fileData) return fileData;
         if (userDetails.profilePic) {
             if (userDetails.profilePic.startsWith('data:image')) return userDetails.profilePic;
-            if (userDetails.profilePic.startsWith('https://wezume')) return userDetails.profilePic;
-            return `data:image/jpeg;base64,${userDetails.profilePic}`;
+            if (userDetails.profilePic.startsWith('https://')) return userDetails.profilePic;
+            try {
+                return `data:image/jpeg;base64,${userDetails.profilePic}`;
+            } catch (error) {
+                console.error('Error processing profile picture:', error);
+                return null;
+            }
         }
         return null;
     };
@@ -76,13 +82,39 @@ export default function Profile() {
     const isEmployerOrInvestor = () => userDetails.roleCode === 'employer' || userDetails.roleCode === 'investor';
     const isPlacementOrAcademy = () => userDetails.roleCode === 'placementDrive' || userDetails.roleCode === 'academy';
 
+    const dataURLtoBlob = (dataurl) => {
+        const arr = dataurl.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while(n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    };
+
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                setSnackbar({ open: true, message: 'File size too large. Please select an image under 5MB.', severity: 'error' });
+                return;
+            }
+            
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setSnackbar({ open: true, message: 'Please select a valid image file (JPEG, PNG, GIF, or WebP).', severity: 'error' });
+                return;
+            }
+
+            setSelectedFile(file);
             const reader = new FileReader();
             reader.onload = () => {
                 setFileData(reader.result);
-                setEditData(prev => ({ ...prev, profilePic: reader.result }));
+            };
+            reader.onerror = () => {
+                setSnackbar({ open: true, message: 'Error reading file. Please try again.', severity: 'error' });
             };
             reader.readAsDataURL(file);
         }
@@ -91,25 +123,33 @@ export default function Profile() {
     const handleEdit = () => {
         if (isEmployerOrInvestor()) {
             setEditData({
-                firstName: userDetails.firstName || '', lastName: userDetails.lastName || '',
-                phoneNumber: userDetails.phoneNumber || '', email: userDetails.email || '',
-                profilePic: getProfileImage() || '', city: userDetails.city || '',
+                firstName: userDetails.firstName || '', 
+                lastName: userDetails.lastName || '',
+                phoneNumber: userDetails.phoneNumber || '', 
+                email: userDetails.email || '',
+                city: userDetails.city || '',
                 currOrganization: userDetails.currOrganization || ''
             });
         } else if (isPlacementOrAcademy()) {
             setEditData({
-                firstName: userDetails.firstName || '', lastName: userDetails.lastName || '',
-                phoneNumber: userDetails.phoneNumber || '', email: userDetails.email || '',
-                profilePic: getProfileImage() || '', college: userDetails.college || '',
+                firstName: userDetails.firstName || '', 
+                lastName: userDetails.lastName || '',
+                phoneNumber: userDetails.phoneNumber || '', 
+                email: userDetails.email || '',
+                college: userDetails.college || '',
                 branch: userDetails.branch || ''
             });
         } else {
             setEditData({
-                firstName: userDetails.firstName || '', phoneNumber: userDetails.phoneNumber || '',
-                email: userDetails.email || '', jobOption: userDetails.jobOption || '',
-                currentRole: userDetails.currentRole || '', industry: userDetails.industry || '',
-                currentEmployer: userDetails.currentEmployer || '', keySkills: userDetails.keySkills || '',
-                college: userDetails.college || '', profilePic: getProfileImage() || ''
+                firstName: userDetails.firstName || '', 
+                phoneNumber: userDetails.phoneNumber || '',
+                email: userDetails.email || '', 
+                jobOption: userDetails.jobOption || '',
+                currentRole: userDetails.currentRole || '', 
+                industry: userDetails.industry || '',
+                currentEmployer: userDetails.currentEmployer || '', 
+                keySkills: userDetails.keySkills || '',
+                college: userDetails.college || ''
             });
         }
         setEditMode(true);
@@ -117,12 +157,40 @@ export default function Profile() {
 
     const handleSave = async () => {
         try {
-            await updateUserDetails(editData);
-            setAlert({ show: true, message: 'Profile updated successfully!', severity: 'success' });
+            let updatedData = { ...editData };
+
+            if (selectedFile) {
+                const formData = new FormData();
+                
+                Object.keys(updatedData).forEach(key => {
+                    if (updatedData[key] !== undefined && updatedData[key] !== null && updatedData[key] !== '') {
+                        formData.append(key, updatedData[key]);
+                    }
+                });
+                
+                formData.append('profilePic', selectedFile);
+
+                await updateUserDetails(formData, true);
+            } else {
+                const filteredData = Object.keys(updatedData).reduce((acc, key) => {
+                    if (updatedData[key] !== undefined && updatedData[key] !== null && updatedData[key] !== '') {
+                        acc[key] = updatedData[key];
+                    }
+                    return acc;
+                }, {});
+
+                if (Object.keys(filteredData).length > 0) {
+                    await updateUserDetails(filteredData, false);
+                }
+            }
+
+            setSnackbar({ open: true, message: 'Profile updated successfully!', severity: 'success' });
             setEditMode(false);
             setFileData(null);
+            setSelectedFile(null);
         } catch (error) {
-            setAlert({ show: true, message: error.message || 'Failed to update profile', severity: 'error' });
+            console.error('Error updating profile:', error);
+            setSnackbar({ open: true, message: error.message || 'Failed to update profile', severity: 'error' });
         }
     };
 
@@ -130,14 +198,21 @@ export default function Profile() {
         setEditMode(false); 
         setEditData({}); 
         setFileData(null);
+        setSelectedFile(null);
     };
     
     const handleChange = (field, value) => setEditData(prev => ({ ...prev, [field]: value }));
     const profileImage = getProfileImage();
 
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') return;
+        setSnackbar(prev => ({ ...prev, open: false }));
+    };
+
     const textFieldStyle = {
         '& .MuiOutlinedInput-root': { 
-            borderRadius: 3, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2' }
+            borderRadius: 3, 
+            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2' }
         },
         '& .MuiInputLabel-root': { fontWeight: 500 }
     };
@@ -171,9 +246,12 @@ export default function Profile() {
 
     const renderTextField = (label, field, props = {}) => (
         <TextField
-            fullWidth label={label} value={editData[field] || ''}
+            fullWidth 
+            label={label} 
+            value={editData[field] || ''}
             onChange={(e) => handleChange(field, e.target.value)}
-            sx={textFieldStyle} {...props}
+            sx={textFieldStyle} 
+            {...props}
         />
     );
 
@@ -207,7 +285,6 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Job Option", "jobOption", { disabled: true })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Role", "currentRole")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Industry", "industry")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
                     <Grid size={{ xs: 12 }}>{renderTextField("Key Skills", "keySkills", { multiline: true, rows: 3 })}</Grid>
@@ -217,19 +294,12 @@ export default function Profile() {
         }
     };
 
+    const hasValue = (value) => value && value !== 'NA' && value !== '';
+
     return (
         <Container maxWidth="lg" sx={{ py: 4, minHeight: "100vh" }}>
             <Slide direction="down" in={!isLoadingUserDetails} mountOnEnter unmountOnExit>
                 <Box>
-                    {alert.show && (
-                        <Fade in={alert.show}>
-                            <Alert severity={alert.severity} onClose={() => setAlert({ ...alert, show: false })}
-                                sx={{ mb: 3, borderRadius: 2, '& .MuiAlert-icon': { fontSize: '1.5rem' } }}>
-                                {alert.message}
-                            </Alert>
-                        </Fade>
-                    )}
-
                     <Paper elevation={4} sx={{ 
                         p: 4, borderRadius: 4, color: 'white', position: 'relative', overflow: 'hidden', mb: 4,
                         background: 'radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73)'
@@ -268,21 +338,25 @@ export default function Profile() {
                                     {userDetails.firstName || 'User'} {userDetails.lastName || ''}
                                 </Typography>
                                 
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                    <EmailIcon sx={{ mr: 1, fontSize: 20 }} />
-                                    <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                                        {displayValue(userDetails.email)}
-                                    </Typography>
-                                </Box>
+                                {hasValue(userDetails.email) && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <EmailIcon sx={{ mr: 1, fontSize: 20 }} />
+                                        <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+                                            {userDetails.email}
+                                        </Typography>
+                                    </Box>
+                                )}
                                 
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                    <PhoneIcon sx={{ mr: 1, fontSize: 20 }} />
-                                    <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                                        {displayValue(userDetails.phoneNumber)}
-                                    </Typography>
-                                </Box>
+                                {hasValue(userDetails.phoneNumber) && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                        <PhoneIcon sx={{ mr: 1, fontSize: 20 }} />
+                                        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                                            {userDetails.phoneNumber}
+                                        </Typography>
+                                    </Box>
+                                )}
 
-                                {userDetails.industry && userDetails.industry !== 'NA' && (
+                                {hasValue(userDetails.industry) && (
                                     <Chip icon={<StarIcon />} label={userDetails.industry} sx={{ 
                                         bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600,
                                         backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)'
@@ -299,66 +373,70 @@ export default function Profile() {
                             </Typography>
                         </Grid>
                         
-                        {userDetails.jobOption && (
+                        {hasValue(userDetails.jobOption) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                 <InfoCard icon={<WorkIcon sx={{ color: '#e74c3c' }} />} title="Job Option"
-                                    value={displayValue(userDetails.jobOption)} color="#e74c3c" />
+                                    value={userDetails.jobOption} color="#e74c3c" />
                             </Grid>
                         )}
 
-                        {userDetails.currentRole && (
+                        {hasValue(userDetails.currentRole) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                 <InfoCard icon={<PersonIcon sx={{ color: '#f39c12' }} />} title="Current Role"
-                                    value={displayValue(userDetails.currentRole)} color="#f39c12" />
+                                    value={userDetails.currentRole} color="#f39c12" />
                             </Grid>
                         )}
 
-                        {(userDetails.currentEmployer || userDetails.currOrganization) && (
+                        {hasValue(userDetails.currentEmployer || userDetails.currOrganization) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                 <InfoCard icon={<BusinessIcon sx={{ color: '#9b59b6' }} />} title="Current Employer"
-                                    value={displayValue(userDetails.currentEmployer || userDetails.currOrganization)} color="#9b59b6" />
+                                    value={userDetails.currentEmployer || userDetails.currOrganization} color="#9b59b6" />
                             </Grid>
                         )}
 
-                        {userDetails.industry && (
+                        {hasValue(userDetails.industry) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                 <InfoCard icon={<BusinessIcon sx={{ color: '#27ae60' }} />} title="Industry"
-                                    value={displayValue(userDetails.industry)} color="#27ae60" />
+                                    value={userDetails.industry} color="#27ae60" />
                             </Grid>
                         )}
 
-                        {userDetails.keySkills && (
+                        {hasValue(userDetails.keySkills) && (
                             <Grid size={{ xs: 12, sm: 6, md: 8 }}>
                                 <InfoCard icon={<StarIcon sx={{ color: '#3498db' }} />} title="Key Skills"
-                                    value={displayValue(userDetails.keySkills)} color="#3498db" />
+                                    value={userDetails.keySkills} color="#3498db" />
                             </Grid>
                         )}
 
-                        {userDetails.city && (
+                        {hasValue(userDetails.city) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                 <InfoCard icon={<LocationOnIcon sx={{ color: '#e67e22' }} />} title="City"
-                                    value={displayValue(userDetails.city)} color="#e67e22" />
+                                    value={userDetails.city} color="#e67e22" />
                             </Grid>
                         )}
 
-                        <Grid size={{ xs: 12 }}>
-                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#2c3e50', mb: 3, mt: 4 }}>
-                                Education & Background
-                            </Typography>
-                        </Grid>
+                        {!isEmployerOrInvestor() && (hasValue(userDetails.college) || hasValue(userDetails.branch)) && (
+                            <>
+                                <Grid size={{ xs: 12 }}>
+                                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#2c3e50', mb: 3, mt: 4 }}>
+                                        Education & Background
+                                    </Typography>
+                                </Grid>
 
-                        {userDetails.college && (
-                            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                                <InfoCard icon={<SchoolIcon sx={{ color: '#e67e22' }} />} title="College"
-                                    value={displayValue(userDetails.college)} color="#e67e22" />
-                            </Grid>
-                        )}
+                                {hasValue(userDetails.college) && (
+                                    <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+                                        <InfoCard icon={<SchoolIcon sx={{ color: '#e67e22' }} />} title="College"
+                                            value={userDetails.college} color="#e67e22" />
+                                    </Grid>
+                                )}
 
-                        {userDetails.branch && (
-                            <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                                <InfoCard icon={<SchoolIcon sx={{ color: '#2ecc71' }} />} title="Branch"
-                                    value={displayValue(userDetails.branch)} color="#2ecc71" />
-                            </Grid>
+                                {hasValue(userDetails.branch) && (
+                                    <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+                                        <InfoCard icon={<SchoolIcon sx={{ color: '#2ecc71' }} />} title="Branch"
+                                            value={userDetails.branch} color="#2ecc71" />
+                                    </Grid>
+                                )}
+                            </>
                         )}
                     </Grid>
                 </Box>
@@ -397,6 +475,11 @@ export default function Profile() {
                             style={{ display: 'none' }}
                             onChange={handleFileChange}
                         />
+                        {selectedFile && (
+                            <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                                Selected: {selectedFile.name}
+                            </Typography>
+                        )}
                     </Box>
                     <Grid container spacing={3}>{renderEditFields()}</Grid>
                 </DialogContent>
@@ -436,6 +519,21 @@ export default function Profile() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={handleSnackbarClose} 
+                    severity={snackbar.severity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Container>
     );
 }

@@ -53,7 +53,7 @@ export default function Liked() {
 
       <Grid container spacing={0.7}>
         {isLoadingLikedVideos ? (
-          Array(8).fill().map((_, index) => (
+          Array(12).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={index}>
               <VideoSkeleton />
             </Grid>
