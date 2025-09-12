@@ -79,7 +79,6 @@ export default function BaseLayout() {
     const navLinks = [
         { label: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
         { label: "Videos", icon: <VideocamIcon />, path: "/app/videos" },
-        { label: "Liked", icon: <FavoriteIcon />, path: "/app/liked" },
         { label: "Profile", icon: <PersonIcon />, path: "/app/profile" },
     ];
 

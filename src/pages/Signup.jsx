@@ -47,11 +47,8 @@ export default function Signup() {
         password: "",
         jobOption: "",
         profilePic: null,
-        currentRole: "",
-        experience: "",
         industry: "",
         currentEmployer: "",
-        keySkills: "",
         college: "",
         jobid: "",
         city: "",
@@ -144,7 +141,7 @@ export default function Signup() {
     };
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files;
         setFormData((prevData) => ({ ...prevData, profilePic: file }));
     };
 
@@ -157,11 +154,8 @@ export default function Signup() {
             ...prevData, 
             jobOption: e.target.value,
             profilePic: null,
-            currentRole: "",
-            experience: "",
             industry: "",
             currentEmployer: "",
-            keySkills: "",
             college: "",
             jobid: "",
             city: "",
@@ -273,11 +267,8 @@ export default function Signup() {
                 
                 if (formData.lastName) formDataToSend.append('lastName', formData.lastName);
                 if (formData.jobOption) formDataToSend.append('jobOption', formData.jobOption);
-                if (formData.currentRole) formDataToSend.append('currentRole', formData.currentRole);
-                if (formData.experience) formDataToSend.append('experience', formData.experience);
                 if (formData.industry) formDataToSend.append('industry', formData.industry);
                 if (formData.currentEmployer) formDataToSend.append('currentEmployer', formData.currentEmployer);
-                if (formData.keySkills) formDataToSend.append('keySkills', formData.keySkills);
                 if (formData.college) formDataToSend.append('college', formData.college);
                 if (formData.city) formDataToSend.append('city', formData.city);
                 
@@ -287,7 +278,6 @@ export default function Signup() {
 
                 payload = formDataToSend;
             }
-            console.log(...payload);
             
             const response = await axios.post(endpoint, payload);
 
@@ -370,6 +360,15 @@ export default function Signup() {
                         </label>
                     </Paper>
 
+                    <TextField 
+                        label="Company Name"
+                        name="currentEmployer"
+                        value={formData.currentEmployer}
+                        onChange={handleChange}
+                        fullWidth
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                    />
+
                     <FormControl fullWidth>
                         <InputLabel id="industry-label">Industry</InputLabel>
                         <Select
@@ -392,15 +391,6 @@ export default function Signup() {
                         label="Job ID"
                         name="jobid"
                         value={formData.jobid}
-                        onChange={handleChange}
-                        fullWidth
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                    />
-
-                    <TextField 
-                        label="Current Employer"
-                        name="currentEmployer"
-                        value={formData.currentEmployer}
                         onChange={handleChange}
                         fullWidth
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
@@ -441,6 +431,70 @@ export default function Signup() {
         if (isPlacementOrAcademy) {
             return (
                 <>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            width: "100%",
+                            border: '2px dashed #ccc',
+                            borderRadius: '8px',
+                            p: 2,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                borderColor: '#1976d2',
+                                backgroundColor: '#f8f9ff'
+                            },
+                            ...(formData.profilePic && {
+                                borderColor: '#4caf50',
+                                backgroundColor: '#f1f8e9'
+                            })
+                        }}
+                    >
+                        <input
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            id="profile-pic-upload"
+                            type="file"
+                            onChange={handleFileChange}
+                        />
+                        <label htmlFor="profile-pic-upload" style={{ cursor: 'pointer', width: '100%', display: 'block' }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                {formData.profilePic ? (
+                                    <>
+                                        <InsertDriveFile sx={{ fontSize: 40, color: '#4caf50' }} />
+                                        <Typography variant="body2" color="success.main" fontWeight="medium">
+                                            {formData.profilePic.name}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Click to change file
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <>
+                                        <CloudUpload sx={{ fontSize: 40, color: '#1976d2' }} />
+                                        <Typography variant="body2" color="primary" fontWeight="medium">
+                                            Upload Profile Picture
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Click to select an image file
+                                        </Typography>
+                                    </>
+                                )}
+                            </Box>
+                        </label>
+                    </Paper>
+
+                    <TextField 
+                        label="Organization Name"
+                        name="college"
+                        value={formData.college}
+                        onChange={handleChange}
+                        fullWidth
+                        required
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                    />
+
                     <TextField 
                         label="Job ID"
                         name="jobid"
@@ -450,24 +504,6 @@ export default function Signup() {
                         required
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
-
-                    <FormControl fullWidth required>
-                        <InputLabel id="college-label">College</InputLabel>
-                        <Select
-                            labelId="college-label"
-                            name="college"
-                            value={formData.college}
-                            label="College"
-                            onChange={handleChange}
-                            sx={{ borderRadius: "8px" }}
-                        >
-                            {cities.map((city) => (
-                                <MenuItem key={city} value={city}>
-                                    {city}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
 
                     <TextField 
                         label="Branch"
@@ -482,7 +518,6 @@ export default function Signup() {
             );
         }
 
-        // Default fields for regular users
         return (
             <>
                 <Paper
@@ -539,24 +574,6 @@ export default function Signup() {
                     </label>
                 </Paper>
 
-                <TextField 
-                    label="Current Role"
-                    name="currentRole"
-                    value={formData.currentRole}
-                    onChange={handleChange}
-                    fullWidth
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                />
-
-                <TextField 
-                    label="Experience (in years)"
-                    name="experience"
-                    value={formData.experience}
-                    onChange={handleChange}
-                    fullWidth
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                />
-
                 <FormControl fullWidth>
                     <InputLabel id="industry-label">Industry</InputLabel>
                     <Select
@@ -583,35 +600,6 @@ export default function Signup() {
                     fullWidth
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                 />
-
-                <TextField 
-                    label="Key Skills"
-                    name="keySkills"
-                    value={formData.keySkills}
-                    onChange={handleChange}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                />
-
-                <FormControl fullWidth>
-                    <InputLabel id="college-label">College</InputLabel>
-                    <Select
-                        labelId="college-label"
-                        name="college"
-                        value={formData.college}
-                        label="College"
-                        onChange={handleChange}
-                        sx={{ borderRadius: "8px" }}
-                    >
-                        {cities.map((city) => (
-                            <MenuItem key={city} value={city}>
-                                {city}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
 
                 <FormControl fullWidth>
                     <InputLabel id="city-label">City</InputLabel>
@@ -992,12 +980,12 @@ export default function Signup() {
                         />
                         
                         <FormControl fullWidth required>
-                            <InputLabel id="job-option-label">Job Option</InputLabel>
+                            <InputLabel id="job-option-label">Select Role</InputLabel>
                             <Select
                               labelId="job-option-label"
                               name="jobOption"
                               value={formData.jobOption}
-                              label="Job Option"
+                              label="Select Role"
                               onChange={handleJobOptionChange}
                               sx={{ borderRadius: "8px" }}
                             >

@@ -1,43 +1,171 @@
-import { lazy, useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Card,
     Container,
-    Grid,
-    IconButton,
     Typography,
     Snackbar,
-    Alert
+    Alert,
+    Grid,
+    Paper,
+    Button,
+    CircularProgress
 } from "@mui/material";
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CommentIcon from '@mui/icons-material/Comment';
 import WorkIcon from '@mui/icons-material/Work';
 import { useAppStore } from "../store/appStore";
-import { useNavigate } from 'react-router-dom';
-
-const LineGraph = lazy(() => import("../components/dashboard/LineGraph"));
-const BarGraph = lazy(() => import("../components/dashboard/BarGraph"));
+import VideoCard from "../components/videos/VideoCard";
 
 export default function Dashboard() {
-    const { likedVideos, userDetails } = useAppStore();
-    const navigate = useNavigate();
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+    const { 
+        likedVideos, 
+        userDetails, 
+        comments,
+        videos,
+        isLoadingVideos,
+        isLoadingLikedVideos,
+        isLoadingComments,
+        getLikedVideos,
+        getComments,
+        getVideos
+    } = useAppStore();
     
-    const handleJobPostingsClick = () => {
-        if (!userDetails?.jobid) {
+    const [activeTab, setActiveTab] = useState('liked');
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+    const [displayVideos, setDisplayVideos] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [initialized, setInitialized] = useState(false);
+
+    useEffect(() => {
+        if (!initialized) {
+            loadTabData(activeTab);
+            setInitialized(true);
+        }
+    }, [initialized]);
+
+    useEffect(() => {
+        if (initialized) {
+            updateDisplayVideos();
+        }
+    }, [activeTab, likedVideos, comments, videos, initialized]);
+
+    const updateDisplayVideos = () => {
+        switch (activeTab) {
+            case 'liked':
+                setDisplayVideos(likedVideos || []);
+                break;
+            case 'commented':
+                { const commentedVideoIds = [...new Set(comments?.map(c => c.videoId) || [])];
+                const commentedVideos = (videos || []).filter(video => 
+                    commentedVideoIds.includes(video.id)
+                );
+                setDisplayVideos(commentedVideos);
+                break; }
+            case 'job':
+                if (!userDetails?.jobid) {
+                    setDisplayVideos([]);
+                } else {
+                    setDisplayVideos(videos || []);
+                }
+                break;
+            default:
+                setDisplayVideos([]);
+        }
+    };
+
+    const loadTabData = async (tab) => {
+        setLoading(true);
+        try {
+            switch (tab) {
+                case 'liked':
+                    if (!likedVideos || likedVideos.length === 0) {
+                        await getLikedVideos();
+                    }
+                    break;
+                case 'commented':
+                    if (!comments || comments.length === 0) {
+                        await getComments();
+                    }
+                    if (!videos || videos.length === 0) {
+                        await getVideos();
+                    }
+                    break;
+                case 'job':
+                    if (!userDetails?.jobid) {
+                        setSnackbar({ 
+                            open: true, 
+                            message: 'You have no job ID assigned to your profile', 
+                            severity: 'warning' 
+                        });
+                        break;
+                    }
+                    if (!videos || videos.length === 0) {
+                        await getVideos();
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error('Error loading tab data:', error);
             setSnackbar({ 
                 open: true, 
-                message: 'You have no job ID assigned to your profile', 
-                severity: 'warning' 
+                message: 'Failed to load videos', 
+                severity: 'error' 
             });
-            return;
+        } finally {
+            setLoading(false);
         }
-        navigate(`/app/videos?jobid=${userDetails.jobid}`);
+    };
+
+    const handleTabClick = (tab) => {
+        if (tab !== activeTab) {
+            setActiveTab(tab);
+            loadTabData(tab);
+        }
     };
 
     const handleSnackbarClose = (event, reason) => {
         if (reason === 'clickaway') return;
         setSnackbar(prev => ({ ...prev, open: false }));
+    };
+
+    const getTabTitle = () => {
+        switch (activeTab) {
+            case 'liked':
+                return 'Liked Videos';
+            case 'commented':
+                return 'Commented Videos';
+            case 'job':
+                return `Job Videos${userDetails?.jobid ? ` (Job ID: ${userDetails.jobid})` : ''}`;
+            default:
+                return 'Videos';
+        }
+    };
+
+    const getTabCount = () => {
+        switch (activeTab) {
+            case 'liked':
+                return likedVideos?.length || 0;
+            case 'commented':
+                return [...new Set(comments?.map(c => c.videoId) || [])].length || 0;
+            case 'job':
+                return userDetails?.jobid ? (videos?.length || 0) : 0;
+            default:
+                return 0;
+        }
+    };
+
+    const isCurrentTabLoading = () => {
+        switch (activeTab) {
+            case 'liked':
+                return isLoadingLikedVideos;
+            case 'commented':
+                return isLoadingComments || isLoadingVideos;
+            case 'job':
+                return isLoadingVideos;
+            default:
+                return false;
+        }
     };
     
     return (
@@ -59,308 +187,143 @@ export default function Dashboard() {
                 borderBottom: "1px solid #e0e0e0",
                 display: "flex",
                 alignItems: "center",
-                mb: 2
+                justifyContent: "space-between",
+                mb: 3
               }}
             >
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>
                   Dashboard
                 </Typography>
             </Box>
-            
-            <Grid
-              container
-              spacing={3}
-              sx={{
-                width: "100%",
-                maxWidth: "1200px"
-              }}
-            >
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card
-                        variant="outlined"
-                        sx={{
-                            height: "fit-content",
-                            p: 2,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center"
-                        }}
-                    >  
-                        <Typography variant="h6" sx={{ mb: 2, textAlign: "center" }}>
-                          Monthly Confidence Score Trend
-                        </Typography>
-                        <LineGraph />
-                    </Card>
-                </Grid>
-                
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card
-                        variant="outlined"
-                        sx={{
-                            height: "fit-content",
-                            p: 2,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center"
-                        }}
-                    >  
-                        <Typography variant="h6" sx={{ mb: 2, textAlign: "center" }}>
-                          Confidence Score Comparison
-                        </Typography>
-                        <BarGraph />
-                    </Card>
-                </Grid>
-            </Grid>
 
-            <Card
-              variant="outlined"
+            <Paper
               sx={{
                 width: "100%",
                 maxWidth: "1200px",
-                mt: 3,
-                background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-                borderRadius: "16px",
-                border: "1px solid #e2e8f0",
-                overflow: "hidden",
-                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)"
+                p: 3,
+                mb: 3,
+                borderRadius: 3,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
               }}
             >
-                <Box sx={{ p: 3, pb: 2 }}>
-                    <Typography 
-                      variant="h5" 
-                      fontWeight={600}
-                      sx={{ 
-                        fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                        background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text",
-                        mb: 1
-                      }}
+                <Box sx={{ 
+                    display: "flex", 
+                    gap: 2, 
+                    mb: 3,
+                    flexWrap: "wrap"
+                }}>
+                    <Button
+                        variant={activeTab === 'liked' ? 'contained' : 'outlined'}
+                        startIcon={<FavoriteIcon />}
+                        onClick={() => handleTabClick('liked')}
+                        sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1.5,
+                            ...(activeTab === 'liked' && {
+                                background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+                                boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)"
+                            })
+                        }}
                     >
-                      My Activity
+                        Liked Videos ({likedVideos?.length || 0})
+                    </Button>
+                    
+                    <Button
+                        variant={activeTab === 'commented' ? 'contained' : 'outlined'}
+                        startIcon={<CommentIcon />}
+                        onClick={() => handleTabClick('commented')}
+                        sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1.5,
+                            ...(activeTab === 'commented' && {
+                                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
+                            })
+                        }}
+                    >
+                        Commented Videos ({[...new Set(comments?.map(c => c.videoId) || [])].length})
+                    </Button>
+                    
+                    <Button
+                        variant={activeTab === 'job' ? 'contained' : 'outlined'}
+                        startIcon={<WorkIcon />}
+                        onClick={() => handleTabClick('job')}
+                        sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1.5,
+                            ...(activeTab === 'job' && {
+                                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
+                            })
+                        }}
+                    >
+                        Job Videos
+                    </Button>
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                    <Typography 
+                        variant="h6" 
+                        sx={{ 
+                            fontWeight: 600,
+                            color: "#1e293b",
+                            mb: 1
+                        }}
+                    >
+                        {getTabTitle()}
                     </Typography>
                     <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: "#64748b",
-                        fontSize: { xs: '0.875rem', sm: '1rem' }
-                      }}
+                        variant="body2" 
+                        sx={{ 
+                            color: "#64748b"
+                        }}
                     >
-                      Track your engagement and contributions
+                        {getTabCount()} video{getTabCount() !== 1 ? 's' : ''} found
                     </Typography>
                 </Box>
 
-                <Box sx={{ px: 3, pb: 3 }}>
-                    <Grid container spacing={3}>
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <Card
-                              component="a"
-                              href="/app/liked"
-                              sx={{
-                                borderRadius: "12px",
-                                border: "1px solid #e2e8f0",
-                                background: "#ffffff",
-                                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                                transition: "all 0.3s ease",
-                                textDecoration: "none",
-                                display: "block",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
-                                  transform: "translateY(-2px)",
-                                  backgroundColor: "#f8fafc"
-                                }
-                              }}
-                            >
-                                <Box
-                                  sx={{
-                                    width: "100%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    p: 3,
-                                    gap: 2
-                                  }}
-                                >
-                                    <Box
-                                      sx={{
-                                        width: 48,
-                                        height: 48,
-                                        borderRadius: "12px",
-                                        background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)"
-                                      }}
-                                    >
-                                        <FavoriteIcon sx={{ color: "white", fontSize: "1.5rem" }} />
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography
-                                          variant="h6"
-                                          sx={{
-                                            fontWeight: 600,
-                                            fontSize: { xs: '1rem', sm: '1.125rem' },
-                                            color: "#1e293b"
-                                          }}
-                                        >
-                                            Liked Videos
-                                        </Typography>
-                                        <Typography
-                                          variant="body2"
-                                          sx={{
-                                            color: "#64748b",
-                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                          }}
-                                        >
-                                            {likedVideos?.length || 0} videos liked
-                                        </Typography>
-                                    </Box>
+                {(loading || isCurrentTabLoading()) ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <Grid container spacing={0.7}>
+                        {displayVideos.length === 0 ? (
+                            <Grid size={{ xs: 12 }}>
+                                <Box sx={{ 
+                                    textAlign: 'center', 
+                                    py: 6,
+                                    color: '#6b7280'
+                                }}>
+                                    <Typography variant="h6">
+                                        No videos found
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ mt: 1 }}>
+                                        {activeTab === 'liked' && "You haven't liked any videos yet"}
+                                        {activeTab === 'commented' && "You haven't commented on any videos yet"}
+                                        {activeTab === 'job' && (!userDetails?.jobid ? "No job ID assigned to your profile" : "No videos available for this job")}
+                                    </Typography>
                                 </Box>
-                            </Card>
-                        </Grid>
-                        
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <Card
-                              component="a"
-                              href="#"
-                              sx={{
-                                borderRadius: "12px",
-                                border: "1px solid #e2e8f0",
-                                background: "#ffffff",
-                                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                                transition: "all 0.3s ease",
-                                textDecoration: "none",
-                                display: "block",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
-                                  transform: "translateY(-2px)",
-                                  backgroundColor: "#f8fafc"
-                                }
-                              }}
-                            >
-                                <Box
-                                  sx={{
-                                    width: "100%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    p: 3,
-                                    gap: 2
-                                  }}
-                                >
-                                    <Box
-                                      sx={{
-                                        width: 48,
-                                        height: 48,
-                                        borderRadius: "12px",
-                                        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
-                                      }}
-                                    >
-                                        <CommentIcon sx={{ color: "white", fontSize: "1.5rem" }} />
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography
-                                          variant="h6"
-                                          sx={{
-                                            fontWeight: 600,
-                                            fontSize: { xs: '1rem', sm: '1.125rem' },
-                                            color: "#1e293b"
-                                          }}
-                                        >
-                                            Commented Videos
-                                        </Typography>
-                                        <Typography
-                                          variant="body2"
-                                          sx={{
-                                            color: "#64748b",
-                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                          }}
-                                        >
-                                            23 videos commented
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Card>
-                        </Grid>
-                        
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <Card
-                              onClick={handleJobPostingsClick}
-                              sx={{
-                                borderRadius: "12px",
-                                border: "1px solid #e2e8f0",
-                                background: "#ffffff",
-                                boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-                                transition: "all 0.3s ease",
-                                textDecoration: "none",
-                                display: "block",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  boxShadow: "0 4px 12px 0 rgba(0, 0, 0, 0.1)",
-                                  transform: "translateY(-2px)",
-                                  backgroundColor: "#f8fafc"
-                                }
-                              }}
-                            >
-                                <Box
-                                  sx={{
-                                    width: "100%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    p: 3,
-                                    gap: 2
-                                  }}
-                                >
-                                    <Box
-                                      sx={{
-                                        width: 48,
-                                        height: 48,
-                                        borderRadius: "12px",
-                                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
-                                      }}
-                                    >
-                                        <WorkIcon sx={{ color: "white", fontSize: "1.5rem" }} />
-                                    </Box>
-                                    <Box sx={{ textAlign: "center" }}>
-                                        <Typography
-                                          variant="h6"
-                                          sx={{
-                                            fontWeight: 600,
-                                            fontSize: { xs: '1rem', sm: '1.125rem' },
-                                            color: "#1e293b"
-                                          }}
-                                        >
-                                            Job Postings
-                                        </Typography>
-                                        <Typography
-                                          variant="body2"
-                                          sx={{
-                                            color: "#64748b",
-                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                          }}
-                                        >
-                                            {userDetails?.jobid ? `Job ID: ${userDetails.jobid}` : 'No job assigned'}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Card>
-                        </Grid>
+                            </Grid>
+                        ) : (
+                            displayVideos.map((video) => (
+                                <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
+                                    <VideoCard video={video} />
+                                </Grid>
+                            ))
+                        )}
                     </Grid>
-                </Box>
-            </Card>
+                )}
+            </Paper>
 
             <Snackbar
                 open={snackbar.open}

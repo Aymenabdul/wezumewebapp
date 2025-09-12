@@ -11,7 +11,8 @@ import {
   Divider,
   Badge,
   Stack,
-  CircularProgress
+  CircularProgress,
+  Skeleton
 } from '@mui/material';
 import { 
   TrendingUp, 
@@ -122,32 +123,115 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return ['#Expressive'];
   };
 
-  // Simple Loading State with CircularProgress
+  // Enhanced Loading State with Skeletons
   if (loading) {
     return (
       <Box sx={{ 
         height: '100%', 
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
+        overflow: 'auto',
         p: 2
       }}>
-        <CircularProgress size={60} sx={{ color: '#1976d2', mb: 2 }} />
-        <Typography variant="h6" sx={{ 
-          color: '#1976d2',
-          fontWeight: 600,
-          mb: 1
+        {/* Profile Section Skeleton */}
+        <Paper sx={{ 
+          mb: 2, 
+          p: 2,
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)'
         }}>
-          Analyzing Performance
-        </Typography>
-        <Typography variant="body2" sx={{ 
-          color: '#6b7280',
-          fontWeight: 500,
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Skeleton variant="circular" width={60} height={60} />
+            <Box sx={{ flex: 1 }}>
+              <Skeleton variant="text" width="60%" height={28} />
+              <Skeleton variant="text" width="40%" height={20} />
+              <Skeleton variant="rounded" width={80} height={24} sx={{ mt: 1 }} />
+            </Box>
+          </Stack>
+        </Paper>
+
+        {/* Overall Score Section Skeleton */}
+        <Paper sx={{ 
+          mb: 3,
+          p: 3,
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)',
           textAlign: 'center'
         }}>
-          Please wait while we evaluate the video...
-        </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <CircularProgress size={60} sx={{ color: '#1976d2' }} />
+          </Box>
+          <Typography variant="h6" sx={{ 
+            color: '#1976d2',
+            fontWeight: 600,
+            mb: 1
+          }}>
+            Analyzing Performance
+          </Typography>
+          <Typography variant="body2" sx={{ 
+            color: '#6b7280',
+            fontWeight: 500
+          }}>
+            Please wait while we evaluate the video...
+          </Typography>
+          <Box sx={{ maxWidth: 300, mx: 'auto', mt: 2 }}>
+            <Skeleton variant="rounded" height={12} />
+          </Box>
+        </Paper>
+
+        {/* Breakdown Section Skeleton */}
+        <Box sx={{ mb: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <Skeleton variant="circular" width={20} height={20} />
+            <Skeleton variant="text" width={100} height={28} />
+          </Stack>
+
+          <Grid container spacing={1.5}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Grid size={{ xs: 12 }} key={index}>
+                <Paper sx={{ 
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid rgba(0,0,0,0.05)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                }}>
+                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1.5 }}>
+                    <Skeleton variant="rounded" width={32} height={32} />
+                    <Box sx={{ flex: 1 }}>
+                      <Skeleton variant="text" width="40%" height={20} />
+                      <Skeleton variant="text" width="60%" height={16} />
+                    </Box>
+                    <Skeleton variant="text" width={30} height={28} />
+                  </Stack>
+                  <Skeleton variant="rounded" height={6} />
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        {/* Analysis Section Skeleton */}
+        <Paper sx={{ 
+          p: 2.5,
+          borderRadius: 2,
+          border: '1px solid rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <Skeleton variant="circular" width={20} height={20} />
+            <Skeleton variant="text" width={80} height={28} />
+          </Stack>
+          <Divider sx={{ mb: 2 }} />
+          
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} variant="rounded" width={80} height={24} />
+            ))}
+          </Box>
+
+          <Skeleton variant="text" width="90%" height={20} sx={{ mb: 1 }} />
+          <Skeleton variant="text" width="85%" height={20} />
+        </Paper>
       </Box>
     );
   }
@@ -210,7 +294,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
               fontWeight: 600,
               mb: 1
             }}>
-              No Score Available
+              No total score found for the video
             </Typography>
             <Typography variant="body2" sx={{ 
               color: '#6b7280',

@@ -105,17 +105,6 @@ export default function CommentsSection({ videoId }) {
     }
   };
 
-  const getProfileImage = () => {
-    if (!userDetails?.profilePic) return null;
-    if (userDetails.profilePic.startsWith('https://')) return userDetails.profilePic;
-    if (userDetails.profilePic.startsWith('data:image')) return userDetails.profilePic;
-    try {
-      return `data:image/jpeg;base64,${userDetails.profilePic}`;
-    } catch {
-      return null;
-    }
-  };
-
   const formatTime = (createdDate) => {
     const date = new Date(createdDate);
     const now = new Date();
@@ -285,7 +274,7 @@ export default function CommentsSection({ videoId }) {
       }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
           <Avatar 
-            src={getProfileImage()}
+            src={userDetails?.profilepicurl}
             sx={{ 
               width: 32, 
               height: 32,

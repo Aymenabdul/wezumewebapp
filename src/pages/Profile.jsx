@@ -317,7 +317,6 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Established Year", "establishedYear", { type: "number", inputProps: { min: 1900, max: new Date().getFullYear() } })}</Grid>
                 </>
             );
         } else if (isPlacementOrAcademy()) {
