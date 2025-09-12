@@ -29,16 +29,6 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-function RootRedirect() {
-  const { isAuthenticated } = useAppStore()
-  
-  if (isAuthenticated()) {
-    return <Navigate to="/app/dashboard" replace />
-  }
-  
-  return <Landing />
-}
-
 export default function App() {
   const { initialize, isInitialized } = useAppStore()
 
@@ -63,7 +53,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<RootRedirect />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />

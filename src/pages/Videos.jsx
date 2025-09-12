@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -13,7 +12,8 @@ import {
   Typography,
   Collapse,
   Snackbar,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import { FilterList, ExpandMore, ExpandLess, Refresh } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
@@ -25,6 +25,7 @@ import VideoSkeleton from '../components/videos/VideoSkeleton';
 export default function Videos() {
   const [searchParams] = useSearchParams();
   const jobid = searchParams.get('jobid');
+  const scrollContainerRef = useRef(null);
 
   const [filteredVideos, setFilteredVideos] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -46,8 +47,11 @@ export default function Videos() {
     userDetails,
     videos,
     isLoadingVideos,
+    isLoadingMoreVideos,
+    hasMoreVideos,
     videoError,
     getVideos,
+    loadMoreVideos,
     refreshVideos
   } = useAppStore();
 
@@ -63,6 +67,28 @@ export default function Videos() {
     'Architecture', 'Arts & Design', 'Environmental Services', 'Human Resources', 'Legal', 'Management',
     'Telecommunications', 'Other'
   ];
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+    
+    if (scrollPercentage > 0.8 && hasMoreVideos && !isLoadingMoreVideos && !filterLoading) {
+      const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
+      if (!hasFilters) {
+        loadMoreVideos();
+      }
+    }
+  }, [hasMoreVideos, isLoadingMoreVideos, filterLoading, filters, loadMoreVideos]);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   useEffect(() => {
     if (jobid) {
@@ -86,8 +112,10 @@ export default function Videos() {
     try {
       let videoData;
       if (jobid && userDetails?.jobid === jobid) {
-        const response = await axiosInstance.get(`/videos/job/${jobid}`);
-        videoData = response.data || [];
+        const response = await axiosInstance.get(`/videos/job/${jobid}`, {
+          params: { page: 0, size: 20 }
+        });
+        videoData = response.data?.videos || [];
         setFilteredVideos(videoData);
         showSnackbar(`Loaded ${videoData.length} job-specific videos`, 'success');
       } else {
@@ -104,8 +132,10 @@ export default function Videos() {
     try {
       let videoData;
       if (jobid && userDetails?.jobid === jobid) {
-        const response = await axiosInstance.get(`/videos/job/${jobid}`);
-        videoData = response.data || [];
+        const response = await axiosInstance.get(`/videos/job/${jobid}`, {
+          params: { page: 0, size: 20 }
+        });
+        videoData = response.data?.videos || [];
         setFilteredVideos(videoData);
         showSnackbar('Job-specific videos refreshed successfully', 'success');
       } else {
@@ -212,7 +242,14 @@ export default function Videos() {
   };
 
   return (
-    <Box sx={{ p: 3}}>
+    <Box 
+      ref={scrollContainerRef}
+      sx={{ 
+        p: 3, 
+        height: '100vh', 
+        overflow: 'auto'
+      }}
+    >
       {jobid && (
         <Box sx={{ mb: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #90caf9' }}>
           <Typography variant="h6" color="primary">
@@ -406,6 +443,14 @@ export default function Videos() {
             </Grid>
           ))
         )}
+        
+        {isLoadingMoreVideos && (
+          Array(8).fill().map((_, index) => (
+            <Grid size={{ xs: 4, lg: 3 }} key={`loading-${index}`}>
+              <VideoSkeleton />
+            </Grid>
+          ))
+        )}
       </Grid>
 
       {!isLoadingVideos && filteredVideos.length === 0 && (
@@ -424,7 +469,21 @@ export default function Videos() {
           <Typography variant="body2" color="text.secondary">
             {filteredVideos.length} video{filteredVideos.length !== 1 ? 's' : ''} found
             {jobid && ' for this job'}
+            {hasMoreVideos && !filterLoading && (
+              <Typography component="span" sx={{ ml: 1, color: 'primary.main' }}>
+                • Scroll down for more
+              </Typography>
+            )}
           </Typography>
+          
+          {isLoadingMoreVideos && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <CircularProgress size={24} />
+              <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
+                Loading more videos...
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 

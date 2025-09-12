@@ -18,6 +18,9 @@ export const useAppStore = create(
       isLoadingVideos: false,
       videoError: null,
       lastVideoEndpoint: null,
+      currentPage: 0,
+      hasMoreVideos: true,
+      isLoadingMoreVideos: false,
       
       likedVideos: [],
       isLoadingLikedVideos: false,
@@ -85,6 +88,9 @@ export const useAppStore = create(
           videos: [], 
           videoError: null,
           lastVideoEndpoint: null,
+          currentPage: 0,
+          hasMoreVideos: true,
+          isLoadingMoreVideos: false,
           likedVideos: [],
           likedVideoError: null,
           comments: [],
@@ -213,8 +219,16 @@ export const useAppStore = create(
       
       clearUserDetails: () => set({ userDetails: null }),
       
-      getVideos: async (forceRefresh = false) => {
-        const { userDetails, videos, isLoadingVideos, lastVideoEndpoint } = get()
+      getVideos: async (forceRefresh = false, loadMore = false) => {
+        const { 
+          userDetails, 
+          videos, 
+          isLoadingVideos, 
+          isLoadingMoreVideos,
+          lastVideoEndpoint,
+          currentPage,
+          hasMoreVideos
+        } = get()
         
         if (!userDetails) {
           return []
@@ -224,19 +238,34 @@ export const useAppStore = create(
           ? `/videos/job/${userDetails.jobid}`
           : '/videos/videos'
         
-        if (!forceRefresh && videos.length > 0 && lastVideoEndpoint === currentEndpoint) {
+        if (loadMore && (!hasMoreVideos || isLoadingMoreVideos)) {
           return videos
         }
         
-        if (isLoadingVideos) {
+        if (!loadMore && !forceRefresh && videos.length > 0 && lastVideoEndpoint === currentEndpoint) {
+          return videos
+        }
+        
+        if (!loadMore && isLoadingVideos) {
           return videos 
         }
         
-        set({ isLoadingVideos: true, videoError: null })
+        const page = loadMore ? currentPage + 1 : 0
+        const size = 20
+        
+        set({ 
+          [loadMore ? 'isLoadingMoreVideos' : 'isLoadingVideos']: true, 
+          videoError: null 
+        })
         
         try {
-          const response = await axiosInstance.get(currentEndpoint)
-          const rawVideoData = response.data || []
+          const response = await axiosInstance.get(currentEndpoint, {
+            params: { page, size }
+          })
+          
+          const responseData = response.data || {}
+          const rawVideoData = responseData.videos || []
+          const totalPages = responseData.totalPages || 1
           
           const filteredVideoData = rawVideoData.filter(video => {
             return video && 
@@ -246,20 +275,25 @@ export const useAppStore = create(
                    video.thumbnail !== undefined
           })
           
+          const newVideos = loadMore ? [...videos, ...filteredVideoData] : filteredVideoData
+          const hasMore = page < (totalPages - 1)
+          
           set({ 
-            videos: filteredVideoData,
-            isLoadingVideos: false,
+            videos: newVideos,
+            [loadMore ? 'isLoadingMoreVideos' : 'isLoadingVideos']: false,
             lastVideoEndpoint: currentEndpoint,
+            currentPage: page,
+            hasMoreVideos: hasMore,
             videoError: null
           })
           
-          return filteredVideoData
+          return newVideos
         } catch (error) {
           console.error('Error fetching videos:', error)
           const errorMessage = error.response?.data?.message || 'Failed to fetch videos'
           
           set({ 
-            isLoadingVideos: false,
+            [loadMore ? 'isLoadingMoreVideos' : 'isLoadingVideos']: false,
             videoError: errorMessage
           })
           
@@ -267,14 +301,27 @@ export const useAppStore = create(
         }
       },
       
+      loadMoreVideos: async () => {
+        const { getVideos } = get()
+        return getVideos(false, true)
+      },
+      
       clearVideos: () => set({ 
         videos: [], 
         videoError: null, 
-        lastVideoEndpoint: null 
+        lastVideoEndpoint: null,
+        currentPage: 0,
+        hasMoreVideos: true,
+        isLoadingMoreVideos: false
       }),
       
       refreshVideos: () => {
         const { getVideos } = get()
+        set({ 
+          currentPage: 0,
+          hasMoreVideos: true,
+          isLoadingMoreVideos: false
+        })
         return getVideos(true)
       },
 
