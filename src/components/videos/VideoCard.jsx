@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from 'react';
 import { Card, CardMedia, Box, IconButton, Slide, Typography, Avatar } from '@mui/material';
 import { Favorite, FavoriteBorder, Assessment, PlayArrow, Person } from '@mui/icons-material';
@@ -48,7 +49,7 @@ export default function VideoCard({ video }) {
         setTotalScore(scoreRes.data);
         setLikesLoaded(true);
       } catch (error) {
-        console.error('Error fetching video data:', error);
+        // console.error('Error fetching video data:', error);
       }
     }
   };
@@ -113,7 +114,7 @@ export default function VideoCard({ video }) {
           zIndex: 1,
         }}
       >
-        <PlayArrow sx={{ fontSize: 60, color: 'white' }} />
+        <PlayArrow sx={{ fontSize: { xs: 24, md: 60 }, color: 'white' }} />
       </Box>
 
       <Slide direction="up" in={hovered} mountOnEnter unmountOnExit>

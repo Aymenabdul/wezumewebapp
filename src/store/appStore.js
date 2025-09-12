@@ -23,12 +23,36 @@ export const useAppStore = create(
       isLoadingLikedVideos: false,
       likedVideoError: null,
       
+      comments: [],
+      isLoadingComments: false,
+      commentError: null,
+      
       login: async (credentials) => {
         set({ isLoading: true, error: null })
         try {
           const response = await axiosInstance.post('/login', credentials)
           
-          const { token } = response.data
+          const { token, jobOption } = response.data
+          
+          const allowedJobOptions = ['Employer', 'Investor', 'placementDrive', 'Academy']
+          
+          if (!allowedJobOptions.includes(jobOption)) {
+            set({ 
+              isLoading: false,
+              error: 'Access denied. This application is only available for Employers, Investors, Placement Drives, and Academy users.'
+            })
+            
+            setTimeout(() => {
+              window.location.href = '/'
+            }, 3000)
+            
+            return { 
+              success: false, 
+              error: 'Access denied. This application is only available for Employers, Investors, Placement Drives, and Academy users.',
+              redirect: true
+            }
+          }
+          
           Cookies.set('wezume_auth_token', token, {
             expires: 0.5, 
             sameSite: 'strict'
@@ -42,8 +66,8 @@ export const useAppStore = create(
           
           return { success: true }
         } catch (error) {
-          const errorMessage = error.response?.data || 'Login failed'
-          
+          const errorMessage = error.response?.data.message || 'Login failed'
+          console.log(error)
           set({ 
             isLoading: false, 
             error: errorMessage 
@@ -62,7 +86,9 @@ export const useAppStore = create(
           videoError: null,
           lastVideoEndpoint: null,
           likedVideos: [],
-          likedVideoError: null
+          likedVideoError: null,
+          comments: [],
+          commentError: null
         })
         window.location.href = '/login'
       },
@@ -106,6 +132,21 @@ export const useAppStore = create(
           const response = await axiosInstance.get('/user-detail')
           const userData = response.data
           
+          const allowedJobOptions = ['Employer', 'Investor', 'placementDrive', 'Academy']
+          
+          if (!allowedJobOptions.includes(userData.jobOption)) {
+            set({ 
+              isLoadingUserDetails: false,
+              error: 'Access denied. This application is only available for Employers, Investors, Placement Drives, and Academy users.'
+            })
+            
+            setTimeout(() => {
+              get().logout()
+            }, 2000)
+            
+            throw new Error('Access denied')
+          }
+          
           set({ 
             userDetails: userData, 
             isLoadingUserDetails: false 
@@ -116,7 +157,7 @@ export const useAppStore = create(
           
           set({ 
             isLoadingUserDetails: false,
-            error: error.response?.data?.message || 'Failed to fetch user details'
+            error: error.response?.data?.message || error.message || 'Failed to fetch user details'
           })
           throw error
         }
@@ -161,8 +202,7 @@ export const useAppStore = create(
           
           return updatedUserDetails
         } catch (error) {
-          console.error('Failed to update user details:', error)
-          const errorMessage = error.response?.data?.message || 'Failed to update user details'
+          const errorMessage = error.response?.data || 'Failed to update user details'
           set({ 
             isUpdatingUserDetails: false,
             error: errorMessage
@@ -177,7 +217,6 @@ export const useAppStore = create(
         const { userDetails, videos, isLoadingVideos, lastVideoEndpoint } = get()
         
         if (!userDetails) {
-          console.error('User details not available')
           return []
         }
 
@@ -197,16 +236,24 @@ export const useAppStore = create(
         
         try {
           const response = await axiosInstance.get(currentEndpoint)
-          const videoData = response.data || []
-          console.log(response.data);
+          const rawVideoData = response.data || []
+          
+          const filteredVideoData = rawVideoData.filter(video => {
+            return video && 
+                   video.thumbnail && 
+                   video.thumbnail.trim() !== '' &&
+                   video.thumbnail !== null &&
+                   video.thumbnail !== undefined
+          })
+          
           set({ 
-            videos: videoData,
+            videos: filteredVideoData,
             isLoadingVideos: false,
             lastVideoEndpoint: currentEndpoint,
             videoError: null
           })
           
-          return videoData
+          return filteredVideoData
         } catch (error) {
           console.error('Error fetching videos:', error)
           const errorMessage = error.response?.data?.message || 'Failed to fetch videos'
@@ -253,15 +300,23 @@ export const useAppStore = create(
           const response = await axiosInstance.get('/videos/liked', {
             params: { userId: userDetails.userId }
           })
-          const likedVideoData = response.data || []
+          const rawLikedVideoData = response.data || []
+          
+          const filteredLikedVideoData = rawLikedVideoData.filter(video => {
+            return video && 
+                   video.thumbnail && 
+                   video.thumbnail.trim() !== '' &&
+                   video.thumbnail !== null &&
+                   video.thumbnail !== undefined
+          })
           
           set({ 
-            likedVideos: likedVideoData,
+            likedVideos: filteredLikedVideoData,
             isLoadingLikedVideos: false,
             likedVideoError: null
           })
           
-          return likedVideoData
+          return filteredLikedVideoData
         } catch (error) {
           console.error('Error fetching liked videos:', error)
           const errorMessage = error.response?.data?.message || 'Failed to fetch liked videos'
@@ -283,7 +338,117 @@ export const useAppStore = create(
       refreshLikedVideos: () => {
         const { getLikedVideos } = get()
         return getLikedVideos(true)
-      }
+      },
+
+      getComments: async (forceRefresh = false) => {
+        const { userDetails, comments, isLoadingComments } = get()
+        
+        if (!userDetails?.userId) {
+          return []
+        }
+
+        if (!forceRefresh && comments.length > 0) {
+          return comments
+        }
+        
+        if (isLoadingComments) {
+          return comments
+        }
+        
+        set({ isLoadingComments: true, commentError: null })
+        
+        try {
+          const response = await axiosInstance.get(`/comments/userId?userId=${userDetails.userId}`)
+          const commentData = response.data || []
+          
+          set({ 
+            comments: commentData,
+            isLoadingComments: false,
+            commentError: null
+          })
+          
+          return commentData
+        } catch (error) {
+          console.error('Error fetching comments:', error)
+          const errorMessage = error.response?.data?.message || 'Failed to fetch comments'
+          
+          set({ 
+            isLoadingComments: false,
+            commentError: errorMessage
+          })
+          
+          return comments
+        }
+      },
+
+      addComment: async (videoId, comment) => {
+        const { userDetails } = get()
+        
+        if (!userDetails) throw new Error('User not authenticated')
+        
+        try {
+          await axiosInstance.post(`/comments/add`, null, {
+            params: {
+              userId: userDetails.userId,
+              videoId: videoId,
+              firstName: userDetails.firstName,
+              comment: comment.trim()
+            }
+          })
+          
+          const { getComments } = get()
+          await getComments(true)
+        } catch (error) {
+          console.error('Error adding comment:', error)
+          throw error
+        }
+      },
+
+      updateComment: async (commentId, newComment) => {
+        const { userDetails } = get()
+        
+        if (!userDetails) throw new Error('User not authenticated')
+        
+        try {
+          await axiosInstance.put(`/comments/edit/${commentId}`, null, {
+            params: {
+              userId: userDetails.userId,
+              newComment: newComment.trim()
+            }
+          })
+          
+          const { getComments } = get()
+          await getComments(true)
+        } catch (error) {
+          console.error('Error updating comment:', error)
+          throw error
+        }
+      },
+
+      deleteComment: async (commentId) => {
+        const { userDetails } = get()
+        
+        if (!userDetails) throw new Error('User not authenticated')
+        
+        try {
+          await axiosInstance.delete(`/comments/delete/${commentId}`, {
+            params: {
+              userId: userDetails.userId
+            }
+          })
+          
+          const { getComments } = get()
+          await getComments(true)
+        } catch (error) {
+          console.error('Error deleting comment:', error)
+          throw error
+        }
+      },
+      
+      clearComments: () => set({ 
+        comments: [], 
+        commentError: null 
+      })
     }),
     {
       name: 'wezume-app-storage', 

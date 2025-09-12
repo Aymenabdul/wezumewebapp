@@ -47,24 +47,70 @@ export default function Signup() {
         password: "",
         jobOption: "",
         profilePic: null,
+        currentRole: "",
+        experience: "",
         industry: "",
-        currOrganizationName: "",
-        city: "",
-        jobid: "",
+        currentEmployer: "",
+        keySkills: "",
         college: "",
+        jobid: "",
+        city: "",
+        establishedYear: "",
         branch: ""
     });
+    
     const [showPassword, setShowPassword] = useState(false);
     const [isAnimationPaused, setIsAnimationPaused] = useState(false);
     const [loading, setLoading] = useState(false);
     const [emailValidating, setEmailValidating] = useState(false);
     const [emailError, setEmailError] = useState("");
     const [alert, setAlert] = useState({ show: false, message: "", severity: "info" });
-    const [cities, setCities] = useState([]);
-    const [industries, setIndustries] = useState([]);
     const [success, setSuccess] = useState(false);
 
     const navigate = useNavigate();
+
+    const cities = [
+        'New Delhi',
+        'Mumbai',
+        'Bengaluru',
+        'Chennai',
+        'Hyderabad',
+        'Pune',
+        'Kolkata'
+    ];
+
+    const industries = [
+        'Banking & Finance',
+        'Biotechnology',
+        'Construction',
+        'Consumer Goods',
+        'Education',
+        'Energy',
+        'Healthcare',
+        'Media & Entertainment',
+        'Hospitality',
+        'Information Technology (IT)',
+        'Insurance',
+        'Manufacturing',
+        'Non-Profit',
+        'Real Estate',
+        'Retail',
+        'Transportation',
+        'Travel & Tourism',
+        'Textiles',
+        'Logistics & Supply Chain',
+        'Sports',
+        'E-commerce',
+        'Consulting',
+        'Advertising & Marketing',
+        'Architecture',
+        'Arts & Design',
+        'Environmental Services',
+        'Human Resources',
+        'Legal',
+        'Management',
+        'Telecommunications'
+    ];
 
     useEffect(() => {
         let timeoutId;
@@ -80,23 +126,6 @@ export default function Signup() {
             document.removeEventListener('click', handleUserActivity);
             clearTimeout(timeoutId);
         };
-    }, []);
-
-    useEffect(() => {
-        setCities([
-            { id: 1, name: "New York" },
-            { id: 2, name: "Los Angeles" },
-            { id: 3, name: "Chicago" },
-            { id: 4, name: "Houston" },
-            { id: 5, name: "Phoenix" }
-        ]);
-        setIndustries([
-            { id: 1, name: "Technology" },
-            { id: 2, name: "Healthcare" },
-            { id: 3, name: "Finance" },
-            { id: 4, name: "Education" },
-            { id: 5, name: "Manufacturing" }
-        ]);
     }, []);
 
     useEffect(() => {
@@ -128,11 +157,15 @@ export default function Signup() {
             ...prevData, 
             jobOption: e.target.value,
             profilePic: null,
+            currentRole: "",
+            experience: "",
             industry: "",
-            currOrganizationName: "",
-            city: "",
-            jobid: "",
+            currentEmployer: "",
+            keySkills: "",
             college: "",
+            jobid: "",
+            city: "",
+            establishedYear: "",
             branch: ""
         }));
         setEmailError("");
@@ -191,31 +224,31 @@ export default function Signup() {
 
             if (isEmployerOrInvestor) {
                 endpoint = `${URL}/users/signup/user`;
-                payload = {
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    phoneNumber: formData.phoneNumber,
-                    email: formData.email,
-                    password: formData.password,
-                    jobOption: formData.jobOption,
-                    jobid: formData.jobid,
-                    industry: formData.industry,
-                    currOrganizationName: formData.currOrganizationName,
-                    city: formData.city
-                };
-
+                
+                const formDataToSend = new FormData();
+                
+                formDataToSend.append('firstName', formData.firstName);
+                formDataToSend.append('email', formData.email);
+                formDataToSend.append('phoneNumber', formData.phoneNumber);
+                formDataToSend.append('password', formData.password);
+                
+                if (formData.lastName) formDataToSend.append('lastName', formData.lastName);
+                if (formData.jobOption) formDataToSend.append('jobOption', formData.jobOption);
+                if (formData.industry) formDataToSend.append('industry', formData.industry);
+                if (formData.currentEmployer) formDataToSend.append('currentEmployer', formData.currentEmployer);
+                if (formData.city) formDataToSend.append('city', formData.city);
+                if (formData.jobid) formDataToSend.append('jobid', formData.jobid);
+                if (formData.establishedYear) formDataToSend.append('establishedYear', parseInt(formData.establishedYear));
+                
                 if (formData.profilePic) {
-                    const formDataWithFile = new FormData();
-                    Object.entries(payload).forEach(([key, value]) => {
-                        if (value !== undefined && value !== null && value !== "") {
-                            formDataWithFile.append(key, value);
-                        }
-                    });
-                    formDataWithFile.append('profilePic', formData.profilePic, formData.profilePic.name);
-                    payload = formDataWithFile;
+                    formDataToSend.append('profilePic', formData.profilePic);
                 }
+
+                payload = formDataToSend;
+
             } else if (isPlacementOrAcademy) {
                 endpoint = `${URL}/auth/signup/placement`;
+                
                 payload = {
                     firstname: formData.firstName,
                     lastname: formData.lastName,
@@ -226,8 +259,35 @@ export default function Signup() {
                     jobid: formData.jobid,
                     college: formData.college,
                     branch: formData.branch
-                };   
+                };
+
+            } else {
+                endpoint = `${URL}/users/signup/user`;
+                
+                const formDataToSend = new FormData();
+                
+                formDataToSend.append('firstName', formData.firstName);
+                formDataToSend.append('email', formData.email);
+                formDataToSend.append('phoneNumber', formData.phoneNumber);
+                formDataToSend.append('password', formData.password);
+                
+                if (formData.lastName) formDataToSend.append('lastName', formData.lastName);
+                if (formData.jobOption) formDataToSend.append('jobOption', formData.jobOption);
+                if (formData.currentRole) formDataToSend.append('currentRole', formData.currentRole);
+                if (formData.experience) formDataToSend.append('experience', formData.experience);
+                if (formData.industry) formDataToSend.append('industry', formData.industry);
+                if (formData.currentEmployer) formDataToSend.append('currentEmployer', formData.currentEmployer);
+                if (formData.keySkills) formDataToSend.append('keySkills', formData.keySkills);
+                if (formData.college) formDataToSend.append('college', formData.college);
+                if (formData.city) formDataToSend.append('city', formData.city);
+                
+                if (formData.profilePic) {
+                    formDataToSend.append('profilePic', formData.profilePic);
+                }
+
+                payload = formDataToSend;
             }
+            console.log(...payload);
             
             const response = await axios.post(endpoint, payload);
 
@@ -240,7 +300,8 @@ export default function Signup() {
                 });
             }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || error.message || "Registration failed. Please try again.";
+            const errorMessage = error.response?.data || "Registration failed. Please try again.";
+            console.error(error)
             setAlert({
                 show: true,
                 message: String(errorMessage),
@@ -309,22 +370,19 @@ export default function Signup() {
                         </label>
                     </Paper>
 
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth>
                         <InputLabel id="industry-label">Industry</InputLabel>
                         <Select
                             labelId="industry-label"
-                            id="industry"
                             name="industry"
                             value={formData.industry}
                             label="Industry"
                             onChange={handleChange}
-                            sx={{
-                                borderRadius: "8px",
-                            }}
+                            sx={{ borderRadius: "8px" }}
                         >
                             {industries.map((industry) => (
-                                <MenuItem key={industry.id} value={industry.name}>
-                                    {industry.name}
+                                <MenuItem key={industry} value={industry}>
+                                    {industry}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -336,47 +394,46 @@ export default function Signup() {
                         value={formData.jobid}
                         onChange={handleChange}
                         fullWidth
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
 
                     <TextField 
-                        label="Current Organization"
-                        name="currOrganizationName"
-                        value={formData.currOrganizationName}
+                        label="Current Employer"
+                        name="currentEmployer"
+                        value={formData.currentEmployer}
                         onChange={handleChange}
                         fullWidth
-                        required
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
 
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth>
                         <InputLabel id="city-label">City</InputLabel>
                         <Select
                             labelId="city-label"
-                            id="city"
                             name="city"
                             value={formData.city}
                             label="City"
                             onChange={handleChange}
-                            sx={{
-                                borderRadius: "8px",
-                            }}
+                            sx={{ borderRadius: "8px" }}
                         >
                             {cities.map((city) => (
-                                <MenuItem key={city.id} value={city.name}>
-                                    {city.name}
+                                <MenuItem key={city} value={city}>
+                                    {city}
                                 </MenuItem>
                             ))}
                         </Select>
                     </FormControl>
+
+                    <TextField 
+                        label="Established Year"
+                        name="establishedYear"
+                        type="number"
+                        value={formData.establishedYear}
+                        onChange={handleChange}
+                        fullWidth
+                        inputProps={{ min: 1900, max: new Date().getFullYear() }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                    />
                 </>
             );
         }
@@ -391,26 +448,26 @@ export default function Signup() {
                         onChange={handleChange}
                         fullWidth
                         required
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
 
-                    <TextField 
-                        label="College"
-                        name="college"
-                        value={formData.college}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
-                    />
+                    <FormControl fullWidth required>
+                        <InputLabel id="college-label">College</InputLabel>
+                        <Select
+                            labelId="college-label"
+                            name="college"
+                            value={formData.college}
+                            label="College"
+                            onChange={handleChange}
+                            sx={{ borderRadius: "8px" }}
+                        >
+                            {cities.map((city) => (
+                                <MenuItem key={city} value={city}>
+                                    {city}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
 
                     <TextField 
                         label="Branch"
@@ -419,16 +476,162 @@ export default function Signup() {
                         onChange={handleChange}
                         fullWidth
                         required
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
                 </>
             );
         }
-        return null;
+
+        // Default fields for regular users
+        return (
+            <>
+                <Paper
+                    elevation={0}
+                    sx={{
+                        width: "100%",
+                        border: '2px dashed #ccc',
+                        borderRadius: '8px',
+                        p: 2,
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            borderColor: '#1976d2',
+                            backgroundColor: '#f8f9ff'
+                        },
+                        ...(formData.profilePic && {
+                            borderColor: '#4caf50',
+                            backgroundColor: '#f1f8e9'
+                        })
+                    }}
+                >
+                    <input
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        id="profile-pic-upload"
+                        type="file"
+                        onChange={handleFileChange}
+                    />
+                    <label htmlFor="profile-pic-upload" style={{ cursor: 'pointer', width: '100%', display: 'block' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                            {formData.profilePic ? (
+                                <>
+                                    <InsertDriveFile sx={{ fontSize: 40, color: '#4caf50' }} />
+                                    <Typography variant="body2" color="success.main" fontWeight="medium">
+                                        {formData.profilePic.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Click to change file
+                                    </Typography>
+                                </>
+                            ) : (
+                                <>
+                                    <CloudUpload sx={{ fontSize: 40, color: '#1976d2' }} />
+                                    <Typography variant="body2" color="primary" fontWeight="medium">
+                                        Upload Profile Picture
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Click to select an image file
+                                    </Typography>
+                                </>
+                            )}
+                        </Box>
+                    </label>
+                </Paper>
+
+                <TextField 
+                    label="Current Role"
+                    name="currentRole"
+                    value={formData.currentRole}
+                    onChange={handleChange}
+                    fullWidth
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+
+                <TextField 
+                    label="Experience (in years)"
+                    name="experience"
+                    value={formData.experience}
+                    onChange={handleChange}
+                    fullWidth
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+
+                <FormControl fullWidth>
+                    <InputLabel id="industry-label">Industry</InputLabel>
+                    <Select
+                        labelId="industry-label"
+                        name="industry"
+                        value={formData.industry}
+                        label="Industry"
+                        onChange={handleChange}
+                        sx={{ borderRadius: "8px" }}
+                    >
+                        {industries.map((industry) => (
+                            <MenuItem key={industry} value={industry}>
+                                {industry}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <TextField 
+                    label="Current Employer"
+                    name="currentEmployer"
+                    value={formData.currentEmployer}
+                    onChange={handleChange}
+                    fullWidth
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+
+                <TextField 
+                    label="Key Skills"
+                    name="keySkills"
+                    value={formData.keySkills}
+                    onChange={handleChange}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                />
+
+                <FormControl fullWidth>
+                    <InputLabel id="college-label">College</InputLabel>
+                    <Select
+                        labelId="college-label"
+                        name="college"
+                        value={formData.college}
+                        label="College"
+                        onChange={handleChange}
+                        sx={{ borderRadius: "8px" }}
+                    >
+                        {cities.map((city) => (
+                            <MenuItem key={city} value={city}>
+                                {city}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                    <InputLabel id="city-label">City</InputLabel>
+                    <Select
+                        labelId="city-label"
+                        name="city"
+                        value={formData.city}
+                        label="City"
+                        onChange={handleChange}
+                        sx={{ borderRadius: "8px" }}
+                    >
+                        {cities.map((city) => (
+                            <MenuItem key={city} value={city}>
+                                {city}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </>
+        );
     };
 
     if (success) {
@@ -690,11 +893,7 @@ export default function Signup() {
                                 onChange={handleChange}
                                 fullWidth
                                 required
-                                sx={{
-                                  "& .MuiOutlinedInput-root": {
-                                    borderRadius: "8px",
-                                  },
-                                }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                             <TextField 
                                 label="Last Name"
@@ -702,12 +901,7 @@ export default function Signup() {
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 fullWidth
-                                required
-                                sx={{
-                                  "& .MuiOutlinedInput-root": {
-                                    borderRadius: "8px",
-                                  },
-                                }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             />
                         </Box>
                         
@@ -718,11 +912,7 @@ export default function Signup() {
                             onChange={handleChange}
                             fullWidth
                             required
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "8px",
-                              },
-                            }}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                         />
                         
                         <Box sx={{ width: "100%" }}>
@@ -735,11 +925,7 @@ export default function Signup() {
                                 fullWidth
                                 required
                                 error={!!emailError}
-                                sx={{
-                                  "& .MuiOutlinedInput-root": {
-                                    borderRadius: "8px",
-                                  },
-                                }}
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                                 slotProps={{
                                     input: {
                                         endAdornment: emailValidating && (
@@ -787,11 +973,7 @@ export default function Signup() {
                             onChange={handleChange}
                             fullWidth
                             required
-                            sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "8px",
-                              },
-                            }}
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                             slotProps={{
                                 input: {
                                     endAdornment: (
@@ -813,14 +995,11 @@ export default function Signup() {
                             <InputLabel id="job-option-label">Job Option</InputLabel>
                             <Select
                               labelId="job-option-label"
-                              id="jobOption"
                               name="jobOption"
                               value={formData.jobOption}
                               label="Job Option"
                               onChange={handleJobOptionChange}
-                              sx={{
-                                borderRadius: "8px",
-                              }}
+                              sx={{ borderRadius: "8px" }}
                             >
                                 <MenuItem value="Employer">Employer</MenuItem>
                                 <MenuItem value="Investor">Investor</MenuItem>

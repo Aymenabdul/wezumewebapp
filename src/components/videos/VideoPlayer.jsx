@@ -12,7 +12,8 @@ import {
   Paper,
   Snackbar,
   Alert,
-  Typography
+  Typography,
+  Chip
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -24,7 +25,8 @@ import {
   Phone,
   Email,
   Assessment,
-  Comment
+  Comment,
+  Mic
 } from '@mui/icons-material';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import axiosInstance from '../../axios/axios';
@@ -132,13 +134,24 @@ export default function VideoPlayer() {
     }
   };
 
-  useEffect(() => {
-    if (!videos || videos.length === 0 || !videos[currentIndex]) return;
+  const fetchLikeData = async (videoId) => {
+    if (!videoId || !userDetails?.userId) return;
     
-    const currentVideo = videos[currentIndex];
-    setIsLiked(currentVideo.isLiked || currentVideo.liked || false);
-    setLikeCount(currentVideo.likeCount || 0);
-  }, [videos, currentIndex]);
+    try {
+      const [likesRes, statusRes] = await Promise.all([
+        axiosInstance.get(`/videos/${videoId}/like-count`),
+        axiosInstance.get(`/videos/likes/status?userId=${userDetails.userId}`)
+      ]);
+      
+      setLikeCount(likesRes.data || 0);
+      
+      if (statusRes.data && typeof statusRes.data === 'object') {
+        setIsLiked(statusRes.data[videoId] || false);
+      }
+    } catch (error) {
+      console.error('Error fetching like data:', error);
+    }
+  };
 
   const navigateVideo = useCallback((direction) => {
     if (!videos || videos.length === 0) return;
@@ -175,12 +188,22 @@ export default function VideoPlayer() {
     let touchStartX = null;
     let touchStartTime = null;
     const minSwipeDistance = 80;
-    const maxSwipeTime = 500;
+    const maxSwipeTime = 800;
 
     const handleTouchStart = (e) => {
+      if (e.touches[0].clientY < 100) {
+        e.preventDefault();
+      }
+      
       touchStartY = e.touches[0].clientY;
       touchStartX = e.touches[0].clientX;
       touchStartTime = Date.now();
+    };
+
+    const handleTouchMove = (e) => {
+      if (touchStartY && e.touches[0].clientY < touchStartY) {
+        e.preventDefault();
+      }
     };
 
     const handleTouchEnd = (e) => {
@@ -191,32 +214,36 @@ export default function VideoPlayer() {
       const touchEndTime = Date.now();
 
       const deltaY = touchStartY - touchEndY;
-      const deltaX = touchStartX - touchEndX;
+      const deltaX = Math.abs(touchStartX - touchEndX);
       const duration = touchEndTime - touchStartTime;
-
-      if (duration > maxSwipeTime) return;
-
-      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > minSwipeDistance) {
-        e.preventDefault();
-        if (deltaY > 0) {
-          navigateVideo('next');
-        } else {
-          navigateVideo('prev');
-        }
-      }
 
       touchStartY = null;
       touchStartX = null;
       touchStartTime = null;
+
+      if (duration > maxSwipeTime) return;
+      if (Math.abs(deltaY) < minSwipeDistance) return;
+      if (deltaX > Math.abs(deltaY)) return; 
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (deltaY > 0) {
+        navigateVideo('next');
+      } else {
+        navigateVideo('prev');
+      }
     };
 
     const container = mobileContainerRef.current;
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     return () => {
       if (container) {
         container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
         container.removeEventListener('touchend', handleTouchEnd);
       }
     };
@@ -292,8 +319,8 @@ export default function VideoPlayer() {
     
     setVideo(videoData);
     setVideoLoading(false);
-    setIsLiked(videoData.isLiked || videoData.liked || false);
-    setLikeCount(videoData.likeCount || 0);
+    
+    await fetchLikeData(videoData.id);
     
     if (!subtitlesFetched.has(videoData.id)) {
       fetchSubtitles(videoData.id);
@@ -316,13 +343,15 @@ export default function VideoPlayer() {
       
       const newLikedStatus = !isLiked;
       setIsLiked(newLikedStatus);
-      setLikeCount(prev => newLikedStatus ? prev + 1 : prev - 1);
+      setLikeCount(prev => newLikedStatus ? prev + 1 : Math.max(0, prev - 1));
       
       if (videos && videos[currentIndex]) {
         videos[currentIndex].isLiked = newLikedStatus;
         videos[currentIndex].liked = newLikedStatus;
         videos[currentIndex].likeCount = newLikedStatus ? (videos[currentIndex].likeCount || 0) + 1 : Math.max(0, (videos[currentIndex].likeCount || 0) - 1);
       }
+      
+      showSnackbar(newLikedStatus ? 'Video liked!' : 'Video unliked!', 'success');
     } catch (error) {
       console.error('Error liking video:', error);
       showSnackbar('Failed to update like status', 'error');
@@ -410,8 +439,8 @@ export default function VideoPlayer() {
       <Box 
         ref={mobileContainerRef}
         sx={{ 
-          height: '100vh', 
-          width: '100vw',
+          height: '100%', 
+          width: '100%',
           position: 'fixed',
           top: 0,
           left: 0,
@@ -419,10 +448,9 @@ export default function VideoPlayer() {
           bottom: 0,
           bgcolor: 'black',
           zIndex: 1300,
-          display: 'flex',
-          flexDirection: 'column',
           overflow: 'hidden',
-          transition: 'transform 0.3s ease-in-out'
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         <IconButton
@@ -441,7 +469,8 @@ export default function VideoPlayer() {
         </IconButton>
 
         <Box sx={{ 
-          flex: 1, 
+          width: '100%', 
+          height: '100%',
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -471,7 +500,7 @@ export default function VideoPlayer() {
             style={{ 
               width: '100%', 
               height: '100%', 
-              objectFit: 'contain'
+              objectFit: 'cover'
             }}
             crossOrigin="anonymous"
           >
@@ -487,6 +516,28 @@ export default function VideoPlayer() {
             )}
           </video>
           
+          {video.description && (
+            <Box sx={{
+              position: 'absolute',
+              bottom: 80,
+              left: 20,
+              right: 100,
+              zIndex: 10,
+              background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+              p: 2,
+              borderRadius: 2
+            }}>
+              <Typography variant="body2" sx={{ 
+                color: 'white',
+                fontSize: '0.875rem',
+                lineHeight: 1.4,
+                textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+              }}>
+                {video.description}
+              </Typography>
+            </Box>
+          )}
+          
           <style>
             {`
               video::cue {
@@ -498,6 +549,7 @@ export default function VideoPlayer() {
             `}
           </style>
           
+          {/* Left Side Actions */}
           <Box sx={{ 
             position: 'absolute', 
             left: 20, 
@@ -539,7 +591,7 @@ export default function VideoPlayer() {
               >
                 {isLiked ? <Favorite /> : <FavoriteBorder />}
               </Fab>
-              <Typography variant="caption" sx={{ display: 'block', color: 'white', mt: 0.5, fontSize: '10px' }}>
+              <Typography variant="caption" sx={{ display: 'block', color: 'white', mt: 0.5, fontSize: '10px', fontWeight: 'bold' }}>
                 {likeCount}
               </Typography>
             </Box>

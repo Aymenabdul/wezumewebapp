@@ -10,7 +10,8 @@ import {
   Grid,
   Divider,
   Badge,
-  Stack
+  Stack,
+  CircularProgress
 } from '@mui/material';
 import { 
   TrendingUp, 
@@ -23,7 +24,7 @@ import {
   Error
 } from '@mui/icons-material';
 
-export default function ScoreEvaluation({ scoreData, video }) {
+export default function ScoreEvaluation({ scoreData, video, loading = false, error = false }) {
   const decodeProfilePic = (pic) => {
     if (!pic) return null;
     if (pic.startsWith('https://wezume')) return pic;
@@ -121,7 +122,38 @@ export default function ScoreEvaluation({ scoreData, video }) {
     return ['#Expressive'];
   };
 
-  if (!scoreData) {
+  // Simple Loading State with CircularProgress
+  if (loading) {
+    return (
+      <Box sx={{ 
+        height: '100%', 
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        p: 2
+      }}>
+        <CircularProgress size={60} sx={{ color: '#1976d2', mb: 2 }} />
+        <Typography variant="h6" sx={{ 
+          color: '#1976d2',
+          fontWeight: 600,
+          mb: 1
+        }}>
+          Analyzing Performance
+        </Typography>
+        <Typography variant="body2" sx={{ 
+          color: '#6b7280',
+          fontWeight: 500,
+          textAlign: 'center'
+        }}>
+          Please wait while we evaluate the video...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Error State
+  if (error) {
     return (
       <Box sx={{ 
         height: '100%', 
@@ -190,6 +222,11 @@ export default function ScoreEvaluation({ scoreData, video }) {
         </Paper>
       </Box>
     );
+  }
+
+  // Success State - when scoreData exists
+  if (!scoreData) {
+    return null;
   }
 
   const getScoreColor = (score) => {

@@ -2,7 +2,7 @@
 import {
     Box, Container, Avatar, Typography, Paper, Grid, Chip, Button, TextField,
     Dialog, DialogTitle, DialogContent, DialogActions, Alert, Skeleton, Fade,
-    Slide, Card, CardContent, Snackbar
+    Slide, Card, CardContent, Snackbar, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { useState, useRef } from 'react';
 import { useAppStore } from '../store/appStore';
@@ -25,6 +25,49 @@ export default function Profile() {
     const [fileData, setFileData] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const fileInputRef = useRef();
+
+    const collegeOptions = [
+        'New Delhi',
+        'Mumbai',
+        'Bengaluru',
+        'Chennai',
+        'Hyderabad',
+        'Pune',
+        'Kolkata'
+    ];
+
+    const educationOptions = [
+        'Banking & Finance',
+        'Biotechnology',
+        'Construction',
+        'Consumer Goods',
+        'Education',
+        'Energy',
+        'Healthcare',
+        'Media & Entertainment',
+        'Hospitality',
+        'Information Technology (IT)',
+        'Insurance',
+        'Manufacturing',
+        'Non-Profit',
+        'Real Estate',
+        'Retail',
+        'Transportation',
+        'Travel & Tourism',
+        'Textiles',
+        'Logistics & Supply Chain',
+        'Sports',
+        'E-commerce',
+        'Consulting',
+        'Advertising & Marketing',
+        'Architecture',
+        'Arts & Design',
+        'Environmental Services',
+        'Human Resources',
+        'Legal',
+        'Management',
+        'Telecommunications'
+    ];
     
     if (isLoadingUserDetails) {
         return (
@@ -66,33 +109,11 @@ export default function Profile() {
     
     const getProfileImage = () => {
         if (fileData) return fileData;
-        if (userDetails.profilePic) {
-            if (userDetails.profilePic.startsWith('data:image')) return userDetails.profilePic;
-            if (userDetails.profilePic.startsWith('https://')) return userDetails.profilePic;
-            try {
-                return `data:image/jpeg;base64,${userDetails.profilePic}`;
-            } catch (error) {
-                console.error('Error processing profile picture:', error);
-                return null;
-            }
-        }
-        return null;
+        return userDetails.profilepicurl || null;
     };
 
     const isEmployerOrInvestor = () => userDetails.roleCode === 'employer' || userDetails.roleCode === 'investor';
     const isPlacementOrAcademy = () => userDetails.roleCode === 'placementDrive' || userDetails.roleCode === 'academy';
-
-    const dataURLtoBlob = (dataurl) => {
-        const arr = dataurl.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while(n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new Blob([u8arr], { type: mime });
-    };
 
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
@@ -128,7 +149,9 @@ export default function Profile() {
                 phoneNumber: userDetails.phoneNumber || '', 
                 email: userDetails.email || '',
                 city: userDetails.city || '',
-                currOrganization: userDetails.currOrganization || ''
+                currentEmployer: userDetails.currentEmployer || '',
+                industry: userDetails.industry || '',
+                establishedYear: userDetails.establishedYear || ''
             });
         } else if (isPlacementOrAcademy()) {
             setEditData({
@@ -145,11 +168,13 @@ export default function Profile() {
                 phoneNumber: userDetails.phoneNumber || '',
                 email: userDetails.email || '', 
                 jobOption: userDetails.jobOption || '',
-                currentRole: userDetails.currentRole || '', 
+                currentRole: userDetails.currentRole || '',
+                experience: userDetails.experience || '',
                 industry: userDetails.industry || '',
                 currentEmployer: userDetails.currentEmployer || '', 
                 keySkills: userDetails.keySkills || '',
-                college: userDetails.college || ''
+                college: userDetails.college || '',
+                education: userDetails.education || ''
             });
         }
         setEditMode(true);
@@ -185,12 +210,21 @@ export default function Profile() {
             }
 
             setSnackbar({ open: true, message: 'Profile updated successfully!', severity: 'success' });
-            setEditMode(false);
-            setFileData(null);
-            setSelectedFile(null);
+            
+            setTimeout(() => {
+                setEditMode(false);
+                setFileData(null);
+                setSelectedFile(null);
+                setSnackbar({ open: false, message: '', severity: 'success' });
+            }, 2000);
         } catch (error) {
             console.error('Error updating profile:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to update profile', severity: 'error' });
+            
+            setTimeout(() => {
+                setEditMode(false);
+                setSnackbar({ open: false, message: '', severity: 'error' });
+            }, 2000);
         }
     };
 
@@ -255,6 +289,23 @@ export default function Profile() {
         />
     );
 
+    const renderSelectField = (label, field, options) => (
+        <FormControl fullWidth sx={textFieldStyle}>
+            <InputLabel>{label}</InputLabel>
+            <Select
+                value={editData[field] || ''}
+                label={label}
+                onChange={(e) => handleChange(field, e.target.value)}
+            >
+                {options.map((option) => (
+                    <MenuItem key={option} value={option}>
+                        {option}
+                    </MenuItem>
+                ))}
+            </Select>
+        </FormControl>
+    );
+
     const renderEditFields = () => {
         if (isEmployerOrInvestor()) {
             return (
@@ -263,8 +314,10 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Last Name", "lastName")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("City", "city")}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Organization", "currOrganization")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Established Year", "establishedYear", { type: "number", inputProps: { min: 1900, max: new Date().getFullYear() } })}</Grid>
                 </>
             );
         } else if (isPlacementOrAcademy()) {
@@ -274,7 +327,7 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Last Name", "lastName")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("College", "college")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("College", "college", collegeOptions)}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Branch", "branch")}</Grid>
                 </>
             );
@@ -285,10 +338,13 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Job Option", "jobOption", { disabled: true })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Industry", "industry")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Role", "currentRole")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Experience", "experience")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
                     <Grid size={{ xs: 12 }}>{renderTextField("Key Skills", "keySkills", { multiline: true, rows: 3 })}</Grid>
-                    <Grid size={{ xs: 12 }}>{renderTextField("College", "college")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("College", "college", collegeOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Education", "education", educationOptions)}</Grid>
                 </>
             );
         }
@@ -387,10 +443,17 @@ export default function Profile() {
                             </Grid>
                         )}
 
-                        {hasValue(userDetails.currentEmployer || userDetails.currOrganization) && (
+                        {hasValue(userDetails.experience) && (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                <InfoCard icon={<StarIcon sx={{ color: '#16a085' }} />} title="Experience"
+                                    value={userDetails.experience} color="#16a085" />
+                            </Grid>
+                        )}
+
+                        {hasValue(userDetails.currentEmployer) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                                 <InfoCard icon={<BusinessIcon sx={{ color: '#9b59b6' }} />} title="Current Employer"
-                                    value={userDetails.currentEmployer || userDetails.currOrganization} color="#9b59b6" />
+                                    value={userDetails.currentEmployer} color="#9b59b6" />
                             </Grid>
                         )}
 
@@ -415,7 +478,14 @@ export default function Profile() {
                             </Grid>
                         )}
 
-                        {!isEmployerOrInvestor() && (hasValue(userDetails.college) || hasValue(userDetails.branch)) && (
+                        {hasValue(userDetails.establishedYear) && (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                                <InfoCard icon={<BusinessIcon sx={{ color: '#8e44ad' }} />} title="Established Year"
+                                    value={userDetails.establishedYear} color="#8e44ad" />
+                            </Grid>
+                        )}
+
+                        {!isEmployerOrInvestor() && (hasValue(userDetails.college) || hasValue(userDetails.branch) || hasValue(userDetails.education)) && (
                             <>
                                 <Grid size={{ xs: 12 }}>
                                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#2c3e50', mb: 3, mt: 4 }}>
@@ -430,10 +500,17 @@ export default function Profile() {
                                     </Grid>
                                 )}
 
+                                {hasValue(userDetails.education) && (
+                                    <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+                                        <InfoCard icon={<SchoolIcon sx={{ color: '#2ecc71' }} />} title="Education"
+                                            value={userDetails.education} color="#2ecc71" />
+                                    </Grid>
+                                )}
+
                                 {hasValue(userDetails.branch) && (
                                     <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                                        <InfoCard icon={<SchoolIcon sx={{ color: '#2ecc71' }} />} title="Branch"
-                                            value={userDetails.branch} color="#2ecc71" />
+                                        <InfoCard icon={<SchoolIcon sx={{ color: '#3498db' }} />} title="Branch"
+                                            value={userDetails.branch} color="#3498db" />
                                     </Grid>
                                 )}
                             </>
@@ -488,15 +565,15 @@ export default function Profile() {
                     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
                     position: 'sticky', bottom: 0, zIndex: 1
                 }}>
-                    <Button onClick={handleCancel} variant="outlined" size="large" sx={{ 
-                        borderRadius: 4, px: 6, py: 2, fontWeight: 600, fontSize: '1rem',
+                    <Button onClick={handleCancel} variant="outlined" size="small" sx={{ 
+                        borderRadius: 3, px: 4, py: 1.5, fontWeight: 600, fontSize: '0.875rem',
                         color: '#64748b', borderColor: '#cbd5e1', borderWidth: '2px',
                         '&:hover': { borderColor: '#94a3b8', backgroundColor: '#f8fafc', borderWidth: '2px' },
                         transition: 'all 0.2s ease'
                     }}>Cancel</Button>
-                    <Button onClick={handleSave} variant="contained" disabled={isUpdatingUserDetails} size="large"
+                    <Button onClick={handleSave} variant="contained" disabled={isUpdatingUserDetails} size="small"
                         sx={{ 
-                            borderRadius: 4, px: 6, py: 2, fontWeight: 600, fontSize: '1rem',
+                            borderRadius: 3, px: 4, py: 1.5, fontWeight: 600, fontSize: '0.875rem',
                             background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
                             boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.4)',
                             '&:hover': { 
@@ -509,7 +586,7 @@ export default function Profile() {
                         {isUpdatingUserDetails ? (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Box sx={{ 
-                                    width: 16, height: 16, border: '2px solid #ffffff', borderTop: '2px solid transparent',
+                                    width: 14, height: 14, border: '2px solid #ffffff', borderTop: '2px solid transparent',
                                     borderRadius: '50%', animation: 'spin 1s linear infinite',
                                     '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' }}
                                 }} />
