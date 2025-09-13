@@ -45,7 +45,6 @@ export default function VideoPlayer() {
   const containerRef = useRef();
   const mobileContainerRef = useRef();
   const videoContainerRef = useRef();
-  const canvasRef = useRef();
 
   const [video, setVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -218,7 +217,7 @@ export default function VideoPlayer() {
     const handleTouchEnd = (e) => {
       if (!touchStartY || !touchStartX || !touchStartTime) return;
 
-      const touchEndY = e.changedTouches[0].changedTouches;
+      const touchEndY = e.changedTouches[0].clientY;
       const touchEndX = e.changedTouches[0].clientX;
       const touchEndTime = Date.now();
 
@@ -348,20 +347,6 @@ export default function VideoPlayer() {
       setScoreData(scoreRes.data);
     } catch (error) {
       console.error("Error fetching score data:", error);
-      
-      if (error.response && error.response.status === 404) {
-        setScoreData({ 
-          message: "Score is not available for the video",
-          isError: true,
-          errorType: 404 
-        });
-      } else {
-        setScoreData({ 
-          message: "Failed to load score data",
-          isError: true,
-          errorType: error.response?.status || 'unknown'
-        });
-      }
     }
   };
 
@@ -398,84 +383,99 @@ export default function VideoPlayer() {
     }
   };
 
-  const getFaviconBlob = async () => {
-    try {
-      const domain = new URL(window.location.origin).hostname;
-      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-      
-      const response = await fetch(faviconUrl);
-      if (!response.ok) throw new Error('Favicon fetch failed');
-      
-      return await response.blob();
-    } catch (error) {
-      console.warn('Could not fetch favicon:', error);
-      return null;
+const handleShare = async () => {
+  if (!video) return;
+  
+  const videoUrl = `${window.location.origin}/app/video/${btoa(
+    video.id.toString()
+  )}`;
+  const videoTitle = video.title || 'Check out this video!';
+  
+  const shareData = {
+    title: 'Wezume',
+    text: videoTitle,
+    url: window.location.href,
+  };
+
+  try {
+    // Check if Web Share API is supported and data can be shared
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      await navigator.share(shareData);
+      showSnackbar("Shared successfully!", "success");
+      return;
     }
-  };
-
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1];
-        resolve(base64String);
-      };
-      reader.readAsDataURL(blob);
-    });
-  };
-
-  const handleShare = async () => {
-    if (!video) return;
-
-    const videoUrl = `${window.location.origin}/app/video/${btoa(
-      video.id.toString()
-    )}`;
-    const videoTitle = video.title || 'Check out this video!';
-    const domain = new URL(window.location.origin).hostname;
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.write) {
-        const faviconBlob = await getFaviconBlob();
-        
-        if (faviconBlob) {
-          const htmlContent = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <img src="data:${faviconBlob.type};base64,${await blobToBase64(faviconBlob)}" 
-                   width="16" height="16" style="vertical-align: middle;" />
-              <div>
-                <div><a href="${videoUrl}" target="_blank">${videoTitle}</a></div>
-                <div style="color: #666; font-size: 12px;">${domain}</div>
-              </div>
-            </div>
-          `;
-
-          const plainText = `${videoTitle}\n${videoUrl}`;
-
-          const clipboardItem = new ClipboardItem({
-            'text/html': new Blob([htmlContent], { type: 'text/html' }),
-            'text/plain': new Blob([plainText], { type: 'text/plain' }),
-            [faviconBlob.type]: faviconBlob
-          });
-
-          await navigator.clipboard.write([clipboardItem]);
-          showSnackbar("Link copied to clipboard!", "success");
-          return;
-        }
-      }
-
-      await navigator.clipboard.writeText(videoUrl);
-      showSnackbar("Link copied to clipboard!", "success");
-
-    } catch (error) {
-      console.error("Share error:", error);
+    
+    // Alternative check for browsers that support share but not canShare
+    if (navigator.share) {
       try {
-        await navigator.clipboard.writeText(videoUrl);
-        showSnackbar("Link copied to clipboard!", "success");
-      } catch (fallbackError) {
-        showSnackbar("Failed to copy link", "error");
+        await navigator.share(shareData);
+        showSnackbar("Shared successfully!", "success");
+        return;
+      } catch (shareError) {
+        // If share fails, fall through to clipboard fallback
+        console.log("Share failed, trying clipboard fallback:", shareError);
       }
     }
-  };
+    
+    // Fallback to clipboard API for unsupported browsers
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(window.location.href);
+      showSnackbar("Link copied to clipboard!", "success");
+      return;
+    }
+    
+    // Legacy fallback for older browsers
+    if (document.execCommand) {
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showSnackbar("Link copied to clipboard!", "success");
+        return;
+      } catch (err) {
+        document.body.removeChild(textArea);
+      }
+    }
+    
+    // Final fallback - show manual copy option
+    showSnackbar("Please copy the URL manually from your address bar", "info");
+    
+  } catch (error) {
+    console.error("Share error:", error);
+    
+    // Handle specific error cases
+    if (error.name === 'AbortError') {
+      // User cancelled the share - don't show error
+      return;
+    }
+    
+    if (error.name === 'NotAllowedError') {
+      showSnackbar("Sharing requires user interaction", "warning");
+      return;
+    }
+    
+    // Try clipboard as final fallback
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(window.location.href);
+        showSnackbar("Link copied to clipboard!", "success");
+      } else {
+        showSnackbar("Unable to share or copy link", "error");
+      }
+    } catch (fallbackError) {
+      showSnackbar("Unable to share or copy link", "error");
+    }
+  }
+};
+
 
   const handleCall = () => {
     if (!video || !video.phonenumber) return;
@@ -608,6 +608,7 @@ export default function VideoPlayer() {
               overscroll-behavior-x: none !important;
             }
             
+            /* Prevent pull-to-refresh on mobile browsers */
             body {
               position: fixed;
               width: 100%;
@@ -615,6 +616,7 @@ export default function VideoPlayer() {
               overflow: hidden;
             }
             
+            /* Video subtitle styling */
             video::cue {
               font-size: 14px !important;
               line-height: 1.2 !important;
@@ -704,6 +706,17 @@ export default function VideoPlayer() {
             </Box>
           )}
 
+          <style>
+            {`
+              video::cue {
+                font-size: 14px !important;
+                line-height: 1.2 !important;
+                background-color: rgba(0, 0, 0, 0.6) !important;
+                color: white !important;
+              }
+            `}
+          </style>
+
           <Box
             sx={{
               position: "absolute",
@@ -780,8 +793,6 @@ export default function VideoPlayer() {
             </Fab>
           </Box>
         </Box>
-
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         <Modal
           open={scoreModalOpen}
@@ -1109,8 +1120,6 @@ export default function VideoPlayer() {
       >
         <NavigateNext sx={{ fontSize: 32 }} />
       </IconButton>
-
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       <Snackbar
         open={snackbar.open}
