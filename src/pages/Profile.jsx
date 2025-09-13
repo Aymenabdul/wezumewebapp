@@ -148,9 +148,9 @@ export default function Profile() {
                 lastName: userDetails.lastName || '',
                 phoneNumber: userDetails.phoneNumber || '', 
                 email: userDetails.email || '',
-                city: userDetails.city || '',
                 currentEmployer: userDetails.currentEmployer || '',
                 industry: userDetails.industry || '',
+                city: userDetails.city || '',
                 establishedYear: userDetails.establishedYear || ''
             });
         } else if (isPlacementOrAcademy()) {
@@ -165,16 +165,12 @@ export default function Profile() {
         } else {
             setEditData({
                 firstName: userDetails.firstName || '', 
+                lastName: userDetails.lastName || '',
                 phoneNumber: userDetails.phoneNumber || '',
-                email: userDetails.email || '', 
-                jobOption: userDetails.jobOption || '',
-                currentRole: userDetails.currentRole || '',
-                experience: userDetails.experience || '',
+                email: userDetails.email || '',
                 industry: userDetails.industry || '',
-                currentEmployer: userDetails.currentEmployer || '', 
-                keySkills: userDetails.keySkills || '',
-                college: userDetails.college || '',
-                education: userDetails.education || ''
+                currentEmployer: userDetails.currentEmployer || '',
+                city: userDetails.city || ''
             });
         }
         setEditMode(true);
@@ -314,9 +310,10 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Last Name", "lastName")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Company Name", "currentEmployer")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Established Year", "establishedYear", { type: "number", inputProps: { min: 1900, max: new Date().getFullYear() } })}</Grid>
                 </>
             );
         } else if (isPlacementOrAcademy()) {
@@ -326,7 +323,7 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Last Name", "lastName")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("College", "college", collegeOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Organization Name", "college")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Branch", "branch")}</Grid>
                 </>
             );
@@ -334,16 +331,12 @@ export default function Profile() {
             return (
                 <>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("First Name", "firstName")}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Last Name", "lastName")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Phone Number", "phoneNumber")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Job Option", "jobOption", { disabled: true })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Role", "currentRole")}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Experience", "experience")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
-                    <Grid size={{ xs: 12 }}>{renderTextField("Key Skills", "keySkills", { multiline: true, rows: 3 })}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("College", "college", collegeOptions)}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Education", "education", educationOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
                 </>
             );
         }

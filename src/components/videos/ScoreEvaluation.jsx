@@ -25,6 +25,7 @@ import {
   Error
 } from '@mui/icons-material';
 
+
 export default function ScoreEvaluation({ scoreData, video, loading = false, error = false }) {
   const decodeProfilePic = (pic) => {
     if (!pic) return null;
@@ -35,6 +36,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
       return pic;
     }
   };
+
 
   const getFeedback = (Clarity, Confidence, Authenticity, emotional) => {
     const scores = [
@@ -55,6 +57,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return feedbackMessages[weakest];
   };
 
+
   const getHashtags = score => {
     const clarity = score?.Clarity ?? 0;
     if (clarity < 4) {
@@ -71,6 +74,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     }
     return ['#Articulate'];
   };
+
 
   const getHashtags1 = score => {
     const confidence = score?.Confidence ?? 0;
@@ -89,6 +93,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return ['#Assured'];
   };
 
+
   const getHashtags2 = score => {
     const authenticity = score?.Authenticity ?? 0;
     if (authenticity < 4) {
@@ -106,6 +111,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return ['#Genuine'];
   };
 
+
   const getHashtags3 = score => {
     const emotional = score?.EmotionalExpressiveness ?? 0;
     if (emotional < 4) {
@@ -122,6 +128,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     }
     return ['#Expressive'];
   };
+
 
   // Enhanced Loading State with Skeletons
   if (loading) {
@@ -148,6 +155,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
             </Box>
           </Stack>
         </Paper>
+
 
         {/* Overall Score Section Skeleton */}
         <Paper sx={{ 
@@ -179,12 +187,14 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
           </Box>
         </Paper>
 
+
         {/* Breakdown Section Skeleton */}
         <Box sx={{ mb: 3 }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
             <Skeleton variant="circular" width={20} height={20} />
             <Skeleton variant="text" width={100} height={28} />
           </Stack>
+
 
           <Grid container spacing={1.5}>
             {Array.from({ length: 4 }).map((_, index) => (
@@ -210,6 +220,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
           </Grid>
         </Box>
 
+
         {/* Analysis Section Skeleton */}
         <Paper sx={{ 
           p: 2.5,
@@ -229,6 +240,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
             ))}
           </Box>
 
+
           <Skeleton variant="text" width="90%" height={20} sx={{ mb: 1 }} />
           <Skeleton variant="text" width="85%" height={20} />
         </Paper>
@@ -236,14 +248,19 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     );
   }
 
-  // Error State
-  if (error) {
+
+  // Enhanced Error State - Handle both error prop and scoreData.isError
+  if (error || (scoreData && scoreData.isError)) {
+    const errorMessage = scoreData?.message || "Score is not available for the video";
+    const is404Error = scoreData?.errorType === 404;
+    
     return (
       <Box sx={{ 
         height: '100%', 
         overflow: 'auto',
         p: 2
       }}>
+        {/* Profile Section */}
         <Paper sx={{ 
           mb: 2, 
           p: 2,
@@ -280,27 +297,36 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
           </Stack>
         </Paper>
 
+        {/* Enhanced Error State */}
         <Paper sx={{ 
           p: 3,
           borderRadius: 3,
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          border: '1px solid rgba(0,0,0,0.05)',
+          border: is404Error ? '1px solid rgba(251, 146, 60, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+          bgcolor: is404Error ? 'rgba(251, 146, 60, 0.05)' : 'rgba(239, 68, 68, 0.05)',
           textAlign: 'center'
         }}>
           <Box sx={{ mb: 2 }}>
-            <Error sx={{ fontSize: 48, color: '#ef4444', mb: 2 }} />
+            {is404Error ? (
+              <Assessment sx={{ fontSize: 48, color: '#f59e0b', mb: 2 }} />
+            ) : (
+              <Error sx={{ fontSize: 48, color: '#ef4444', mb: 2 }} />
+            )}
             <Typography variant="h6" sx={{ 
-              color: '#ef4444',
+              color: is404Error ? '#f59e0b' : '#ef4444',
               fontWeight: 600,
               mb: 1
             }}>
-              No total score found for the video
+              {errorMessage}
             </Typography>
             <Typography variant="body2" sx={{ 
               color: '#6b7280',
               fontWeight: 500
             }}>
-              Score evaluation is not available for this video
+              {is404Error 
+                ? "This video has not been evaluated yet or the score data is unavailable."
+                : "There was an issue loading the score data. Please try again later."
+              }
             </Typography>
           </Box>
         </Paper>
@@ -308,10 +334,12 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     );
   }
 
+
   // Success State - when scoreData exists
   if (!scoreData) {
     return null;
   }
+
 
   const getScoreColor = (score) => {
     if (score >= 8) return '#10b981';
@@ -319,6 +347,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     if (score >= 4) return '#ef4444';
     return '#6b7280';
   };
+
 
   const getScoreIcon = (label) => {
     switch (label.toLowerCase()) {
@@ -330,6 +359,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     }
   };
 
+
   const getPerformanceLabel = (score) => {
     if (score >= 9) return { label: 'Outstanding', color: '#059669' };
     if (score >= 7) return { label: 'Excellent', color: '#0891b2' };
@@ -338,6 +368,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return { label: 'Needs Work', color: '#7c2d12' };
   };
 
+
   const scores = [
     { label: 'Clarity', value: scoreData.clarityScore, description: 'Communication clarity' },
     { label: 'Confidence', value: scoreData.confidenceScore, description: 'Presentation confidence' },
@@ -345,7 +376,9 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     { label: 'Emotional', value: scoreData.emotionalScore, description: 'Emotional connection' }
   ];
 
+
   const totalPerformance = getPerformanceLabel(scoreData.totalScore);
+
 
   const clarityHashtag = getHashtags({ Clarity: scoreData.clarityScore })[0];
   const confidenceHashtag = getHashtags1({ Confidence: scoreData.confidenceScore })[0];
@@ -358,6 +391,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     scoreData.authenticityScore, 
     scoreData.emotionalScore
   );
+
 
   return (
     <Box sx={{ 
@@ -438,6 +472,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
         </Stack>
       </Paper>
 
+
       <Paper sx={{ 
         mb: 3,
         p: 3,
@@ -482,6 +517,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
         </Box>
       </Paper>
 
+
       <Box sx={{ mb: 3 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
           <Assessment sx={{ color: '#6b7280', fontSize: 20 }} />
@@ -493,6 +529,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
             Breakdown
           </Typography>
         </Stack>
+
 
         <Grid container spacing={1.5}>
           {scores.map((score, index) => (
@@ -556,6 +593,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
           ))}
         </Grid>
       </Box>
+
 
       <Paper sx={{ 
         p: 2.5,
@@ -621,6 +659,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
             }}
           />
         </Box>
+
 
         <Typography variant="body2" sx={{ 
           color: 'text.secondary', 

@@ -347,6 +347,22 @@ export default function VideoPlayer() {
       setScoreData(scoreRes.data);
     } catch (error) {
       console.error("Error fetching score data:", error);
+      
+      // Check if it's a 404 error and set appropriate message
+      if (error.response && error.response.status === 404) {
+        setScoreData({ 
+          message: "Score is not available for the video",
+          isError: true,
+          errorType: 404 
+        });
+      } else {
+        // Handle other types of errors
+        setScoreData({ 
+          message: "Failed to load score data",
+          isError: true,
+          errorType: error.response?.status || 'unknown'
+        });
+      }
     }
   };
 
