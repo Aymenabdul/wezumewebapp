@@ -45,6 +45,7 @@ export default function VideoPlayer() {
   const containerRef = useRef();
   const mobileContainerRef = useRef();
   const videoContainerRef = useRef();
+  const canvasRef = useRef();
 
   const [video, setVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -217,7 +218,7 @@ export default function VideoPlayer() {
     const handleTouchEnd = (e) => {
       if (!touchStartY || !touchStartX || !touchStartTime) return;
 
-      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndY = e.changedTouches[0].changedTouches;
       const touchEndX = e.changedTouches[0].clientX;
       const touchEndTime = Date.now();
 
@@ -348,7 +349,6 @@ export default function VideoPlayer() {
     } catch (error) {
       console.error("Error fetching score data:", error);
       
-      // Check if it's a 404 error and set appropriate message
       if (error.response && error.response.status === 404) {
         setScoreData({ 
           message: "Score is not available for the video",
@@ -356,7 +356,6 @@ export default function VideoPlayer() {
           errorType: 404 
         });
       } else {
-        // Handle other types of errors
         setScoreData({ 
           message: "Failed to load score data",
           isError: true,
@@ -399,20 +398,83 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleShare = () => {
+  const getFaviconBlob = async () => {
+    try {
+      const domain = new URL(window.location.origin).hostname;
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      
+      const response = await fetch(faviconUrl);
+      if (!response.ok) throw new Error('Favicon fetch failed');
+      
+      return await response.blob();
+    } catch (error) {
+      console.warn('Could not fetch favicon:', error);
+      return null;
+    }
+  };
+
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result.split(',')[1];
+        resolve(base64String);
+      };
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handleShare = async () => {
     if (!video) return;
 
     const videoUrl = `${window.location.origin}/app/video/${btoa(
       video.id.toString()
     )}`;
-    navigator.clipboard
-      .writeText(videoUrl)
-      .then(() => {
-        showSnackbar("Video link copied to clipboard!", "success");
-      })
-      .catch(() => {
-        showSnackbar("Failed to copy video link", "error");
-      });
+    const videoTitle = video.title || 'Check out this video!';
+    const domain = new URL(window.location.origin).hostname;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.write) {
+        const faviconBlob = await getFaviconBlob();
+        
+        if (faviconBlob) {
+          const htmlContent = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <img src="data:${faviconBlob.type};base64,${await blobToBase64(faviconBlob)}" 
+                   width="16" height="16" style="vertical-align: middle;" />
+              <div>
+                <div><a href="${videoUrl}" target="_blank">${videoTitle}</a></div>
+                <div style="color: #666; font-size: 12px;">${domain}</div>
+              </div>
+            </div>
+          `;
+
+          const plainText = `${videoTitle}\n${videoUrl}`;
+
+          const clipboardItem = new ClipboardItem({
+            'text/html': new Blob([htmlContent], { type: 'text/html' }),
+            'text/plain': new Blob([plainText], { type: 'text/plain' }),
+            [faviconBlob.type]: faviconBlob
+          });
+
+          await navigator.clipboard.write([clipboardItem]);
+          showSnackbar("Link copied to clipboard!", "success");
+          return;
+        }
+      }
+
+      await navigator.clipboard.writeText(videoUrl);
+      showSnackbar("Link copied to clipboard!", "success");
+
+    } catch (error) {
+      console.error("Share error:", error);
+      try {
+        await navigator.clipboard.writeText(videoUrl);
+        showSnackbar("Link copied to clipboard!", "success");
+      } catch (fallbackError) {
+        showSnackbar("Failed to copy link", "error");
+      }
+    }
   };
 
   const handleCall = () => {
@@ -546,7 +608,6 @@ export default function VideoPlayer() {
               overscroll-behavior-x: none !important;
             }
             
-            /* Prevent pull-to-refresh on mobile browsers */
             body {
               position: fixed;
               width: 100%;
@@ -554,7 +615,6 @@ export default function VideoPlayer() {
               overflow: hidden;
             }
             
-            /* Video subtitle styling */
             video::cue {
               font-size: 14px !important;
               line-height: 1.2 !important;
@@ -644,40 +704,6 @@ export default function VideoPlayer() {
             </Box>
           )}
 
-          <style>
-            {`
-              video::cue {
-                font-size: 14px !important;
-                line-height: 1.2 !important;
-                background-color: rgba(0, 0, 0, 0.6) !important;
-                color: white !important;
-              }
-            `}
-          </style>
-
-          {/* Left Side Actions */}
-          <Box
-            sx={{
-              position: "absolute",
-              left: 20,
-              top: "50%",
-              transform: "translateY(-50%)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              zIndex: 10,
-            }}
-          >
-            
-            <Fab
-              size="small"
-              onClick={() => setScoreModalOpen(true)}
-              sx={{ bgcolor: "rgba(255,255,255,0.9)", color: "#1976d2" }}
-            >
-              <Assessment />
-            </Fab>
-          </Box>
-
           <Box
             sx={{
               position: "absolute",
@@ -740,6 +766,13 @@ export default function VideoPlayer() {
             </Fab>
             <Fab
               size="small"
+              onClick={() => setScoreModalOpen(true)}
+              sx={{ bgcolor: "rgba(255,255,255,0.9)", color: "#1976d2" }}
+            >
+              <Assessment />
+            </Fab>
+            <Fab
+              size="small"
               onClick={() => setCommentsModalOpen(true)}
               sx={{ bgcolor: "rgba(255,255,255,0.9)", color: "#607d8b" }}
             >
@@ -747,6 +780,8 @@ export default function VideoPlayer() {
             </Fab>
           </Box>
         </Box>
+
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         <Modal
           open={scoreModalOpen}
@@ -1074,6 +1109,8 @@ export default function VideoPlayer() {
       >
         <NavigateNext sx={{ fontSize: 32 }} />
       </IconButton>
+
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       <Snackbar
         open={snackbar.open}

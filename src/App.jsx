@@ -33,7 +33,7 @@ function RootRedirect() {
   const { isAuthenticated } = useAppStore()
   
   if (isAuthenticated()) {
-    return <Navigate to="/app/dashboard" replace />
+    return <Landing />
   }
   
   return <Landing />

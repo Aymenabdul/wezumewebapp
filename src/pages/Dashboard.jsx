@@ -273,7 +273,7 @@ export default function Dashboard() {
                                     >
                                         Liked Videos
                                     </Typography>
-                                    <Typography
+                                    {/* <Typography
                                       variant="body2"
                                       sx={{
                                         color: "#64748b",
@@ -282,7 +282,7 @@ export default function Dashboard() {
                                       }}
                                     >
                                         {likedVideos?.length || 0} liked
-                                    </Typography>
+                                    </Typography> */}
                                 </Box>
                             </Box>
                         </Card>
@@ -358,7 +358,7 @@ export default function Dashboard() {
                                     >
                                         Commented Videos
                                     </Typography>
-                                    <Typography
+                                    {/* <Typography
                                       variant="body2"
                                       sx={{
                                         color: "#64748b",
@@ -367,7 +367,7 @@ export default function Dashboard() {
                                       }}
                                     >
                                         {[...new Set(comments?.map(c => c.videoId) || [])].length} videos
-                                    </Typography>
+                                    </Typography> */}
                                 </Box>
                             </Box>
                         </Card>
@@ -443,7 +443,7 @@ export default function Dashboard() {
                                     >
                                         Job Videos
                                     </Typography>
-                                    <Typography
+                                    {/* <Typography
                                       variant="body2"
                                       sx={{
                                         color: "#64748b",
@@ -452,7 +452,7 @@ export default function Dashboard() {
                                       }}
                                     >
                                         {userDetails?.jobid ? `ID: ${userDetails.jobid}` : 'No job'}
-                                    </Typography>
+                                    </Typography> */}
                                 </Box>
                             </Box>
                         </Card>
