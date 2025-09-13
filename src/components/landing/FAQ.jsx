@@ -109,7 +109,7 @@ export default function HorizontalFAQ() {
   };
 
   return (
-    <div className="relative w-full mt-20 overflow-visible"> {/* Changed to overflow-visible */}
+    <div className="relative w-full mt-20 overflow-visible">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800">
         <div className="absolute inset-0 bg-gradient-to-t from-blue-900/60 to-transparent"></div>
@@ -132,10 +132,10 @@ export default function HorizontalFAQ() {
               key={index}
               className={`flex flex-col relative ${
                 openStates[index] ? 'z-50' : 'z-10'
-              }`} // Dynamic z-index for expanded sections
+              }`}
             >
-              {/* Header Box */}
-              <div className="bg-white/95 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 relative overflow-hidden">
+              {/* Header Box - Glassmorphism */}
+              <div className="backdrop-filter backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 relative overflow-hidden hover:bg-white/25">
                 {/* Subtle inner doodles */}
                 <div className="absolute top-2 right-2 w-3 h-3 bg-blue-100/50 rounded-full animate-pulse"></div>
                 <div className="absolute bottom-2 left-2 w-2 h-2 bg-blue-200/30 rounded-full animate-ping" 
@@ -145,54 +145,54 @@ export default function HorizontalFAQ() {
                   onClick={() => toggleSection(index)}
                   className="w-full flex flex-col items-center text-center px-6 py-6 focus:outline-none relative z-10"
                 >
-                  <span className="text-xl font-bold text-blue-600">
+                  <span className="text-xl font-bold text-white drop-shadow-lg">
                     {section.title}
                   </span>
-                  <span className="text-sm text-gray-500 mt-1">
+                  <span className="text-sm text-white/80 mt-1 drop-shadow-md">
                     {section.subtitle}
                   </span>
                   <div className="mt-3">
                     {openStates[index] ? (
-                      <ChevronUp className="w-6 h-6 text-blue-600 transform transition-transform duration-300" />
+                      <ChevronUp className="w-6 h-6 text-white transform transition-transform duration-300 drop-shadow-md" />
                     ) : (
-                      <ChevronDown className="w-6 h-6 text-blue-600 transform transition-transform duration-300" />
+                      <ChevronDown className="w-6 h-6 text-white transform transition-transform duration-300 drop-shadow-md" />
                     )}
                   </div>
                 </button>
               </div>
 
-              {/* Expandable Content Below - Fixed with grid-based animation */}
+              {/* Expandable Content Below - Glassmorphism */}
               <div
                 className={`transition-all duration-500 ease-in-out ${
                   openStates[index] 
                     ? "grid-rows-[1fr] opacity-100 mt-4" 
                     : "grid-rows-[0fr] opacity-0"
-                } grid`} // Grid-based animation prevents cutting
+                } grid`}
               >
-                <div className="overflow-hidden"> {/* This wrapper prevents content cutting */}
-                  <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 relative">
+                <div className="overflow-hidden">
+                  <div className="backdrop-filter backdrop-blur-xl bg-white/15 border border-white/25 rounded-2xl shadow-2xl p-6 relative hover:bg-white/20 transition-all duration-300">
                     {/* Content card doodles */}
-                    <div className="absolute top-1 right-4 w-2 h-2 bg-blue-100 rounded-full animate-bounce" 
+                    <div className="absolute top-1 right-4 w-2 h-2 bg-blue-100/30 rounded-full animate-bounce" 
                          style={{ animationDelay: '1s', animationDuration: '4s' }}></div>
                     
                     <div className="space-y-4 relative z-10">
                       {section.items.map((item, i) => (
                         <div
                           key={i}
-                          className="border-l-4 border-blue-600 pl-4 bg-gradient-to-r from-blue-50 to-blue-25 rounded-lg p-4 hover:from-blue-100 hover:to-blue-50 transition-all duration-300 relative overflow-hidden group"
+                          className="border-l-4 border-blue-600 pl-4 rounded-lg p-4 hover:bg-white/40 transition-all duration-300 relative overflow-hidden group border border-white/20"
                         >
                           {/* Item doodles */}
-                          <div className="absolute top-1 right-2 w-1 h-1 bg-blue-300 rounded-full animate-pulse" 
+                          <div className="absolute top-1 right-2 w-1 h-1 bg-blue-600/50 rounded-full animate-pulse" 
                                style={{ animationDelay: `${i * 0.5}s` }}></div>
                           
                           {/* Subtle hover effect background */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div className="absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
                           
                           <div className="relative z-10">
-                            <p className="text-lg font-semibold text-blue-600 mb-2 group-hover:text-blue-700 transition-colors">
+                            <p className="text-lg font-semibold text-white mb-2 group-hover: drop-shadow-sm">
                               {item.heading}
                             </p>
-                            <p className="text-gray-700 text-sm leading-relaxed">
+                            <p className="text-white/90 text-sm leading-relaxed drop-shadow-sm">
                               {item.desc}
                             </p>
                           </div>
