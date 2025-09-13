@@ -196,6 +196,270 @@ export default function Dashboard() {
                 </Typography>
             </Box>
 
+            <Box sx={{ 
+                width: "100%", 
+                maxWidth: "1200px", 
+                mb: 3,
+                px: 2
+            }}>
+                <Grid container spacing={2}>
+                    <Grid size={{ xs: 4, md: 4 }}>
+                        <Card
+                          onClick={() => handleTabClick('liked')}
+                          sx={{
+                            borderRadius: "12px",
+                            border: activeTab === 'liked' ? "2px solid #ec4899" : "1px solid #e2e8f0",
+                            background: activeTab === 'liked' ? 
+                              "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)" : 
+                              "#ffffff",
+                            boxShadow: activeTab === 'liked' ? 
+                              "0 4px 12px rgba(236, 72, 153, 0.3)" : 
+                              "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                            transition: "all 0.3s ease",
+                            cursor: "pointer",
+                            minHeight: { xs: 100, sm: 120, md: 140 },
+                            "&:hover": {
+                              boxShadow: { 
+                                xs: activeTab === 'liked' ? 
+                                  "0 4px 12px rgba(236, 72, 153, 0.3)" : 
+                                  "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                                md: "0 4px 12px 0 rgba(0, 0, 0, 0.1)"
+                              },
+                              transform: { xs: "none", md: "translateY(-2px)" },
+                              backgroundColor: activeTab === 'liked' ? 
+                                "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)" : 
+                                "#f8fafc"
+                            }
+                          }}
+                        >
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                p: { xs: 1.5, sm: 2, md: 3 },
+                                gap: { xs: 1, sm: 1.5, md: 2 }
+                              }}
+                            >
+                                <Box
+                                  sx={{
+                                    width: { xs: 32, sm: 40, md: 48 },
+                                    height: { xs: 32, sm: 40, md: 48 },
+                                    borderRadius: "12px",
+                                    background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)"
+                                  }}
+                                >
+                                    <FavoriteIcon sx={{ 
+                                      color: "white", 
+                                      fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" }
+                                    }} />
+                                </Box>
+                                <Box sx={{ textAlign: "center" }}>
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: 600,
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1.125rem' },
+                                        color: "#1e293b",
+                                        lineHeight: 1.2
+                                      }}
+                                    >
+                                        Liked Videos
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#64748b",
+                                        fontSize: { xs: '0.625rem', sm: '0.75rem', md: '0.875rem' },
+                                        mt: 0.5
+                                      }}
+                                    >
+                                        {likedVideos?.length || 0} liked
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Card>
+                    </Grid>
+                    
+                    <Grid size={{ xs: 4, md: 4 }}>
+                        <Card
+                          onClick={() => handleTabClick('commented')}
+                          sx={{
+                            borderRadius: "12px",
+                            border: activeTab === 'commented' ? "2px solid #f59e0b" : "1px solid #e2e8f0",
+                            background: activeTab === 'commented' ? 
+                              "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" : 
+                              "#ffffff",
+                            boxShadow: activeTab === 'commented' ? 
+                              "0 4px 12px rgba(245, 158, 11, 0.3)" : 
+                              "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                            transition: "all 0.3s ease",
+                            cursor: "pointer",
+                            minHeight: { xs: 100, sm: 120, md: 140 },
+                            "&:hover": {
+                              boxShadow: { 
+                                xs: activeTab === 'commented' ? 
+                                  "0 4px 12px rgba(245, 158, 11, 0.3)" : 
+                                  "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                                md: "0 4px 12px 0 rgba(0, 0, 0, 0.1)"
+                              },
+                              transform: { xs: "none", md: "translateY(-2px)" },
+                              backgroundColor: activeTab === 'commented' ? 
+                                "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)" : 
+                                "#f8fafc"
+                            }
+                          }}
+                        >
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                p: { xs: 1.5, sm: 2, md: 3 },
+                                gap: { xs: 1, sm: 1.5, md: 2 }
+                              }}
+                            >
+                                <Box
+                                  sx={{
+                                    width: { xs: 32, sm: 40, md: 48 },
+                                    height: { xs: 32, sm: 40, md: 48 },
+                                    borderRadius: "12px",
+                                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
+                                  }}
+                                >
+                                    <CommentIcon sx={{ 
+                                      color: "white", 
+                                      fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" }
+                                    }} />
+                                </Box>
+                                <Box sx={{ textAlign: "center" }}>
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: 600,
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1.125rem' },
+                                        color: "#1e293b",
+                                        lineHeight: 1.2
+                                      }}
+                                    >
+                                        Commented Videos
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#64748b",
+                                        fontSize: { xs: '0.625rem', sm: '0.75rem', md: '0.875rem' },
+                                        mt: 0.5
+                                      }}
+                                    >
+                                        {[...new Set(comments?.map(c => c.videoId) || [])].length} videos
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Card>
+                    </Grid>
+                    
+                    <Grid size={{ xs: 4, md: 4 }}>
+                        <Card
+                          onClick={() => handleTabClick('job')}
+                          sx={{
+                            borderRadius: "12px",
+                            border: activeTab === 'job' ? "2px solid #10b981" : "1px solid #e2e8f0",
+                            background: activeTab === 'job' ? 
+                              "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)" : 
+                              "#ffffff",
+                            boxShadow: activeTab === 'job' ? 
+                              "0 4px 12px rgba(16, 185, 129, 0.3)" : 
+                              "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                            transition: "all 0.3s ease",
+                            cursor: "pointer",
+                            minHeight: { xs: 100, sm: 120, md: 140 },
+                            "&:hover": {
+                              boxShadow: { 
+                                xs: activeTab === 'job' ? 
+                                  "0 4px 12px rgba(16, 185, 129, 0.3)" : 
+                                  "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+                                md: "0 4px 12px 0 rgba(0, 0, 0, 0.1)"
+                              },
+                              transform: { xs: "none", md: "translateY(-2px)" },
+                              backgroundColor: activeTab === 'job' ? 
+                                "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)" : 
+                                "#f8fafc"
+                            }
+                          }}
+                        >
+                            <Box
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                p: { xs: 1.5, sm: 2, md: 3 },
+                                gap: { xs: 1, sm: 1.5, md: 2 }
+                              }}
+                            >
+                                <Box
+                                  sx={{
+                                    width: { xs: 32, sm: 40, md: 48 },
+                                    height: { xs: 32, sm: 40, md: 48 },
+                                    borderRadius: "12px",
+                                    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
+                                  }}
+                                >
+                                    <WorkIcon sx={{ 
+                                      color: "white", 
+                                      fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" }
+                                    }} />
+                                </Box>
+                                <Box sx={{ textAlign: "center" }}>
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: 600,
+                                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1.125rem' },
+                                        color: "#1e293b",
+                                        lineHeight: 1.2
+                                      }}
+                                    >
+                                        Job Videos
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: "#64748b",
+                                        fontSize: { xs: '0.625rem', sm: '0.75rem', md: '0.875rem' },
+                                        mt: 0.5
+                                      }}
+                                    >
+                                        {userDetails?.jobid ? `ID: ${userDetails.jobid}` : 'No job'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Card>
+                    </Grid>
+                </Grid>
+            </Box>
+
             <Paper
               sx={{
                 width: "100%",
@@ -206,70 +470,6 @@ export default function Dashboard() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
               }}
             >
-                <Box sx={{ 
-                    display: "flex", 
-                    gap: 2, 
-                    mb: 3,
-                    flexWrap: "wrap"
-                }}>
-                    <Button
-                        variant={activeTab === 'liked' ? 'contained' : 'outlined'}
-                        startIcon={<FavoriteIcon />}
-                        onClick={() => handleTabClick('liked')}
-                        sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            px: 3,
-                            py: 1.5,
-                            ...(activeTab === 'liked' && {
-                                background: "linear-gradient(135deg, #ec4899 0%, #be185d 100%)",
-                                boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)"
-                            })
-                        }}
-                    >
-                        Liked Videos ({likedVideos?.length || 0})
-                    </Button>
-                    
-                    <Button
-                        variant={activeTab === 'commented' ? 'contained' : 'outlined'}
-                        startIcon={<CommentIcon />}
-                        onClick={() => handleTabClick('commented')}
-                        sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            px: 3,
-                            py: 1.5,
-                            ...(activeTab === 'commented' && {
-                                background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)"
-                            })
-                        }}
-                    >
-                        Commented Videos ({[...new Set(comments?.map(c => c.videoId) || [])].length})
-                    </Button>
-                    
-                    <Button
-                        variant={activeTab === 'job' ? 'contained' : 'outlined'}
-                        startIcon={<WorkIcon />}
-                        onClick={() => handleTabClick('job')}
-                        sx={{
-                            borderRadius: 2,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            px: 3,
-                            py: 1.5,
-                            ...(activeTab === 'job' && {
-                                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
-                            })
-                        }}
-                    >
-                        Job Videos
-                    </Button>
-                </Box>
-
                 <Box sx={{ mb: 3 }}>
                     <Typography 
                         variant="h6" 

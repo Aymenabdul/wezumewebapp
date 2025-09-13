@@ -141,7 +141,7 @@ export default function Signup() {
     };
 
     const handleFileChange = (e) => {
-        const file = e.target.files;
+        const file = e.target.files[0];
         setFormData((prevData) => ({ ...prevData, profilePic: file }));
     };
 
@@ -278,6 +278,7 @@ export default function Signup() {
 
                 payload = formDataToSend;
             }
+            console.log(...payload);
             
             const response = await axios.post(endpoint, payload);
 
@@ -431,60 +432,6 @@ export default function Signup() {
         if (isPlacementOrAcademy) {
             return (
                 <>
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            width: "100%",
-                            border: '2px dashed #ccc',
-                            borderRadius: '8px',
-                            p: 2,
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                borderColor: '#1976d2',
-                                backgroundColor: '#f8f9ff'
-                            },
-                            ...(formData.profilePic && {
-                                borderColor: '#4caf50',
-                                backgroundColor: '#f1f8e9'
-                            })
-                        }}
-                    >
-                        <input
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            id="profile-pic-upload"
-                            type="file"
-                            onChange={handleFileChange}
-                        />
-                        <label htmlFor="profile-pic-upload" style={{ cursor: 'pointer', width: '100%', display: 'block' }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                                {formData.profilePic ? (
-                                    <>
-                                        <InsertDriveFile sx={{ fontSize: 40, color: '#4caf50' }} />
-                                        <Typography variant="body2" color="success.main" fontWeight="medium">
-                                            {formData.profilePic.name}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            Click to change file
-                                        </Typography>
-                                    </>
-                                ) : (
-                                    <>
-                                        <CloudUpload sx={{ fontSize: 40, color: '#1976d2' }} />
-                                        <Typography variant="body2" color="primary" fontWeight="medium">
-                                            Upload Profile Picture
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            Click to select an image file
-                                        </Typography>
-                                    </>
-                                )}
-                            </Box>
-                        </label>
-                    </Paper>
-
                     <TextField 
                         label="Organization Name"
                         name="college"

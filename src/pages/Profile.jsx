@@ -180,7 +180,7 @@ export default function Profile() {
         try {
             let updatedData = { ...editData };
 
-            if (selectedFile) {
+            if (selectedFile && !isPlacementOrAcademy()) {
                 const formData = new FormData();
                 
                 Object.keys(updatedData).forEach(key => {
@@ -521,35 +521,37 @@ export default function Profile() {
                     Edit Profile Information
                 </DialogTitle>
                 <DialogContent sx={{ pt: 4, pb: 2, px: 4, backgroundColor: '#fafbfc' }}>
-                    <Box sx={{ mb: 3, textAlign: 'center' }}>
-                        <Avatar
-                            src={fileData || profileImage}
-                            sx={{ width: 100, height: 100, mx: 'auto', mb: 2, cursor: 'pointer' }}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {!fileData && !profileImage && <PersonIcon sx={{ fontSize: 50 }} />}
-                        </Avatar>
-                        <Button
-                            variant="outlined"
-                            startIcon={<UploadIcon />}
-                            onClick={() => fileInputRef.current?.click()}
-                            sx={{ borderRadius: 2 }}
-                        >
-                            Upload Picture
-                        </Button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={handleFileChange}
-                        />
-                        {selectedFile && (
-                            <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                                Selected: {selectedFile.name}
-                            </Typography>
-                        )}
-                    </Box>
+                    {!isPlacementOrAcademy() && (
+                        <Box sx={{ mb: 3, textAlign: 'center' }}>
+                            <Avatar
+                                src={fileData || profileImage}
+                                sx={{ width: 100, height: 100, mx: 'auto', mb: 2, cursor: 'pointer' }}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                {!fileData && !profileImage && <PersonIcon sx={{ fontSize: 50 }} />}
+                            </Avatar>
+                            <Button
+                                variant="outlined"
+                                startIcon={<UploadIcon />}
+                                onClick={() => fileInputRef.current?.click()}
+                                sx={{ borderRadius: 2 }}
+                            >
+                                Upload Picture
+                            </Button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={handleFileChange}
+                            />
+                            {selectedFile && (
+                                <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                                    Selected: {selectedFile.name}
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
                     <Grid container spacing={3}>{renderEditFields()}</Grid>
                 </DialogContent>
                 <DialogActions sx={{ 
