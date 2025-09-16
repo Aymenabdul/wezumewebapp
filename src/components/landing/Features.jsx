@@ -35,7 +35,7 @@ function AnimatedCounter({ from = 0, to = 50, duration = 2, trigger }) {
 export default function Features() {
   const features = [
     {
-      icon: <Users className="w-8 h-8 text-blue-600" />,
+      icon: <Users className="w-8 h-8 text-white" />,
       title: (trigger) => (
         <>
           <AnimatedCounter from={0} to={50} duration={2} trigger={trigger} />+ Verified Recruiters
@@ -45,19 +45,19 @@ export default function Features() {
         "Trusted recruiters from top companies are ready to connect with talent.",
     },
     {
-      icon: <Handshake className="w-8 h-8 text-blue-600" />,
+      icon: <Handshake className="w-8 h-8 text-white" />,
       title: () => "Investors",
       description:
         "Investors easily find and connect with businesses for funding opportunities.",
     },
     {
-      icon: <Briefcase className="w-8 h-8 text-blue-600" />,
+      icon: <Briefcase className="w-8 h-8 text-white" />,
       title: () => "Jobseekers",
       description:
         "Pitch your 60 sec videos and discover the right opportunities.",
     },
     {
-      icon: <Rocket className="w-8 h-8 text-blue-600" />,
+      icon: <Rocket className="w-8 h-8 text-white" />,
       title: () => "Freelancers / Entrepreneurs",
       description:
         "Showcase your skills and pitch ideas to attract potential clients or investors.",
@@ -94,7 +94,7 @@ export default function Features() {
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="p-3 bg-white rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                  <div className="p-3 bg-blue-600 rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300">
                     {feature.icon}
                   </div>
                 </motion.div>

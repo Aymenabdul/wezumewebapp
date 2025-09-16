@@ -5,6 +5,7 @@ const sections = [
   {
     title: "Campus Placement Assist",
     subtitle: "Empowering Colleges & Corporates",
+    backgroundImage: "/campus.jpeg", // Add your image path
     items: [
       {
         heading: "For Colleges",
@@ -23,6 +24,7 @@ const sections = [
   {
     title: "Corporates Hire Assist",
     subtitle: "Smarter Hiring with AI",
+    backgroundImage: "/corporate.jpeg", // Add your image path
     items: [
       {
         heading: "Automate Initial Screening",
@@ -41,6 +43,7 @@ const sections = [
   {
     title: "Platform User Analytics",
     subtitle: "Actionable Talent Insights",
+    backgroundImage: "/analytics.jpeg", // Add your image path
     items: [
       {
         heading: "Track Engagement in Real Time",
@@ -134,8 +137,19 @@ export default function HorizontalFAQ() {
                 openStates[index] ? 'z-50' : 'z-10'
               }`}
             >
-              {/* Header Box - Glassmorphism */}
-              <div className="backdrop-filter backdrop-blur-xl bg-white/20 border border-white/30 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 relative overflow-hidden hover:bg-white/25">
+              {/* Header Box - Glassmorphism with Background Image */}
+              <div className="relative backdrop-filter backdrop-blur border border-white/30 rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden hover:bg-white/25">
+                {/* Background Image with Black Tint Overlay */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('${section.backgroundImage}')`
+                  }}
+                ></div>
+                
+                {/* Additional glassmorphism overlay
+                <div className="absolute inset-0 bg-white/20 backdrop-blur-sm"></div> */}
+                
                 {/* Subtle inner doodles */}
                 <div className="absolute top-2 right-2 w-3 h-3 bg-blue-100/50 rounded-full animate-pulse"></div>
                 <div className="absolute bottom-2 left-2 w-2 h-2 bg-blue-200/30 rounded-full animate-ping" 
@@ -143,12 +157,12 @@ export default function HorizontalFAQ() {
                 
                 <button
                   onClick={() => toggleSection(index)}
-                  className="w-full flex flex-col items-center text-center px-6 py-6 focus:outline-none relative z-10"
+                  className="relative w-full flex flex-col items-center text-center px-6 py-6 focus:outline-none z-10"
                 >
                   <span className="text-xl font-bold text-white drop-shadow-lg">
                     {section.title}
                   </span>
-                  <span className="text-sm text-white/80 mt-1 drop-shadow-md">
+                  <span className="text-sm text-white/90 mt-1 drop-shadow-md">
                     {section.subtitle}
                   </span>
                   <div className="mt-3">
@@ -161,7 +175,7 @@ export default function HorizontalFAQ() {
                 </button>
               </div>
 
-              {/* Expandable Content Below - Glassmorphism */}
+              {/* Expandable Content Below - Glassmorphism with Background Image */}
               <div
                 className={`transition-all duration-500 ease-in-out ${
                   openStates[index] 
@@ -170,7 +184,18 @@ export default function HorizontalFAQ() {
                 } grid`}
               >
                 <div className="overflow-hidden">
-                  <div className="backdrop-filter backdrop-blur-xl bg-white/15 border border-white/25 rounded-2xl shadow-2xl p-6 relative hover:bg-white/20 transition-all duration-300">
+                  <div className="relative backdrop-filter backdrop-blur-xl border border-white/25 rounded-2xl shadow-2xl p-6 hover:bg-white/20 transition-all duration-300 overflow-hidden">
+                    {/* Background Image with Black Tint Overlay for Content */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{
+                        backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('${section.backgroundImage}')`
+                      }}
+                    ></div>
+                    
+                    {/* Additional glassmorphism overlay */}
+                    <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+                    
                     {/* Content card doodles */}
                     <div className="absolute top-1 right-4 w-2 h-2 bg-blue-100/30 rounded-full animate-bounce" 
                          style={{ animationDelay: '1s', animationDuration: '4s' }}></div>
@@ -179,20 +204,20 @@ export default function HorizontalFAQ() {
                       {section.items.map((item, i) => (
                         <div
                           key={i}
-                          className="border-l-4 border-blue-600 pl-4 rounded-lg p-4 hover:bg-white/40 transition-all duration-300 relative overflow-hidden group border border-white/20"
+                          className="relative border-l-4 border-blue-600 pl-4 rounded-lg p-4 hover:bg-white/20 transition-all duration-300 overflow-hidden group border border-white/20"
                         >
+                          {/* Item background with subtle tint */}
+                          <div className="absolute inset-0 bg-black/10 opacity-50 group-hover:opacity-70 transition-opacity duration-300 rounded-lg"></div>
+                          
                           {/* Item doodles */}
                           <div className="absolute top-1 right-2 w-1 h-1 bg-blue-600/50 rounded-full animate-pulse" 
                                style={{ animationDelay: `${i * 0.5}s` }}></div>
                           
-                          {/* Subtle hover effect background */}
-                          <div className="absolute inset-0 bg-gradient-to-r to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
-                          
                           <div className="relative z-10">
-                            <p className="text-lg font-semibold text-white mb-2 group-hover: drop-shadow-sm">
+                            <p className="text-lg font-semibold text-white mb-2 drop-shadow-sm">
                               {item.heading}
                             </p>
-                            <p className="text-white/90 text-sm leading-relaxed drop-shadow-sm">
+                            <p className="text-white/95 text-sm leading-relaxed drop-shadow-sm">
                               {item.desc}
                             </p>
                           </div>

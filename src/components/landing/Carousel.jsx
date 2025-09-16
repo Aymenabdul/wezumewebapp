@@ -47,12 +47,13 @@ export default function ScrollCarousel() {
             <div
               key={index}
               className="min-w-[80vw] sm:min-w-[60vw] lg:min-w-[25vw] h-[70vh]
-                                   rounded-2xl overflow-hidden shadow-xl bg-white flex items-center justify-center"
+                                   rounded-2xl overflow-hidden bg-white flex items-center justify-center"
+              style={{ backgroundColor: 'transparent' }}
             >
               <img
                 src={src}
                 alt={`Image ${index + 1}`}
-                className="w-full h-full object-contain rounded-2xl"
+                className="rounded-2xl"
               />
             </div>
           ))}

@@ -1,21 +1,40 @@
 // HeroBackground.jsx
+import { useState, useEffect } from 'react';
+
 export default function HeroBackground() {
+  const images = ['/herobg1.jpeg', '/herobg2.jpeg', '/herobg3.jpeg'];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 4000); // Change image every 4 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [images.length]);
+
   return (
     <div className="absolute inset-0 z-0">
-      {/* Background Image */}
-      <div
-        className="w-full h-full bg-center bg-no-repeat bg-cover"
-        style={{
-          backgroundImage: "url('/herobg3.jpg')",
-        }}
-      ></div>
+      {/* Background Images with Fade Animation */}
+      {images.map((image, index) => (
+        <div
+          key={index}
+          className={`absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover transition-opacity duration-2000 ease-in-out ${
+            index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{
+            backgroundImage: `url('${image}')`,
+          }}
+        />
+      ))}
 
       {/* Radial Black Tint */}
       <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0.5)_0%,rgba(0,0,0,1)_100%)]"></div>
     </div>
   );
 }
-
 
 
 
