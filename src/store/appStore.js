@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import Cookies from 'js-cookie';
 import axiosInstance from '../axios/axios';
 
+
 export const useAppStore = create(
   persist(
     (set, get) => ({
@@ -29,6 +30,9 @@ export const useAppStore = create(
       comments: [],
       isLoadingComments: false,
       commentError: null,
+      
+      jobVideosCounts: { totalUsers: 0, totalVideos: 0 },
+      isLoadingJobVideosCounts: false,
       
       login: async (credentials) => {
         set({ isLoading: true, error: null })
@@ -94,7 +98,9 @@ export const useAppStore = create(
           likedVideos: [],
           likedVideoError: null,
           comments: [],
-          commentError: null
+          commentError: null,
+          jobVideosCounts: { totalUsers: 0, totalVideos: 0 },
+          isLoadingJobVideosCounts: false
         })
         window.location.href = '/login'
       },
@@ -179,6 +185,7 @@ export const useAppStore = create(
           throw new Error('User ID not available')
         }
 
+
         set({ isUpdatingUserDetails: true, error: null })
         
         try {
@@ -189,9 +196,11 @@ export const useAppStore = create(
             }
           }
 
+
           if (!isFormData) {
             config.headers['Content-Type'] = 'application/json'
           }
+
 
           const response = await axiosInstance.put(
             `/users/update/${userDetails.userId}`, 
@@ -301,6 +310,50 @@ export const useAppStore = create(
         }
       },
       
+      getJobVideosCounts: async () => {
+        const { userDetails, isLoadingJobVideosCounts } = get()
+        
+        if (!userDetails || !userDetails.jobid) {
+          return { totalUsers: 0, totalVideos: 0 }
+        }
+
+        const isPlacementOrAcademy = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy'
+        
+        if (!isPlacementOrAcademy) {
+          return { totalUsers: 0, totalVideos: 0 }
+        }
+        
+        if (isLoadingJobVideosCounts) {
+          return get().jobVideosCounts
+        }
+        
+        set({ isLoadingJobVideosCounts: true })
+        
+        try {
+          const response = await axiosInstance.get(`/videos/counts/${userDetails.jobid}`)
+          const counts = {
+            totalUsers: response.data.totalUsers || 0,
+            totalVideos: response.data.totalVideos || 0
+          }
+          
+          set({ 
+            jobVideosCounts: counts,
+            isLoadingJobVideosCounts: false
+          })
+          
+          return counts
+        } catch (error) {
+          console.error('Error fetching job videos counts:', error)
+          
+          set({ 
+            isLoadingJobVideosCounts: false,
+            jobVideosCounts: { totalUsers: 0, totalVideos: 0 }
+          })
+          
+          return { totalUsers: 0, totalVideos: 0 }
+        }
+      },
+      
       loadMoreVideos: async () => {
         const { getVideos } = get()
         return getVideos(false, true)
@@ -325,6 +378,7 @@ export const useAppStore = create(
         return getVideos(true)
       },
 
+
       getLikedVideos: async (forceRefresh = false) => {
         const { userDetails, likedVideos, isLoadingLikedVideos } = get()
         
@@ -332,6 +386,7 @@ export const useAppStore = create(
           console.error('User details not available')
           return []
         }
+
 
         if (!forceRefresh && likedVideos.length > 0) {
           return likedVideos
@@ -387,12 +442,14 @@ export const useAppStore = create(
         return getLikedVideos(true)
       },
 
+
       getComments: async (forceRefresh = false) => {
         const { userDetails, comments, isLoadingComments } = get()
         
         if (!userDetails?.userId) {
           return []
         }
+
 
         if (!forceRefresh && comments.length > 0) {
           return comments
@@ -428,6 +485,7 @@ export const useAppStore = create(
         }
       },
 
+
       addComment: async (videoId, comment) => {
         const { userDetails } = get()
         
@@ -451,6 +509,7 @@ export const useAppStore = create(
         }
       },
 
+
       updateComment: async (commentId, newComment) => {
         const { userDetails } = get()
         
@@ -471,6 +530,7 @@ export const useAppStore = create(
           throw error
         }
       },
+
 
       deleteComment: async (commentId) => {
         const { userDetails } = get()

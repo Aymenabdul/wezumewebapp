@@ -392,7 +392,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     scoreData.emotionalScore
   );
 
-
   return (
     <Box sx={{ 
       height: '100%', 

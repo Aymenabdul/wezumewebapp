@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import {
     Box,
@@ -10,23 +9,41 @@ import {
     Grid,
     Paper,
     Button,
-    CircularProgress
+    CircularProgress,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    TableSortLabel
 } from "@mui/material";
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CommentIcon from '@mui/icons-material/Comment';
 import WorkIcon from '@mui/icons-material/Work';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import PeopleIcon from '@mui/icons-material/People';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useAppStore } from "../store/appStore";
 import VideoCard from "../components/videos/VideoCard";
-import axiosInstance from '../axios/axios';
+
+
 
 const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
     const [count, setCount] = useState(0);
 
+
+
     useEffect(() => {
         let startTime;
         let animationFrame;
+
+
 
         const animate = (timestamp) => {
             if (!startTime) startTime = timestamp;
@@ -37,12 +54,18 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
             
             setCount(currentCount);
 
+
+
             if (progress < 1) {
                 animationFrame = requestAnimationFrame(animate);
             }
         };
 
+
+
         animationFrame = requestAnimationFrame(animate);
+
+
 
         return () => {
             if (animationFrame) {
@@ -51,8 +74,12 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
         };
     }, [end, duration]);
 
+
+
     return <span>{count.toLocaleString()}{suffix}</span>;
 };
+
+
 
 export default function Dashboard() {
     const { 
@@ -63,62 +90,125 @@ export default function Dashboard() {
         isLoadingVideos,
         isLoadingLikedVideos,
         isLoadingComments,
+        isLoadingMoreVideos,
+        hasMoreVideos,
+        jobVideosCounts,
+        isLoadingJobVideosCounts,
         getLikedVideos,
         getComments,
-        getVideos
+        getVideos,
+        loadMoreVideos,
+        getJobVideosCounts
     } = useAppStore();
     
     const [activeTab, setActiveTab] = useState('liked');
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
     const [displayVideos, setDisplayVideos] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [initialized, setInitialized] = useState(false);
-    const [countsData, setCountsData] = useState({ totalUsers: 0, totalVideos: 0 });
-    const [loadingCounts, setLoadingCounts] = useState(false);
+    const [showStudentTable, setShowStudentTable] = useState(false);
+    const [selectedFilter, setSelectedFilter] = useState('C191');
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [sortBy, setSortBy] = useState('name');
+
+
 
     const isPlacementOrAcademy = userDetails?.jobOption === 'placementDrive' || 
                                  userDetails?.jobOption === 'Academy';
 
-    const fetchCounts = async () => {
-        if (!isPlacementOrAcademy || !userDetails?.jobid) {
-            return;
-        }
+    const studentData = [
+        { id: 1, name: 'Arjun Sharma', email: 'arjun.sharma@email.com', jobId: 'C191' },
+        { id: 2, name: 'Priya Patel', email: 'priya.patel@email.com', jobId: 'C191' },
+        { id: 3, name: 'Rahul Kumar', email: 'rahul.kumar@email.com', jobId: 'C191' },
+        { id: 4, name: 'Anita Singh', email: 'anita.singh@email.com', jobId: 'C191' },
+        { id: 5, name: 'Vikram Gupta', email: 'vikram.gupta@email.com', jobId: 'C191' },
+        { id: 6, name: 'Meera Reddy', email: 'meera.reddy@email.com', jobId: 'C191' },
+        { id: 7, name: 'Suresh Yadav', email: 'suresh.yadav@email.com', jobId: 'C191' },
+        { id: 8, name: 'Kavya Nair', email: 'kavya.nair@email.com', jobId: 'C191' },
+        { id: 9, name: 'Raj Malhotra', email: 'raj.malhotra@email.com', jobId: 'C191' },
+        { id: 10, name: 'Deepika Jain', email: 'deepika.jain@email.com', jobId: 'C191' },
+        { id: 11, name: 'Amit Gupta', email: 'amit.gupta@email.com', jobId: 'C191' },
+        { id: 12, name: 'Sneha Sharma', email: 'sneha.sharma@email.com', jobId: 'C191' },
+        { id: 13, name: 'Ravi Kumar', email: 'ravi.kumar@email.com', jobId: 'C191' },
+        { id: 14, name: 'Pooja Singh', email: 'pooja.singh@email.com', jobId: 'C191' },
+        { id: 15, name: 'Kiran Patel', email: 'kiran.patel@email.com', jobId: 'C191' },
+    ];
+
+    const sortedStudentData = [...studentData].sort((a, b) => {
+        const aValue = a[sortBy];
+        const bValue = b[sortBy];
         
-        setLoadingCounts(true);
-        try {
-            const response = await axiosInstance.get(`/videos/counts/${userDetails.jobid}`);
-            setCountsData(response.data);
-        } catch (error) {
-            setSnackbar({
-                open: true,
-                message: 'Failed to load counts data',
-                severity: 'error'
-            });
-            setCountsData({ totalUsers: 0, totalVideos: 0 });
-        } finally {
-            setLoadingCounts(false);
+        if (sortOrder === 'asc') {
+            return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        } else {
+            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        }
+    });
+
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortOrder('asc');
         }
     };
+
+
+    const handleScroll = () => {
+        if (activeTab !== 'job' || !hasMoreVideos || isLoadingMoreVideos) {
+            return;
+        }
+
+
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.offsetHeight;
+
+
+        if (scrollTop + windowHeight >= documentHeight - 1000) {
+            loadMoreVideos();
+        }
+    };
+
+
+    useEffect(() => {
+        if (activeTab === 'job') {
+            window.addEventListener('scroll', handleScroll);
+            return () => window.removeEventListener('scroll', handleScroll);
+        }
+    }, [activeTab, hasMoreVideos, isLoadingMoreVideos]);
+
+
 
     useEffect(() => {
         if (!initialized && userDetails) {
             const defaultTab = isPlacementOrAcademy ? 'job' : 'liked';
             setActiveTab(defaultTab);
-            loadTabData(defaultTab);
             
             if (isPlacementOrAcademy) {
-                fetchCounts();
+                getJobVideosCounts();
             }
             
             setInitialized(true);
         }
     }, [initialized, isPlacementOrAcademy, userDetails]);
 
+
+    useEffect(() => {
+        if (initialized) {
+            loadTabData(activeTab);
+        }
+    }, [initialized, activeTab]);
+
+
+
     useEffect(() => {
         if (initialized) {
             updateDisplayVideos();
         }
     }, [activeTab, likedVideos, comments, videos, initialized]);
+
+
 
     const updateDisplayVideos = () => {
         switch (activeTab) {
@@ -133,10 +223,10 @@ export default function Dashboard() {
                 setDisplayVideos(commentedVideos);
                 break; }
             case 'job':
-                if (!userDetails?.jobid && !isPlacementOrAcademy) {
-                    setDisplayVideos([]);
-                } else {
+                if (isPlacementOrAcademy || userDetails?.jobid) {
                     setDisplayVideos(videos || []);
+                } else {
+                    setDisplayVideos([]);
                 }
                 break;
             default:
@@ -144,22 +234,17 @@ export default function Dashboard() {
         }
     };
 
+
+
     const loadTabData = async (tab) => {
-        setLoading(true);
         try {
             switch (tab) {
                 case 'liked':
-                    if (!likedVideos || likedVideos.length === 0) {
-                        await getLikedVideos();
-                    }
+                    await getLikedVideos();
                     break;
                 case 'commented':
-                    if (!comments || comments.length === 0) {
-                        await getComments();
-                    }
-                    if (!videos || videos.length === 0) {
-                        await getVideos();
-                    }
+                    await getComments();
+                    await getVideos();
                     break;
                 case 'job':
                     if (!userDetails?.jobid && !isPlacementOrAcademy) {
@@ -168,9 +253,9 @@ export default function Dashboard() {
                             message: 'You have no job ID assigned to your profile', 
                             severity: 'warning' 
                         });
-                        break;
+                        return;
                     }
-                    if (!videos || videos.length === 0) {
+                    if (isPlacementOrAcademy || userDetails?.jobid) {
                         await getVideos();
                     }
                     break;
@@ -181,22 +266,38 @@ export default function Dashboard() {
                 message: 'Failed to load videos', 
                 severity: 'error' 
             });
-        } finally {
-            setLoading(false);
         }
     };
+
+
 
     const handleTabClick = (tab) => {
         if (tab !== activeTab) {
             setActiveTab(tab);
-            loadTabData(tab);
+            setShowStudentTable(false);
         }
     };
+
+    const handleFilterCardClick = () => {
+        setShowStudentTable(false);
+    };
+
+    const handleStudentCardClick = () => {
+        setShowStudentTable(true);
+    };
+
+    const handleFilterChange = (event) => {
+        setSelectedFilter(event.target.value);
+    };
+
+
 
     const handleSnackbarClose = (event, reason) => {
         if (reason === 'clickaway') return;
         setSnackbar(prev => ({ ...prev, open: false }));
     };
+
+
 
     const getTabTitle = () => {
         switch (activeTab) {
@@ -211,6 +312,8 @@ export default function Dashboard() {
         }
     };
 
+
+
     const getTabCount = () => {
         switch (activeTab) {
             case 'liked':
@@ -218,11 +321,13 @@ export default function Dashboard() {
             case 'commented':
                 return [...new Set(comments?.map(c => c.videoId) || [])].length || 0;
             case 'job':
-                return (userDetails?.jobid || isPlacementOrAcademy) ? (videos?.length || 0) : 0;
+                return videos?.length || 0;
             default:
                 return 0;
         }
     };
+
+
 
     const isCurrentTabLoading = () => {
         switch (activeTab) {
@@ -237,13 +342,15 @@ export default function Dashboard() {
         }
     };
 
+
+
     const renderTabCards = () => {
         if (isPlacementOrAcademy) {
             return (
                 <Grid container spacing={2}>
                     <Grid size={{ xs: 4, md: 4 }}>
                         <Card
-                          onClick={() => handleTabClick('job')}
+                          onClick={handleFilterCardClick}
                           sx={{
                             borderRadius: "12px",
                             background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
@@ -281,46 +388,104 @@ export default function Dashboard() {
                                     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
                                   }}
                                 >
-                                    <WorkIcon sx={{ 
+                                    <FilterListIcon sx={{ 
                                       color: "white", 
                                       fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" }
                                     }} />
                                 </Box>
-                                <Box sx={{ textAlign: "center" }}>
-                                    <Typography
-                                      variant="h6"
-                                      sx={{
-                                        fontWeight: 600,
-                                        fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-                                        color: "#1e293b",
-                                        lineHeight: 1.2,
-                                        mb: 0.5
-                                      }}
+                                <FormControl size="small" sx={{ minWidth: 110 }}>
+                                    <Select
+                                        value={selectedFilter}
+                                        onChange={handleFilterChange}
+                                        displayEmpty
+                                        size="small"
+                                        IconComponent={KeyboardArrowDownIcon}
+                                        sx={{
+                                            backgroundColor: 'white',
+                                            borderRadius: '10px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)',
+                                            '& .MuiSelect-select': {
+                                                padding: '8px 12px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                color: '#059669',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                            },
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#10b981',
+                                                borderWidth: '2px',
+                                                borderRadius: '10px',
+                                            },
+                                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#059669',
+                                                borderWidth: '2px',
+                                            },
+                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: '#10b981',
+                                                borderWidth: '2px',
+                                                boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.1)',
+                                            },
+                                            '& .MuiSelect-icon': {
+                                                color: '#059669',
+                                                fontSize: '1.2rem',
+                                            }
+                                        }}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    borderRadius: '8px',
+                                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                                                    border: '1px solid #e5e7eb',
+                                                    mt: 1,
+                                                }
+                                            }
+                                        }}
                                     >
-                                        Job Videos
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        color: "#16a34a",
-                                        fontSize: { xs: '0.65rem', sm: '0.75rem', md: '0.85rem' },
-                                        fontWeight: 600
-                                      }}
-                                    >
-                                        {videos?.length || 0} videos
-                                    </Typography>
-                                </Box>
+                                        <MenuItem 
+                                            value="C191" 
+                                            sx={{ 
+                                                fontSize: '0.8rem',
+                                                fontWeight: 500,
+                                                color: '#374151',
+                                                '&:hover': {
+                                                    backgroundColor: '#ecfdf5',
+                                                    color: '#059669',
+                                                },
+                                                '&.Mui-selected': {
+                                                    backgroundColor: '#d1fae5',
+                                                    color: '#059669',
+                                                    fontWeight: 600,
+                                                    '&:hover': {
+                                                        backgroundColor: '#a7f3d0',
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            C191
+                                        </MenuItem>
+                                    </Select>
+                                </FormControl>
                             </Box>
                         </Card>
                     </Grid>
                     
                     <Grid size={{ xs: 4, md: 4 }}>
                         <Card
+                          onClick={handleStudentCardClick}
                           sx={{
                             borderRadius: "12px",
                             background: "linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%)",
                             boxShadow: "0 4px 12px rgba(168, 85, 247, 0.3)",
+                            transition: "all 0.3s ease",
+                            cursor: "pointer",
                             height: { xs: 100, sm: 120, md: 140 },
+                            "&:hover": {
+                              boxShadow: "0 6px 16px rgba(168, 85, 247, 0.4)",
+                              transform: { xs: "none", md: "translateY(-2px)" }
+                            }
                           }}
                         >
                             <Box
@@ -365,7 +530,7 @@ export default function Dashboard() {
                                     >
                                         Total Students
                                     </Typography>
-                                    {loadingCounts ? (
+                                    {isLoadingJobVideosCounts ? (
                                         <CircularProgress 
                                             size={16} 
                                             sx={{ 
@@ -382,7 +547,7 @@ export default function Dashboard() {
                                           }}
                                         >
                                             <AnimatedCounter 
-                                                end={countsData.totalUsers} 
+                                                end={jobVideosCounts.totalUsers} 
                                                 duration={2500} 
                                             />
                                         </Typography>
@@ -443,7 +608,7 @@ export default function Dashboard() {
                                     >
                                         Total Videos
                                     </Typography>
-                                    {loadingCounts ? (
+                                    {isLoadingJobVideosCounts ? (
                                         <CircularProgress 
                                             size={16} 
                                             sx={{ 
@@ -460,7 +625,7 @@ export default function Dashboard() {
                                           }}
                                         >
                                             <AnimatedCounter 
-                                                end={countsData.totalVideos} 
+                                                end={jobVideosCounts.totalVideos} 
                                                 duration={2000} 
                                             />
                                         </Typography>
@@ -739,6 +904,8 @@ export default function Dashboard() {
                 </Typography>
             </Box>
 
+
+
             <Box sx={{ 
                 width: "100%", 
                 maxWidth: "1200px", 
@@ -747,6 +914,8 @@ export default function Dashboard() {
             }}>
                 {renderTabCards()}
             </Box>
+
+
 
             <Paper
               sx={{
@@ -758,60 +927,223 @@ export default function Dashboard() {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
               }}
             >
-                <Box sx={{ mb: 3 }}>
-                    <Typography 
-                        variant="h6" 
-                        sx={{ 
-                            fontWeight: 600,
-                            color: "#1e293b",
-                            mb: 1
-                        }}
-                    >
-                        {getTabTitle()}
-                    </Typography>
-                    <Typography 
-                        variant="body2" 
-                        sx={{ 
-                            color: "#64748b"
-                        }}
-                    >
-                        {getTabCount()} video{getTabCount() !== 1 ? 's' : ''} found
-                    </Typography>
-                </Box>
-
-                {(loading || isCurrentTabLoading()) ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
-                        <CircularProgress />
+                {showStudentTable ? (
+                    <Box>
+                        <Box sx={{ mb: 3 }}>
+                            <Typography 
+                                variant="h6" 
+                                sx={{ 
+                                    fontWeight: 600,
+                                    color: "#1e293b",
+                                    mb: 1
+                                }}
+                            >
+                                Student Details
+                            </Typography>
+                            <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                    color: "#64748b"
+                                }}
+                            >
+                                {studentData.length} student{studentData.length !== 1 ? 's' : ''} enrolled
+                            </Typography>
+                        </Box>
+                        <TableContainer 
+                            component={Paper} 
+                            sx={{ 
+                                maxHeight: 500,
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+                            }}
+                        >
+                            <Table stickyHeader>
+                                <TableHead>
+                                    <TableRow sx={{ 
+                                        background: 'radial-gradient(circle at top left, #cce0ff, #0066FF, #002d73)',
+                                        '& th': {
+                                            borderBottom: 'none'
+                                        }
+                                    }}>
+                                        <TableCell sx={{ 
+                                            background: 'transparent',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.95rem',
+                                            padding: '16px',
+                                        }}>
+                                            <TableSortLabel
+                                                active={sortBy === 'name'}
+                                                direction={sortBy === 'name' ? sortOrder : 'asc'}
+                                                onClick={() => handleSort('name')}
+                                                sx={{ 
+                                                    color: 'white !important',
+                                                    '& .MuiTableSortLabel-icon': {
+                                                        color: 'white !important',
+                                                    }
+                                                }}
+                                            >
+                                                Name
+                                            </TableSortLabel>
+                                        </TableCell>
+                                        <TableCell sx={{ 
+                                            background: 'transparent',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.95rem',
+                                            padding: '16px',
+                                        }}>
+                                            <TableSortLabel
+                                                active={sortBy === 'email'}
+                                                direction={sortBy === 'email' ? sortOrder : 'asc'}
+                                                onClick={() => handleSort('email')}
+                                                sx={{ 
+                                                    color: 'white !important',
+                                                    '& .MuiTableSortLabel-icon': {
+                                                        color: 'white !important',
+                                                    }
+                                                }}
+                                            >
+                                                Email ID
+                                            </TableSortLabel>
+                                        </TableCell>
+                                        <TableCell sx={{ 
+                                            background: 'transparent',
+                                            color: 'white',
+                                            fontWeight: 700,
+                                            fontSize: '0.95rem',
+                                            padding: '16px',
+                                        }}>
+                                            <TableSortLabel
+                                                active={sortBy === 'jobId'}
+                                                direction={sortBy === 'jobId' ? sortOrder : 'asc'}
+                                                onClick={() => handleSort('jobId')}
+                                                sx={{ 
+                                                    color: 'white !important',
+                                                    '& .MuiTableSortLabel-icon': {
+                                                        color: 'white !important',
+                                                    }
+                                                }}
+                                            >
+                                                Job ID
+                                            </TableSortLabel>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {sortedStudentData.map((student, index) => (
+                                        <TableRow 
+                                            key={student.id} 
+                                            sx={{ 
+                                                '&:hover': { 
+                                                    background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+                                                    transform: 'scale(1.01)',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                    transition: 'all 0.2s ease-in-out'
+                                                },
+                                                backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb',
+                                                transition: 'all 0.2s ease-in-out',
+                                                borderBottom: '1px solid #f1f5f9'
+                                            }}
+                                        >
+                                            <TableCell sx={{ 
+                                                fontSize: '0.9rem',
+                                                padding: '16px',
+                                                fontWeight: 500,
+                                                color: '#374151'
+                                            }}>
+                                                {student.name}
+                                            </TableCell>
+                                            <TableCell sx={{ 
+                                                fontSize: '0.9rem',
+                                                padding: '16px',
+                                                color: '#6b7280'
+                                            }}>
+                                                {student.email}
+                                            </TableCell>
+                                            <TableCell sx={{ 
+                                                fontSize: '0.9rem',
+                                                padding: '16px',
+                                                fontWeight: 600,
+                                                color: '#10b981'
+                                            }}>
+                                                {student.jobId}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
                     </Box>
                 ) : (
-                    <Grid container spacing={0.7}>
-                        {displayVideos.length === 0 ? (
-                            <Grid size={{ xs: 12 }}>
-                                <Box sx={{ 
-                                    textAlign: 'center', 
-                                    py: 6,
-                                    color: '#6b7280'
-                                }}>
-                                    <Typography variant="h6">
-                                        No videos found
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ mt: 1 }}>
-                                        {activeTab === 'liked' && "You haven't liked any videos yet"}
-                                        {activeTab === 'commented' && "You haven't commented on any videos yet"}
-                                        {activeTab === 'job' && (!userDetails?.jobid && !isPlacementOrAcademy ? "No job ID assigned to your profile" : "No videos available for this job")}
-                                    </Typography>
-                                </Box>
-                            </Grid>
+                    <Box>
+                        <Box sx={{ mb: 3 }}>
+                            <Typography 
+                                variant="h6" 
+                                sx={{ 
+                                    fontWeight: 600,
+                                    color: "#1e293b",
+                                    mb: 1
+                                }}
+                            >
+                                {getTabTitle()}
+                            </Typography>
+                            <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                    color: "#64748b"
+                                }}
+                            >
+                                {getTabCount()} video{getTabCount() !== 1 ? 's' : ''} found
+                            </Typography>
+                        </Box>
+
+                        {isCurrentTabLoading() ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                                <CircularProgress />
+                            </Box>
                         ) : (
-                            displayVideos.map((video) => (
-                                <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
-                                    <VideoCard video={video} />
+                            <>
+                                <Grid container spacing={0.7}>
+                                    {displayVideos.length === 0 ? (
+                                        <Grid size={{ xs: 12 }}>
+                                            <Box sx={{ 
+                                                textAlign: 'center', 
+                                                py: 6,
+                                                color: '#6b7280'
+                                            }}>
+                                                <Typography variant="h6">
+                                                    No videos found
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                                    {activeTab === 'liked' && "You haven't liked any videos yet"}
+                                                    {activeTab === 'commented' && "You haven't commented on any videos yet"}
+                                                    {activeTab === 'job' && (!userDetails?.jobid && !isPlacementOrAcademy ? "No job ID assigned to your profile" : "No videos available for this job")}
+                                                </Typography>
+                                            </Box>
+                                        </Grid>
+                                    ) : (
+                                        displayVideos.map((video) => (
+                                            <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
+                                                <VideoCard video={video} />
+                                            </Grid>
+                                        ))
+                                    )}
                                 </Grid>
-                            ))
+                                
+                                {isLoadingMoreVideos && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                                        <CircularProgress />
+                                    </Box>
+                                )}
+                            </>
                         )}
-                    </Grid>
+                    </Box>
                 )}
             </Paper>
+
+
 
             <Snackbar
                 open={snackbar.open}

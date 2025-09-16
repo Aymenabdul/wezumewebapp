@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import {
   Button,
@@ -234,9 +235,9 @@ export default function Signup() {
                 if (formData.jobid) formDataToSend.append('jobid', formData.jobid);
                 if (formData.establishedYear) formDataToSend.append('establishedYear', parseInt(formData.establishedYear));
                 
-                if (formData.profilePic) {
-                    formDataToSend.append('profilePic', formData.profilePic);
-                }
+                // if (formData.profilePic) {
+                //     formDataToSend.append('profilePic', formData.profilePic);
+                // }
 
                 payload = formDataToSend;
 
@@ -272,9 +273,9 @@ export default function Signup() {
                 if (formData.college) formDataToSend.append('college', formData.college);
                 if (formData.city) formDataToSend.append('city', formData.city);
                 
-                if (formData.profilePic) {
-                    formDataToSend.append('profilePic', formData.profilePic);
-                }
+                // if (formData.profilePic) {
+                //     formDataToSend.append('profilePic', formData.profilePic);
+                // }
 
                 payload = formDataToSend;
             }
@@ -306,7 +307,7 @@ export default function Signup() {
         if (isEmployerOrInvestor) {
             return (
                 <>
-                    <Paper
+                    {/* <Paper
                         elevation={0}
                         sx={{
                             width: "100%",
@@ -358,7 +359,7 @@ export default function Signup() {
                                 )}
                             </Box>
                         </label>
-                    </Paper>
+                    </Paper> */}
 
                     <TextField 
                         label="Company Name"
@@ -369,7 +370,7 @@ export default function Signup() {
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
 
-                    <FormControl fullWidth>
+                    {/* <FormControl fullWidth>
                         <InputLabel id="industry-label">Industry</InputLabel>
                         <Select
                             labelId="industry-label"
@@ -385,7 +386,66 @@ export default function Signup() {
                                 </MenuItem>
                             ))}
                         </Select>
+                    </FormControl> */}
+
+                    {formData.jobOption !== null && formData.jobOption === "Employer" &&
+                    <TextField 
+                        label="Job ID"
+                        name="jobid"
+                        value={formData.jobid}
+                        onChange={handleChange}
+                        fullWidth
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                    />}
+
+                    <FormControl fullWidth>
+                        <InputLabel id="city-label">City</InputLabel>
+                        <Select
+                            labelId="city-label"
+                            name="city"
+                            value={formData.city}
+                            label="City"
+                            onChange={handleChange}
+                            sx={{ borderRadius: "8px" }}
+                        >
+                            {cities.map((city) => (
+                                <MenuItem key={city} value={city}>
+                                    {city}
+                                </MenuItem>
+                            ))}
+                        </Select>
                     </FormControl>
+
+                    {/* <TextField 
+                        label="Established Year"
+                        name="establishedYear"
+                        type="number"
+                        value={formData.establishedYear}
+                        onChange={handleChange}
+                        fullWidth
+                        slotProps={{ 
+                            input: {
+                                min: 1900, max: new Date().getFullYear() 
+                            }
+                        }}
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                    /> */}
+                </>
+            );
+        }
+
+        if (isPlacementOrAcademy) {
+            return (
+                <>
+                    <TextField 
+                        label="Institution Name"
+                        name="college"
+                        value={formData.college}
+                        onChange={handleChange}
+                        fullWidth
+                        required
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
+                    />
 
                     <TextField 
                         label="Job ID"
@@ -393,6 +453,7 @@ export default function Signup() {
                         value={formData.jobid}
                         onChange={handleChange}
                         fullWidth
+                        required
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
 
@@ -413,64 +474,13 @@ export default function Signup() {
                             ))}
                         </Select>
                     </FormControl>
-
-                    <TextField 
-                        label="Established Year"
-                        name="establishedYear"
-                        type="number"
-                        value={formData.establishedYear}
-                        onChange={handleChange}
-                        fullWidth
-                        slotProps={{ 
-                            input: {
-                                min: 1900, max: new Date().getFullYear() 
-                            }
-                        }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                    />
-                </>
-            );
-        }
-
-        if (isPlacementOrAcademy) {
-            return (
-                <>
-                    <TextField 
-                        label="Organization Name"
-                        name="college"
-                        value={formData.college}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                    />
-
-                    <TextField 
-                        label="Job ID"
-                        name="jobid"
-                        value={formData.jobid}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                    />
-
-                    <TextField 
-                        label="Branch"
-                        name="branch"
-                        value={formData.branch}
-                        onChange={handleChange}
-                        fullWidth
-                        required
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
-                    />
                 </>
             );
         }
 
         return (
             <>
-                <Paper
+                {/* <Paper
                     elevation={0}
                     sx={{
                         width: "100%",
@@ -522,7 +532,7 @@ export default function Signup() {
                             )}
                         </Box>
                     </label>
-                </Paper>
+                </Paper> */}
 
                 <FormControl fullWidth>
                     <InputLabel id="industry-label">Industry</InputLabel>

@@ -43,17 +43,18 @@ export default function BaseLayout() {
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout, getLikedVideos } = useAppStore();
+    const { logout, getLikedVideos, userDetails } = useAppStore();
 
     useEffect(() => {
         getLikedVideos();
     }, []);
     
     useEffect(() => {
-        if (location.pathname === '/app/videos' || location.pathname === '/app/liked') {
+        const hasVideosAccess = userDetails?.jobOption !== "placementDrive" && userDetails?.jobOption !== "Academy";
+        if ((location.pathname === '/app/videos' && hasVideosAccess) || location.pathname === '/app/liked') {
             setIsCollapsed(true);
         } 
-    }, [location.pathname]);
+    }, [location.pathname, userDetails?.jobOption]);
 
     const handleToggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
@@ -78,7 +79,10 @@ export default function BaseLayout() {
 
     const navLinks = [
         { label: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
-        { label: "Videos", icon: <VideocamIcon />, path: "/app/videos" },
+        ...(userDetails?.jobOption !== "placementDrive" && userDetails?.jobOption !== "Academy" 
+            ? [{ label: "Videos", icon: <VideocamIcon />, path: "/app/videos" }] 
+            : []
+        ),
         { label: "Profile", icon: <PersonIcon />, path: "/app/profile" },
     ];
 

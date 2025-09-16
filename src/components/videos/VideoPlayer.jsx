@@ -27,6 +27,7 @@ import {
   Assessment,
   Comment,
   Mic,
+  Link,
 } from "@mui/icons-material";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { createPortal } from "react-dom";
@@ -34,6 +35,7 @@ import axiosInstance from "../../axios/axios";
 import { useAppStore } from "../../store/appStore";
 import ScoreEvaluation from "./ScoreEvaluation";
 import CommentsSection from "./CommentsSection";
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
 export default function VideoPlayer() {
   const { videoId } = useParams();
@@ -791,6 +793,13 @@ const handleShare = async () => {
             >
               <Comment />
             </Fab>
+            <Fab
+              ize="small"
+              onClick={() => setCommentsModalOpen(true)}
+              sx={{ bgcolor: "rgba(255,255,255,0.9)" }}
+            >
+              <LinkedInIcon style={{ color: '#0A66C2' }} />
+            </Fab>
           </Box>
         </Box>
 
@@ -991,9 +1000,11 @@ const handleShare = async () => {
                 sx={{
                   display: "block",
                   color: "white",
-                  mt: 1,
-                  fontWeight: "bold",
+                  // mt: 1,
+                  fontWeight: 800,
                   textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+                  fontSize: 16,
+                  mb: -2
                 }}
               >
                 {likeCount}
@@ -1014,6 +1025,22 @@ const handleShare = async () => {
               }}
             >
               <Share />
+            </IconButton>
+            <IconButton
+              // onClick={handleEmail}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.9)",
+                color: "#4d75efff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                "&:hover": {
+                  bgcolor: "white",
+                  transform: "scale(1.1)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              <LinkedInIcon />
             </IconButton>
             <IconButton
               onClick={handleCall}

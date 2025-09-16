@@ -344,6 +344,91 @@ export default function Profile() {
 
     const hasValue = (value) => value && value !== 'NA' && value !== '';
 
+    // Create all info cards array for unified display
+    const getAllInfoCards = () => {
+        const cards = [];
+
+        // Add cards based on available data
+        if (hasValue(userDetails.jobOption)) {
+            cards.push(
+                <InfoCard icon={<WorkIcon sx={{ color: '#e74c3c' }} />} title="Role"
+                    value={displayValue(userDetails.jobOption)} color="#e74c3c" />
+            );
+        }
+
+        if (hasValue(userDetails.currentRole)) {
+            cards.push(
+                <InfoCard icon={<PersonIcon sx={{ color: '#f39c12' }} />} title="Current Role"
+                    value={displayValue(userDetails.currentRole)} color="#f39c12" />
+            );
+        }
+
+        if (hasValue(userDetails.experience)) {
+            cards.push(
+                <InfoCard icon={<StarIcon sx={{ color: '#16a085' }} />} title="Experience"
+                    value={displayValue(userDetails.experience)} color="#16a085" />
+            );
+        }
+
+        if (hasValue(userDetails.currentEmployer)) {
+            cards.push(
+                <InfoCard icon={<BusinessIcon sx={{ color: '#9b59b6' }} />} title="Current Employer"
+                    value={displayValue(userDetails.currentEmployer)} color="#9b59b6" />
+            );
+        }
+
+        if (hasValue(userDetails.industry)) {
+            cards.push(
+                <InfoCard icon={<BusinessIcon sx={{ color: '#27ae60' }} />} title="Industry"
+                    value={displayValue(userDetails.industry)} color="#27ae60" />
+            );
+        }
+
+        if (hasValue(userDetails.keySkills)) {
+            cards.push(
+                <InfoCard icon={<StarIcon sx={{ color: '#3498db' }} />} title="Key Skills"
+                    value={displayValue(userDetails.keySkills)} color="#3498db" />
+            );
+        }
+
+        if (hasValue(userDetails.city)) {
+            cards.push(
+                <InfoCard icon={<LocationOnIcon sx={{ color: '#e67e22' }} />} title="City"
+                    value={displayValue(userDetails.city)} color="#e67e22" />
+            );
+        }
+
+        if (hasValue(userDetails.establishedYear)) {
+            cards.push(
+                <InfoCard icon={<BusinessIcon sx={{ color: '#8e44ad' }} />} title="Established Year"
+                    value={displayValue(userDetails.establishedYear)} color="#8e44ad" />
+            );
+        }
+
+        if (hasValue(userDetails.college)) {
+            cards.push(
+                <InfoCard icon={<SchoolIcon sx={{ color: '#e67e22' }} />} title="College"
+                    value={displayValue(userDetails.college)} color="#e67e22" />
+            );
+        }
+
+        if (hasValue(userDetails.education)) {
+            cards.push(
+                <InfoCard icon={<SchoolIcon sx={{ color: '#2ecc71' }} />} title="Education"
+                    value={displayValue(userDetails.education)} color="#2ecc71" />
+            );
+        }
+
+        if (hasValue(userDetails.branch)) {
+            cards.push(
+                <InfoCard icon={<SchoolIcon sx={{ color: '#3498db' }} />} title="Branch"
+                    value={displayValue(userDetails.branch)} color="#3498db" />
+            );
+        }
+
+        return cards;
+    };
+
     return (
         <Container maxWidth="lg" sx={{ py: 4, minHeight: "100vh" }}>
             <Slide direction="down" in={!isLoadingUserDetails} mountOnEnter unmountOnExit>
@@ -415,98 +500,11 @@ export default function Profile() {
                     </Paper>
 
                     <Grid container spacing={3}>
-                        <Grid size={{ xs: 12 }}>
-                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#2c3e50', mb: 3 }}>
-                                Professional Information
-                            </Typography>
-                        </Grid>
-                        
-                        {hasValue(userDetails.jobOption) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<WorkIcon sx={{ color: '#e74c3c' }} />} title="Role"
-                                    value={userDetails.jobOption} color="#e74c3c" />
+                        {getAllInfoCards().map((card, index) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                                {card}
                             </Grid>
-                        )}
-
-                        {hasValue(userDetails.currentRole) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<PersonIcon sx={{ color: '#f39c12' }} />} title="Current Role"
-                                    value={userDetails.currentRole} color="#f39c12" />
-                            </Grid>
-                        )}
-
-                        {hasValue(userDetails.experience) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<StarIcon sx={{ color: '#16a085' }} />} title="Experience"
-                                    value={userDetails.experience} color="#16a085" />
-                            </Grid>
-                        )}
-
-                        {hasValue(userDetails.currentEmployer) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<BusinessIcon sx={{ color: '#9b59b6' }} />} title="Current Employer"
-                                    value={userDetails.currentEmployer} color="#9b59b6" />
-                            </Grid>
-                        )}
-
-                        {hasValue(userDetails.industry) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<BusinessIcon sx={{ color: '#27ae60' }} />} title="Industry"
-                                    value={userDetails.industry} color="#27ae60" />
-                            </Grid>
-                        )}
-
-                        {hasValue(userDetails.keySkills) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 8 }}>
-                                <InfoCard icon={<StarIcon sx={{ color: '#3498db' }} />} title="Key Skills"
-                                    value={userDetails.keySkills} color="#3498db" />
-                            </Grid>
-                        )}
-
-                        {hasValue(userDetails.city) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<LocationOnIcon sx={{ color: '#e67e22' }} />} title="City"
-                                    value={userDetails.city} color="#e67e22" />
-                            </Grid>
-                        )}
-
-                        {hasValue(userDetails.establishedYear) && (
-                            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<BusinessIcon sx={{ color: '#8e44ad' }} />} title="Established Year"
-                                    value={userDetails.establishedYear} color="#8e44ad" />
-                            </Grid>
-                        )}
-
-                        {!isEmployerOrInvestor() && (hasValue(userDetails.college) || hasValue(userDetails.branch) || hasValue(userDetails.education)) && (
-                            <>
-                                <Grid size={{ xs: 12 }}>
-                                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#2c3e50', mb: 3, mt: 4 }}>
-                                        Education & Background
-                                    </Typography>
-                                </Grid>
-
-                                {hasValue(userDetails.college) && (
-                                    <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                                        <InfoCard icon={<SchoolIcon sx={{ color: '#e67e22' }} />} title="College"
-                                            value={userDetails.college} color="#e67e22" />
-                                    </Grid>
-                                )}
-
-                                {hasValue(userDetails.education) && (
-                                    <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                                        <InfoCard icon={<SchoolIcon sx={{ color: '#2ecc71' }} />} title="Education"
-                                            value={userDetails.education} color="#2ecc71" />
-                                    </Grid>
-                                )}
-
-                                {hasValue(userDetails.branch) && (
-                                    <Grid size={{ xs: 12, sm: 6, md: 6 }}>
-                                        <InfoCard icon={<SchoolIcon sx={{ color: '#3498db' }} />} title="Branch"
-                                            value={userDetails.branch} color="#3498db" />
-                                    </Grid>
-                                )}
-                            </>
-                        )}
+                        ))}
                     </Grid>
                 </Box>
             </Slide>
