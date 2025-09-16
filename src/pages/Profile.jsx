@@ -423,7 +423,7 @@ export default function Profile() {
                         
                         {hasValue(userDetails.jobOption) && (
                             <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                                <InfoCard icon={<WorkIcon sx={{ color: '#e74c3c' }} />} title="Job Option"
+                                <InfoCard icon={<WorkIcon sx={{ color: '#e74c3c' }} />} title="Role"
                                     value={userDetails.jobOption} color="#e74c3c" />
                             </Grid>
                         )}

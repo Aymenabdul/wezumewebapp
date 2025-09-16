@@ -13,6 +13,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { keyframes } from "@mui/system";
 import { Link, useNavigate } from "react-router"; 
 import { useAppStore } from "../store/appStore";
+import personPeeking from "../assets/images/person-peeking.png";
 
 const AnimationCarousel = lazy(() => import("../components/auth/AnimationCarousel"));
 
@@ -24,6 +25,28 @@ const jelly = keyframes`
   100% { transform: scale(1, 1); }
 `;
 
+const peekIn = keyframes`
+  0% { 
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+`;
+
+const peekOut = keyframes`
+  0% { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% { 
+    transform: translateX(100%);
+    opacity: 0;
+  }
+`;
+
 export default function Login() {
   const [formData, setFormData] = useState({
     email: "",
@@ -31,6 +54,7 @@ export default function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", severity: "success" });
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
 
   const { login, isLoading, clearError, isAuthenticated, getUserDetails } = useAppStore();
   const navigate = useNavigate();
@@ -57,6 +81,14 @@ export default function Login() {
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setFormData((prev) => ({ ...prev, email: value }));
+  };
+
+  const handleEmailFocus = () => {
+    setIsEmailFocused(true);
+  };
+
+  const handleEmailBlur = () => {
+    setIsEmailFocused(false);
   };
 
   const handleChange = (e) => {
@@ -314,6 +346,37 @@ export default function Login() {
             }}
           >
             <Box sx={{ width: "100%", position: "relative", flexShrink: 0 }}>
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: -35,
+                  // top: "20%",
+                  transform: "translateY(-75%)",
+                  width: 55,
+                  height: 55,
+                  zIndex: 10,
+                  pointerEvents: "none",
+                  opacity: isEmailFocused ? 1 : 0,
+                  animation: isEmailFocused 
+                    ? `${peekIn} 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`
+                    : `${peekOut} 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards`,
+                  transition: "opacity 0.3s ease",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={personPeeking}
+                  alt="Person peeking"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    filter: "drop-shadow(2px 2px 4px rgba(0,0,0,0.3))",
+                    borderRadius: "50%",
+                  }}
+                />
+              </Box>
+
               <TextField
                 label="Email"
                 name="email"
@@ -323,9 +386,24 @@ export default function Login() {
                 required
                 value={formData.email}
                 onChange={handleEmailChange}
+                onFocus={handleEmailFocus}
+                onBlur={handleEmailBlur}
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "8px",
+                    transition: "all 0.3s ease",
+                    ...(isEmailFocused && {
+                      "& fieldset": {
+                        borderColor: "#1CA7EC",
+                        borderWidth: "2px",
+                      },
+                    }),
+                  },
+                  "& .MuiInputLabel-root": {
+                    transition: "all 0.3s ease",
+                    ...(isEmailFocused && {
+                      color: "#1CA7EC",
+                    }),
                   },
                 }}
               />

@@ -278,7 +278,6 @@ export default function Signup() {
 
                 payload = formDataToSend;
             }
-            console.log(...payload);
             
             const response = await axios.post(endpoint, payload);
 
@@ -422,7 +421,11 @@ export default function Signup() {
                         value={formData.establishedYear}
                         onChange={handleChange}
                         fullWidth
-                        inputProps={{ min: 1900, max: new Date().getFullYear() }}
+                        slotProps={{ 
+                            input: {
+                                min: 1900, max: new Date().getFullYear() 
+                            }
+                        }}
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
                     />
                 </>

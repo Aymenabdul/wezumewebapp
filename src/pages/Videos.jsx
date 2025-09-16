@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
@@ -33,6 +34,9 @@ export default function Videos() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [customCity, setCustomCity] = useState('');
   const [customIndustry, setCustomIndustry] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isFilteredResults, setIsFilteredResults] = useState(false);
   const [filters, setFilters] = useState({
     transcriptionKeywords: '',
     keyskills: '',
@@ -74,13 +78,17 @@ export default function Videos() {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
     const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
     
-    if (scrollPercentage > 0.8 && hasMoreVideos && !isLoadingMoreVideos && !filterLoading) {
-      const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
-      if (!hasFilters) {
-        loadMoreVideos();
+    if (scrollPercentage > 0.8) {
+      if (isFilteredResults && currentPage < totalPages - 1 && !filterLoading) {
+        loadMoreFilteredVideos();
+      } else if (!isFilteredResults && hasMoreVideos && !isLoadingMoreVideos && !filterLoading) {
+        const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
+        if (!hasFilters) {
+          loadMoreVideos();
+        }
       }
     }
-  }, [hasMoreVideos, isLoadingMoreVideos, filterLoading, filters, loadMoreVideos]);
+  }, [hasMoreVideos, isLoadingMoreVideos, filterLoading, filters, loadMoreVideos, isFilteredResults, currentPage, totalPages]);
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -103,10 +111,10 @@ export default function Videos() {
   }, [userDetails, jobid]);
 
   useEffect(() => {
-    if (!isLoadingVideos && videos.length > 0) {
+    if (!isLoadingVideos && videos.length > 0 && !isFilteredResults) {
       setFilteredVideos(videos);
     }
-  }, [videos, isLoadingVideos]);
+  }, [videos, isLoadingVideos, isFilteredResults]);
 
   const fetchVideos = async () => {
     try {
@@ -117,10 +125,12 @@ export default function Videos() {
         });
         videoData = response.data?.videos || [];
         setFilteredVideos(videoData);
+        setIsFilteredResults(false);
         showSnackbar(`Loaded ${videoData.length} job-specific videos`, 'success');
       } else {
         videoData = await getVideos();
         setFilteredVideos(videoData);
+        setIsFilteredResults(false);
       }
     } catch (error) {
       console.error('Error fetching videos:', error);
@@ -130,6 +140,8 @@ export default function Videos() {
 
   const handleRefresh = async () => {
     try {
+      setCurrentPage(0);
+      setIsFilteredResults(false);
       let videoData;
       if (jobid && userDetails?.jobid === jobid) {
         const response = await axiosInstance.get(`/videos/job/${jobid}`, {
@@ -170,17 +182,12 @@ export default function Videos() {
     setFilters(prev => ({ ...prev, industry: value }));
   };
 
-  const applyFilters = async () => {
-    const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
-
-    if (!hasFilters) {
-      setFilteredVideos(videos);
-      showSnackbar('No filters applied - showing all videos', 'info');
-      return;
-    }
+  const loadMoreFilteredVideos = async () => {
+    if (currentPage >= totalPages - 1 || filterLoading) return;
 
     try {
       setFilterLoading(true);
+      const nextPage = currentPage + 1;
 
       const finalFilterValues = {
         transcriptionKeywords: filters.transcriptionKeywords,
@@ -199,18 +206,68 @@ export default function Videos() {
         }
       }
 
-      const response = await axiosInstance.post('/videos/filter', payload); 
+      const response = await axiosInstance.post(`/videos/filter?page=${nextPage}&size=20`, payload);
 
-      if (response.data && response.data.length > 0) {
-        setFilteredVideos(response.data);
-        showSnackbar(`Found ${response.data.length} videos matching your filters`, 'success');
+      if (response.data && response.data.videos && response.data.videos.length > 0) {
+        setFilteredVideos(prev => [...prev, ...response.data.videos]);
+        setCurrentPage(nextPage);
+        setTotalPages(response.data.totalPages);
+      }
+    } catch (error) {
+      console.error('Error loading more filtered videos:', error);
+    } finally {
+      setFilterLoading(false);
+    }
+  };
+
+  const applyFilters = async () => {
+    const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
+
+    if (!hasFilters) {
+      setFilteredVideos(videos);
+      setIsFilteredResults(false);
+      setCurrentPage(0);
+      setTotalPages(0);
+      return;
+    }
+
+    try {
+      setFilterLoading(true);
+      setCurrentPage(0);
+
+      const finalFilterValues = {
+        transcriptionKeywords: filters.transcriptionKeywords,
+        keyskills: filters.keyskills,
+        experience: filters.experience,
+        industry: filters.industry === 'Other' ? customIndustry : filters.industry,
+        city: filters.city === 'Other' ? customCity : filters.city,
+        college: filters.college,
+        jobId: filters.jobid 
+      };
+
+      const payload = {};
+      for (const [key, value] of Object.entries(finalFilterValues)) {
+        if (value && value.toString().trim() !== '') {
+          payload[key] = value;
+        }
+      }
+
+      const response = await axiosInstance.post('/videos/filter?page=0&size=20', payload);
+
+      if (response.data && response.data.videos && response.data.videos.length > 0) {
+        setFilteredVideos(response.data.videos);
+        setCurrentPage(response.data.currentPage);
+        setTotalPages(response.data.totalPages);
+        setIsFilteredResults(true);
       } else {
         setFilteredVideos([]);
-        showSnackbar('No videos found matching your filters', 'warning');
+        setCurrentPage(0);
+        setTotalPages(0);
+        setIsFilteredResults(true);
       }
     } catch (error) {
       setFilteredVideos(videos);
-      showSnackbar('Error applying filters. Please try again.', 'error');
+      setIsFilteredResults(false);
     } finally {
       setFilterLoading(false);
     }
@@ -229,7 +286,9 @@ export default function Videos() {
     setCustomCity('');
     setCustomIndustry('');
     setFilteredVideos(videos);
-    showSnackbar('Filters cleared', 'info');
+    setCurrentPage(0);
+    setTotalPages(0);
+    setIsFilteredResults(false);
   };
 
   const showSnackbar = (message, severity) => {
@@ -444,7 +503,7 @@ export default function Videos() {
           ))
         )}
         
-        {isLoadingMoreVideos && (
+        {(isLoadingMoreVideos || filterLoading) && (
           Array(8).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={`loading-${index}`}>
               <VideoSkeleton />
@@ -469,14 +528,19 @@ export default function Videos() {
           <Typography variant="body2" color="text.secondary">
             {filteredVideos.length} video{filteredVideos.length !== 1 ? 's' : ''} found
             {jobid && ' for this job'}
-            {hasMoreVideos && !filterLoading && (
+            {isFilteredResults && totalPages > 1 && (
+              <Typography component="span" sx={{ ml: 1, color: 'primary.main' }}>
+                • Page {currentPage + 1} of {totalPages}
+              </Typography>
+            )}
+            {((isFilteredResults && currentPage < totalPages - 1) || (!isFilteredResults && hasMoreVideos)) && !filterLoading && (
               <Typography component="span" sx={{ ml: 1, color: 'primary.main' }}>
                 • Scroll down for more
               </Typography>
             )}
           </Typography>
           
-          {isLoadingMoreVideos && (
+          {(isLoadingMoreVideos || filterLoading) && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
               <CircularProgress size={24} />
               <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
