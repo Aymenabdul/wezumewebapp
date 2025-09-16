@@ -65,7 +65,7 @@ export default function VideoPlayer() {
     severity: "info",
   });
 
-  const { userDetails, videos, isLoadingVideos, getVideos } = useAppStore();
+  const { userDetails, videos, likedVideos, isLoadingVideos, getVideos, getLikedVideos } = useAppStore();
 
   let decodedVideoId;
   try {
@@ -280,17 +280,40 @@ export default function VideoPlayer() {
   }, [videos]);
 
   useEffect(() => {
-    if (videos && videos.length > 0 && decodedVideoId) {
-      const index = videos.findIndex(
-        (v) => v && v.id && v.id.toString() === decodedVideoId
-      );
-      const foundIndex = index >= 0 ? index : 0;
-      setCurrentIndex(foundIndex);
-      if (videos[foundIndex]) {
-        loadVideo(videos[foundIndex]);
+    if (decodedVideoId) {
+      let foundVideo = null;
+      let foundIndex = -1;
+      let sourceArray = videos;
+
+      if (videos && videos.length > 0) {
+        foundIndex = videos.findIndex(
+          (v) => v && v.id && v.id.toString() === decodedVideoId
+        );
+        if (foundIndex >= 0) {
+          foundVideo = videos[foundIndex];
+          sourceArray = videos;
+        }
+      }
+
+      if (!foundVideo && likedVideos && likedVideos.length > 0) {
+        foundIndex = likedVideos.findIndex(
+          (v) => v && v.id && v.id.toString() === decodedVideoId
+        );
+        if (foundIndex >= 0) {
+          foundVideo = likedVideos[foundIndex];
+          sourceArray = likedVideos;
+        }
+      }
+
+      if (foundVideo) {
+        setCurrentIndex(foundIndex);
+        loadVideo(foundVideo);
+      } else if (videos && videos.length > 0) {
+        setCurrentIndex(0);
+        loadVideo(videos[0]);
       }
     }
-  }, [videos, decodedVideoId]);
+  }, [videos, likedVideos, decodedVideoId]);
 
   useEffect(() => {
     const handleWheel = (e) => {

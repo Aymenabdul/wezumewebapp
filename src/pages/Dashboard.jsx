@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import {
     Box,
@@ -31,8 +32,6 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { useAppStore } from "../store/appStore";
 import VideoCard from "../components/videos/VideoCard";
-
-
 
 const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
     const [count, setCount] = useState(0);
@@ -79,8 +78,6 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
     return <span>{count.toLocaleString()}{suffix}</span>;
 };
 
-
-
 export default function Dashboard() {
     const { 
         likedVideos, 
@@ -109,8 +106,6 @@ export default function Dashboard() {
     const [selectedFilter, setSelectedFilter] = useState('C191');
     const [sortOrder, setSortOrder] = useState('asc');
     const [sortBy, setSortBy] = useState('name');
-
-
 
     const isPlacementOrAcademy = userDetails?.jobOption === 'placementDrive' || 
                                  userDetails?.jobOption === 'Academy';
@@ -153,7 +148,6 @@ export default function Dashboard() {
         }
     };
 
-
     const handleScroll = () => {
         if (activeTab !== 'job' || !hasMoreVideos || isLoadingMoreVideos) {
             return;
@@ -170,15 +164,12 @@ export default function Dashboard() {
         }
     };
 
-
     useEffect(() => {
         if (activeTab === 'job') {
             window.addEventListener('scroll', handleScroll);
             return () => window.removeEventListener('scroll', handleScroll);
         }
     }, [activeTab, hasMoreVideos, isLoadingMoreVideos]);
-
-
 
     useEffect(() => {
         if (!initialized && userDetails) {
@@ -193,14 +184,11 @@ export default function Dashboard() {
         }
     }, [initialized, isPlacementOrAcademy, userDetails]);
 
-
     useEffect(() => {
         if (initialized) {
             loadTabData(activeTab);
         }
     }, [initialized, activeTab]);
-
-
 
     useEffect(() => {
         if (initialized) {
@@ -208,12 +196,10 @@ export default function Dashboard() {
         }
     }, [activeTab, likedVideos, comments, videos, initialized]);
 
-
-
     const updateDisplayVideos = () => {
         switch (activeTab) {
             case 'liked':
-                setDisplayVideos(likedVideos || []);
+                setDisplayVideos(likedVideos);
                 break;
             case 'commented':
                 { const commentedVideoIds = [...new Set(comments?.map(c => c.videoId) || [])];
@@ -233,8 +219,6 @@ export default function Dashboard() {
                 setDisplayVideos([]);
         }
     };
-
-
 
     const loadTabData = async (tab) => {
         try {
@@ -269,8 +253,6 @@ export default function Dashboard() {
         }
     };
 
-
-
     const handleTabClick = (tab) => {
         if (tab !== activeTab) {
             setActiveTab(tab);
@@ -290,14 +272,10 @@ export default function Dashboard() {
         setSelectedFilter(event.target.value);
     };
 
-
-
     const handleSnackbarClose = (event, reason) => {
         if (reason === 'clickaway') return;
         setSnackbar(prev => ({ ...prev, open: false }));
     };
-
-
 
     const getTabTitle = () => {
         switch (activeTab) {
@@ -306,13 +284,11 @@ export default function Dashboard() {
             case 'commented':
                 return 'Commented Videos';
             case 'job':
-                return isPlacementOrAcademy ? 'Job Videos' : `Job Videos${userDetails?.jobid ? ` (Job ID: ${userDetails.jobid})` : ''}`;
+                return isPlacementOrAcademy ? 'Videos' : `Videos${userDetails?.jobid ? ` (Job ID: ${userDetails.jobid})` : ''}`;
             default:
                 return 'Videos';
         }
     };
-
-
 
     const getTabCount = () => {
         switch (activeTab) {
@@ -327,8 +303,6 @@ export default function Dashboard() {
         }
     };
 
-
-
     const isCurrentTabLoading = () => {
         switch (activeTab) {
             case 'liked':
@@ -341,8 +315,6 @@ export default function Dashboard() {
                 return false;
         }
     };
-
-
 
     const renderTabCards = () => {
         if (isPlacementOrAcademy) {
@@ -857,7 +829,7 @@ export default function Dashboard() {
                                         lineHeight: 1.2
                                       }}
                                     >
-                                        Job Videos
+                                        Videos
                                     </Typography>
                                 </Box>
                             </Box>
@@ -904,8 +876,6 @@ export default function Dashboard() {
                 </Typography>
             </Box>
 
-
-
             <Box sx={{ 
                 width: "100%", 
                 maxWidth: "1200px", 
@@ -914,8 +884,6 @@ export default function Dashboard() {
             }}>
                 {renderTabCards()}
             </Box>
-
-
 
             <Paper
               sx={{
@@ -1142,8 +1110,6 @@ export default function Dashboard() {
                     </Box>
                 )}
             </Paper>
-
-
 
             <Snackbar
                 open={snackbar.open}
