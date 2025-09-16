@@ -6,7 +6,7 @@ export default function HeroBackground() {
       <div
         className="w-full h-full bg-center bg-no-repeat bg-cover"
         style={{
-          backgroundImage: "url('/herobg.jpg')",
+          backgroundImage: "url('/herobg.png')",
         }}
       ></div>
 
