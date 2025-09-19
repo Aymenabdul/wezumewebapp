@@ -14,6 +14,7 @@ import {
   Alert,
   Typography,
   Chip,
+  Popover,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -37,6 +38,7 @@ import ScoreEvaluation from "./ScoreEvaluation";
 import CommentsSection from "./CommentsSection";
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 
+
 const getStoredVideosForNavigation = () => {
   try {
     const stored = sessionStorage.getItem('currentVideosList');
@@ -46,6 +48,7 @@ const getStoredVideosForNavigation = () => {
   }
 };
 
+
 const getStoredVideoListType = () => {
   try {
     return sessionStorage.getItem('videoListType') || null;
@@ -54,6 +57,7 @@ const getStoredVideoListType = () => {
   }
 };
 
+
 export default function VideoPlayer() {
   const { videoId } = useParams();
   const navigate = useNavigate();
@@ -61,10 +65,12 @@ export default function VideoPlayer() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
+
   const videoRef = useRef();
   const containerRef = useRef();
   const mobileContainerRef = useRef();
   const videoContainerRef = useRef();
+
 
   const [video, setVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -79,15 +85,19 @@ export default function VideoPlayer() {
   const [subtitles, setSubtitles] = useState({});
   const [subtitlesFetched, setSubtitlesFetched] = useState(new Set());
   const [isScrolling, setIsScrolling] = useState(false);
+  const [phonePopoverOpen, setPhonePopoverOpen] = useState(false);
+  const [phoneAnchorEl, setPhoneAnchorEl] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "info",
   });
 
+
   const { userDetails, videos, likedVideos, commentedVideos, isLoadingVideos, getVideos, getLikedVideos } = useAppStore();
   
   const [currentVideosList, setCurrentVideosList] = useState([]);
+
 
   let decodedVideoId;
   try {
@@ -96,6 +106,7 @@ export default function VideoPlayer() {
     console.error("Error decoding video ID:", error);
     decodedVideoId = null;
   }
+
 
   useEffect(() => {
     const storedVideos = getStoredVideosForNavigation();
@@ -106,12 +117,14 @@ export default function VideoPlayer() {
     }
   }, [videos]);
 
+
   const convertSrtToVtt = (srtContent) => {
     if (!srtContent) return "";
     let vttContent = "WEBVTT\n\n";
     vttContent += srtContent.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
     return vttContent;
   };
+
 
   const fetchSubtitles = async (videoId) => {
     if (!videoId || subtitlesFetched.has(videoId)) return;
@@ -139,23 +152,24 @@ export default function VideoPlayer() {
     }
   };
 
+
   const cleanupBlobs = () => {
     Object.entries(subtitles).forEach(([videoId, url]) => {
       if (url && url.startsWith("blob:")) {
         try {
           URL.revokeObjectURL(url);
-        } catch (error) {
-          // console.warn("Error revoking blob URL:", error);
-        }
+        } catch (error) { /* empty */ }
       }
     });
     setSubtitles({});
     setSubtitlesFetched(new Set());
   };
 
+
   const showSnackbar = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
   };
+
 
   const handleBackNavigation = () => {
     if (location.state?.from) {
@@ -166,6 +180,7 @@ export default function VideoPlayer() {
       navigate('/app/videos');
     }
   };
+
 
   const fetchLikeData = async (videoId) => {
     if (!videoId || !userDetails?.userId) return;
@@ -183,24 +198,30 @@ export default function VideoPlayer() {
     }
   };
 
+
   const navigateVideo = useCallback(
     (direction) => {
       if (!currentVideosList || currentVideosList.length === 0) return;
+
 
       const newIndex =
         direction === "next"
           ? (currentIndex + 1) % currentVideosList.length
           : (currentIndex - 1 + currentVideosList.length) % currentVideosList.length;
 
+
       if (!currentVideosList[newIndex]) return;
+
 
       setIsScrolling(true);
       setCurrentIndex(newIndex);
       const nextVideo = currentVideosList[newIndex];
       loadVideo(nextVideo);
 
+
       const hashedId = btoa(nextVideo.id.toString());
       navigate(`/app/video/${hashedId}`, { replace: true });
+
 
       if (!isMobile && containerRef.current) {
         const scrollDirection = direction === "next" ? 1 : -1;
@@ -210,19 +231,23 @@ export default function VideoPlayer() {
         });
       }
 
+
       setTimeout(() => setIsScrolling(false), 1000);
     },
     [currentVideosList, currentIndex, navigate, isMobile]
   );
 
+
   useEffect(() => {
     if (!isMobile || !mobileContainerRef.current) return;
+
 
     let touchStartY = null;
     let touchStartX = null;
     let touchStartTime = null;
     const minSwipeDistance = 80;
     const maxSwipeTime = 800;
+
 
     const handleTouchStart = (e) => {
       if (e.touches[0].clientY < 100) {
@@ -233,14 +258,17 @@ export default function VideoPlayer() {
       touchStartTime = Date.now();
     };
 
+
     const handleTouchMove = (e) => {
       if (touchStartY && e.touches[0].clientY < touchStartY) {
         e.preventDefault();
       }
     };
 
+
     const handleTouchEnd = (e) => {
       if (!touchStartY || !touchStartX || !touchStartTime) return;
+
 
       const touchEndY = e.changedTouches[0].clientY;
       const touchEndX = e.changedTouches[0].clientX;
@@ -249,16 +277,20 @@ export default function VideoPlayer() {
       const deltaX = Math.abs(touchStartX - touchEndX);
       const duration = touchEndTime - touchStartTime;
 
+
       touchStartY = null;
       touchStartX = null;
       touchStartTime = null;
+
 
       if (duration > maxSwipeTime) return;
       if (Math.abs(deltaY) < minSwipeDistance) return;
       if (deltaX > Math.abs(deltaY)) return;
 
+
       e.preventDefault();
       e.stopPropagation();
+
 
       if (deltaY > 0) {
         navigateVideo("next");
@@ -266,6 +298,7 @@ export default function VideoPlayer() {
         navigateVideo("prev");
       }
     };
+
 
     const container = mobileContainerRef.current;
     container.addEventListener("touchstart", handleTouchStart, {
@@ -276,6 +309,7 @@ export default function VideoPlayer() {
     });
     container.addEventListener("touchend", handleTouchEnd, { passive: false });
 
+
     return () => {
       if (container) {
         container.removeEventListener("touchstart", handleTouchStart);
@@ -285,11 +319,13 @@ export default function VideoPlayer() {
     };
   }, [isMobile, navigateVideo]);
 
+
   useEffect(() => {
     if (userDetails) {
       fetchVideos();
     }
   }, [userDetails]);
+
 
   useEffect(() => {
     if (currentVideosList && currentVideosList.length > 0) {
@@ -301,19 +337,16 @@ export default function VideoPlayer() {
     }
   }, [currentVideosList]);
 
+
   useEffect(() => {
     if (decodedVideoId) {
       let foundVideo = null;
       let foundIndex = -1;
       let foundList = null;
 
-      const storedListType = getStoredVideoListType();
-      console.log('Looking for video with ID:', decodedVideoId);
-      console.log('Stored list type:', storedListType);
-      console.log('Current videos list length:', currentVideosList?.length);
-      console.log('Liked videos length:', likedVideos?.length);
-      console.log('Commented videos length:', commentedVideos?.length);
 
+      const storedListType = getStoredVideoListType();
+      
       if (currentVideosList && currentVideosList.length > 0) {
         foundIndex = currentVideosList.findIndex(
           (v) => v && v.id && v.id.toString() === decodedVideoId
@@ -321,9 +354,9 @@ export default function VideoPlayer() {
         if (foundIndex >= 0) {
           foundVideo = currentVideosList[foundIndex];
           foundList = currentVideosList;
-          console.log('Found video in current list at index:', foundIndex);
         }
       }
+
 
       if (!foundVideo && storedListType) {
         if (storedListType === 'liked' && likedVideos && likedVideos.length > 0) {
@@ -333,7 +366,6 @@ export default function VideoPlayer() {
           if (foundIndex >= 0) {
             foundVideo = likedVideos[foundIndex];
             foundList = likedVideos;
-            console.log('Found video in liked videos at index:', foundIndex);
           }
         } else if (storedListType === 'commented' && commentedVideos && commentedVideos.length > 0) {
           foundIndex = commentedVideos.findIndex(
@@ -351,10 +383,10 @@ export default function VideoPlayer() {
           if (foundIndex >= 0) {
             foundVideo = videos[foundIndex];
             foundList = videos;
-            console.log('Found video in job videos at index:', foundIndex);
           }
         }
       }
+
 
       if (!foundVideo && likedVideos && likedVideos.length > 0) {
         foundIndex = likedVideos.findIndex(
@@ -363,26 +395,26 @@ export default function VideoPlayer() {
         if (foundIndex >= 0) {
           foundVideo = likedVideos[foundIndex];
           foundList = likedVideos;
-          console.log('Found video in liked videos fallback at index:', foundIndex);
         }
       }
+
 
       if (foundVideo && foundList) {
         setCurrentIndex(foundIndex);
         setCurrentVideosList(foundList);
         loadVideo(foundVideo);
-        console.log('Set current video list to:', storedListType || 'fallback');
       } else if (currentVideosList && currentVideosList.length > 0) {
         setCurrentIndex(0);
         loadVideo(currentVideosList[0]);
-        console.log('Using first video from current list');
       }
     }
   }, [currentVideosList, likedVideos, commentedVideos, videos, decodedVideoId]);
 
+
   useEffect(() => {
     const handleWheel = (e) => {
       if (isMobile) return;
+
 
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 50) {
         e.preventDefault();
@@ -394,10 +426,12 @@ export default function VideoPlayer() {
       }
     };
 
+
     if (containerRef.current && !isMobile) {
       containerRef.current.addEventListener("wheel", handleWheel, {
         passive: false,
       });
+
 
       return () => {
         if (containerRef.current) {
@@ -407,30 +441,34 @@ export default function VideoPlayer() {
     }
   }, [currentVideosList, currentIndex, isMobile, navigateVideo]);
 
+
   useEffect(() => {
     return () => {
       cleanupBlobs();
     };
   }, []);
 
+
   const fetchVideos = async () => {
     try {
       await getVideos();
-    } catch (error) {
-      console.error("Error fetching videos:", error);
-    }
+    } catch (error) { /* empty */ }
   };
+
 
   const loadVideo = async (videoData) => {
     if (!videoData || !videoData.id) return;
+
 
     setVideo(videoData);
     setVideoLoading(false);
     await fetchLikeData(videoData.id);
 
+
     if (!subtitlesFetched.has(videoData.id)) {
       fetchSubtitles(videoData.id);
     }
+
 
     try {
       setScoreLoading(true);
@@ -457,8 +495,10 @@ export default function VideoPlayer() {
     }
   };
 
+
   const handleLike = async () => {
     if (!video || !video.id || !userDetails) return;
+
 
     try {
       const endpoint = isLiked ? "dislike" : "like";
@@ -466,11 +506,13 @@ export default function VideoPlayer() {
         `/videos/${video.id}/${endpoint}?userId=${userDetails.userId}&firstName=${userDetails.firstName}`
       );
 
+
       const newLikedStatus = !isLiked;
       setIsLiked(newLikedStatus);
       setLikeCount((prev) =>
         newLikedStatus ? prev + 1 : Math.max(0, prev - 1)
       );
+
 
       if (currentVideosList && currentVideosList[currentIndex]) {
         currentVideosList[currentIndex].isLiked = newLikedStatus;
@@ -479,6 +521,7 @@ export default function VideoPlayer() {
           ? (currentVideosList[currentIndex].likeCount || 0) + 1
           : Math.max(0, (currentVideosList[currentIndex].likeCount || 0) - 1);
       }
+
 
       showSnackbar(
         newLikedStatus ? "Video liked!" : "Video unliked!",
@@ -490,19 +533,23 @@ export default function VideoPlayer() {
     }
   };
 
+
   const handleShare = async () => {
     if (!video) return;
+
 
     const videoUrl = `${window.location.origin}/app/video/${btoa(
       video.id.toString()
     )}`;
     const videoTitle = video.title || 'Check out this video!';
 
+
     const shareData = {
       title: 'Wezume',
       text: videoTitle,
-      url: window.location.href,
+      url: videoUrl,
     };
+
 
     try {
       if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
@@ -510,6 +557,7 @@ export default function VideoPlayer() {
         showSnackbar("Shared successfully!", "success");
         return;
       }
+
 
       if (navigator.share) {
         try {
@@ -521,11 +569,13 @@ export default function VideoPlayer() {
         }
       }
 
+
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(window.location.href);
         showSnackbar("Link copied to clipboard!", "success");
         return;
       }
+
 
       if (document.execCommand) {
         const textArea = document.createElement('textarea');
@@ -537,6 +587,7 @@ export default function VideoPlayer() {
         textArea.focus();
         textArea.select();
 
+
         try {
           document.execCommand('copy');
           document.body.removeChild(textArea);
@@ -547,18 +598,22 @@ export default function VideoPlayer() {
         }
       }
 
+
       showSnackbar("Please copy the URL manually from your address bar", "info");
     } catch (error) {
       console.error("Share error:", error);
+
 
       if (error.name === 'AbortError') {
         return;
       }
 
+
       if (error.name === 'NotAllowedError') {
         showSnackbar("Sharing requires user interaction", "warning");
         return;
       }
+
 
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -573,20 +628,41 @@ export default function VideoPlayer() {
     }
   };
 
-  const handleCall = () => {
-    if (!video || !video.phonenumber) return;
-    window.open(`tel:${video.phonenumber}`);
+
+  const handleCall = async (event) => {
+    if (!video?.phonenumber) return;
+    
+    setPhoneAnchorEl(event.currentTarget);
+    setPhonePopoverOpen(true);
+    
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(video.phonenumber);
+        showSnackbar("Phone number copied to clipboard!", "success");
+      }
+    } catch (error) {
+      console.log("Could not copy to clipboard:", error);
+    }
   };
+
+
+  const handlePhonePopoverClose = () => {
+    setPhonePopoverOpen(false);
+    setPhoneAnchorEl(null);
+  };
+
 
   const handleEmail = () => {
     if (!video || !video.email) return;
     window.open(`mailto:${video.email}`);
   };
 
+
   const handleLinkedIn = () => {
     if (!video || !video.linkedinprofile) return;
     window.open(video?.linkedinprofile, '_blank');
   };
+
 
   const handleVideoContainerClick = (e) => {
     const target = e.target;
@@ -595,16 +671,20 @@ export default function VideoPlayer() {
       target.closest("button") ||
       target.closest('[role="button"]');
 
+
     const isVideoControl =
       target.closest("video") || target.tagName === "VIDEO";
+
 
     if (isButton || isVideoControl) {
       e.stopPropagation();
       return;
     }
 
+
     e.stopPropagation();
   };
+
 
   const enableSubtitles = (videoElement) => {
     if (
@@ -622,8 +702,10 @@ export default function VideoPlayer() {
     }
   };
 
+
   const handleVideoLoad = (videoElement, videoId) => {
     setVideoLoading(false);
+
 
     const checkAndEnableSubtitles = () => {
       if (subtitles[videoId]) {
@@ -633,8 +715,10 @@ export default function VideoPlayer() {
       }
     };
 
+
     setTimeout(checkAndEnableSubtitles, 100);
   };
+
 
   if (isLoadingVideos) {
     return (
@@ -650,6 +734,7 @@ export default function VideoPlayer() {
       </Box>
     );
   }
+
 
   if (!video || !currentVideosList || currentVideosList.length === 0) {
     return (
@@ -672,6 +757,7 @@ export default function VideoPlayer() {
       </Box>
     );
   }
+
 
   if (isMobile) {
     return (
@@ -863,6 +949,7 @@ export default function VideoPlayer() {
                 </Fab>
                 <Fab
                   size="small"
+                  onClick={handleLinkedIn}
                   sx={{ bgcolor: "rgba(255,255,255,0.9)", color: "#0A66C2" }}
                 >
                   <LinkedInIcon />
@@ -890,6 +977,37 @@ export default function VideoPlayer() {
                 </Fab>
               </Box>
             </Box>
+            <Popover
+              open={phonePopoverOpen}
+              anchorEl={phoneAnchorEl}
+              onClose={handlePhonePopoverClose}
+              anchorOrigin={{
+                vertical: 'center',
+                horizontal: 'left',
+              }}
+              transformOrigin={{
+                vertical: 'center',
+                horizontal: 'right',
+              }}
+              PaperProps={{
+                sx: {
+                  bgcolor: 'rgba(0,0,0,0.9)',
+                  color: 'white',
+                  p: 2,
+                  borderRadius: 2,
+                  maxWidth: 200,
+                },
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                  📞 {video?.phonenumber || "Phone number not available"}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Copied to clipboard!
+                </Typography>
+              </Box>
+            </Popover>
           </>,
           document.body
         )}
@@ -957,6 +1075,7 @@ export default function VideoPlayer() {
     );
   }
 
+
   return (
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <Box
@@ -986,6 +1105,7 @@ export default function VideoPlayer() {
           Back to Videos
         </Button>
       </Box>
+
 
       <Box
         ref={containerRef}
@@ -1116,6 +1236,7 @@ export default function VideoPlayer() {
               <Share />
             </IconButton>
             <IconButton
+              onClick={handleLinkedIn}
               sx={{
                 bgcolor: "rgba(255,255,255,0.9)",
                 color: "#0A66C2",
@@ -1222,6 +1343,37 @@ export default function VideoPlayer() {
       >
         <NavigateNext sx={{ fontSize: 32 }} />
       </IconButton>
+      <Popover
+        open={phonePopoverOpen}
+        anchorEl={phoneAnchorEl}
+        onClose={handlePhonePopoverClose}
+        anchorOrigin={{
+          vertical: 'center',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'center',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(0,0,0,0.9)',
+            color: 'white',
+            p: 2,
+            borderRadius: 2,
+            maxWidth: 200,
+          },
+        }}
+      >
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            📞 {video?.phonenumber || "Phone number not available"}
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+            Copied to clipboard!
+          </Typography>
+        </Box>
+      </Popover>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

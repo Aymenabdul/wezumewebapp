@@ -22,6 +22,14 @@ export const useAppStore = create(
       hasMoreVideos: true,
       isLoadingMoreVideos: false,
       
+      filteredVideos: [],
+      isLoadingFilteredVideos: false,
+      filteredVideoError: null,
+      lastFilteredEndpoint: null,
+      filteredCurrentPage: 0,
+      hasMoreFilteredVideos: true,
+      isLoadingMoreFilteredVideos: false,
+      
       allVideos: [],
       isLoadingAllVideos: false,
       allVideosError: null,
@@ -122,6 +130,12 @@ export const useAppStore = create(
           currentPage: 0,
           hasMoreVideos: true,
           isLoadingMoreVideos: false,
+          filteredVideos: [],
+          filteredVideoError: null,
+          lastFilteredEndpoint: null,
+          filteredCurrentPage: 0,
+          hasMoreFilteredVideos: true,
+          isLoadingMoreFilteredVideos: false,
           allVideos: [],
           allVideosError: null,
           likedVideos: [],
@@ -420,6 +434,93 @@ export const useAppStore = create(
           return videos 
         }
       },
+
+      getFilteredVideos: async (filters, forceRefresh = false, loadMore = false) => {
+        const { 
+          filteredVideos, 
+          isLoadingFilteredVideos, 
+          isLoadingMoreFilteredVideos,
+          lastFilteredEndpoint,
+          filteredCurrentPage,
+          hasMoreFilteredVideos,
+          filterVideos
+        } = get()
+
+        const currentEndpoint = JSON.stringify(filters)
+        
+        if (loadMore && (!hasMoreFilteredVideos || isLoadingMoreFilteredVideos)) {
+          return filteredVideos
+        }
+        
+        if (!loadMore && !forceRefresh && filteredVideos.length > 0 && lastFilteredEndpoint === currentEndpoint) {
+          return filteredVideos
+        }
+        
+        if (!loadMore && isLoadingFilteredVideos) {
+          return filteredVideos 
+        }
+        
+        const page = loadMore ? filteredCurrentPage + 1 : 0
+        const size = 20
+        
+        set({ 
+          [loadMore ? 'isLoadingMoreFilteredVideos' : 'isLoadingFilteredVideos']: true, 
+          filteredVideoError: null 
+        })
+        
+        try {
+          const finalFilterValues = {
+            transcriptionKeywords: filters.transcriptionKeywords || '',
+            keyskills: filters.keyskills || '',
+            experience: filters.experience || '',
+            industry: filters.industry || '',
+            city: filters.city || '',
+            college: filters.college || '',
+            jobId: filters.jobid || ''
+          }
+          
+          const payload = {}
+          for (const [key, value] of Object.entries(finalFilterValues)) {
+            if (value && value.toString().trim() !== '') {
+              payload[key] = value
+            }
+          }
+          
+          const response = await axiosInstance.post(`/videos/filter?page=${page}&size=${size}`, payload)
+          
+          const responseData = response.data || {}
+          const rawVideoData = responseData.videos || []
+          const totalPages = responseData.totalPages || 1
+          
+          const filteredVideoData = filterVideos(rawVideoData)
+          
+          const combinedVideos = loadMore ? [...filteredVideos, ...filteredVideoData] : filteredVideoData
+          const finalVideos = filterVideos(combinedVideos)
+          
+          const hasMore = page < (totalPages - 1)
+          
+          set({ 
+            filteredVideos: finalVideos,
+            [loadMore ? 'isLoadingMoreFilteredVideos' : 'isLoadingFilteredVideos']: false,
+            lastFilteredEndpoint: currentEndpoint,
+            filteredCurrentPage: page,
+            hasMoreFilteredVideos: hasMore,
+            filteredVideoError: null
+          })
+          
+          return finalVideos
+        } catch (error) {
+          console.error('Error fetching filtered videos:', error)
+          const errorMessage = error.response?.data?.message || 'Failed to fetch filtered videos'
+          
+          set({ 
+            [loadMore ? 'isLoadingMoreFilteredVideos' : 'isLoadingFilteredVideos']: false,
+            filteredVideoError: errorMessage
+          })
+          
+          return filteredVideos 
+        }
+      },
       
       getJobVideosCounts: async () => {
         const { userDetails, isLoadingJobVideosCounts } = get()
@@ -469,6 +570,11 @@ export const useAppStore = create(
         const { getVideos } = get()
         return getVideos(false, true)
       },
+
+      loadMoreFilteredVideos: async (filters) => {
+        const { getFilteredVideos } = get()
+        return getFilteredVideos(filters, false, true)
+      },
       
       clearVideos: () => set({ 
         videos: [], 
@@ -477,6 +583,15 @@ export const useAppStore = create(
         currentPage: 0,
         hasMoreVideos: true,
         isLoadingMoreVideos: false
+      }),
+
+      clearFilteredVideos: () => set({ 
+        filteredVideos: [], 
+        filteredVideoError: null, 
+        lastFilteredEndpoint: null,
+        filteredCurrentPage: 0,
+        hasMoreFilteredVideos: true,
+        isLoadingMoreFilteredVideos: false
       }),
       
       refreshVideos: () => {
@@ -487,6 +602,16 @@ export const useAppStore = create(
           isLoadingMoreVideos: false
         })
         return getVideos(true)
+      },
+
+      refreshFilteredVideos: (filters) => {
+        const { getFilteredVideos } = get()
+        set({ 
+          filteredCurrentPage: 0,
+          hasMoreFilteredVideos: true,
+          isLoadingMoreFilteredVideos: false
+        })
+        return getFilteredVideos(filters, true)
       },
 
       getLikedVideos: async (forceRefresh = false) => {
@@ -652,6 +777,11 @@ export const useAppStore = create(
         commentedVideos: [], 
         commentedVideoError: null 
       }),
+
+      refreshCommentedVideos: () => {
+        const { getCommentedVideos } = get()
+        return getCommentedVideos(true)
+      },
 
       addComment: async (videoId, comment) => {
         const { userDetails } = get()

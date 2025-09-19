@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import { FilterList, ExpandMore, ExpandLess, Refresh } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
-import axiosInstance from '../axios/axios';
 import { useAppStore } from '../store/appStore';
 import VideoCard from '../components/videos/VideoCard';
 import VideoSkeleton from '../components/videos/VideoSkeleton';
@@ -47,24 +46,13 @@ const storeFilteredVideosForNavigation = (videos) => {
   }
 };
 
-const filterVideosWithThumbnails = (videos) => {
-  return videos.filter(video => {
-    const thumbnail = video.thumbnail || video.thumbnailUrl || video.thumb;
-    return thumbnail && thumbnail.trim() !== '';
-  });
-};
-
 export default function Videos() {
   const [searchParams] = useSearchParams();
   const jobid = searchParams.get('jobid');
   const scrollContainerRef = useRef(null);
 
-  const [filteredVideos, setFilteredVideos] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filterLoading, setFilterLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [isFilteredResults, setIsFilteredResults] = useState(false);
 
   const getInitialFilters = () => {
@@ -97,7 +85,15 @@ export default function Videos() {
     videoError,
     getVideos,
     loadMoreVideos,
-    refreshVideos
+    refreshVideos,
+    filteredVideos,
+    isLoadingFilteredVideos,
+    isLoadingMoreFilteredVideos,
+    hasMoreFilteredVideos,
+    filteredVideoError,
+    getFilteredVideos,
+    loadMoreFilteredVideos,
+    refreshFilteredVideos,
   } = useAppStore();
 
   const cityOptions = [
@@ -113,61 +109,11 @@ export default function Videos() {
     'Telecommunications'
   ];
 
-  const removeDuplicateVideos = (videoArray) => {
-    return videoArray.filter((video, index, self) => {
-      const uniqueId = video.id || video.videoId || video.videoID;
-      if (!uniqueId) return true;
-      
-      return index === self.findIndex(v => {
-        const compareId = v.id || v.videoId || v.videoID;
-        return compareId === uniqueId;
-      });
-    });
-  };
-
-  const loadMoreFilteredVideos = useCallback(async () => {
-    if (currentPage >= totalPages - 1 || filterLoading) return;
-
-    try {
-      setFilterLoading(true);
-      const nextPage = currentPage + 1;
-
-      const finalFilterValues = {
-        transcriptionKeywords: filters.transcriptionKeywords,
-        keyskills: filters.keyskills,
-        experience: filters.experience,
-        industry: filters.industry,
-        city: filters.city,
-        college: filters.college,
-        jobId: filters.jobid 
-      };
-      
-      const payload = {};
-      for (const [key, value] of Object.entries(finalFilterValues)) {
-        if (value && value.toString().trim() !== '') {
-          payload[key] = value;
-        }
-      }
-
-      const response = await axiosInstance.post(`/videos/filter?page=${nextPage}&size=20`, payload);
-
-      if (response.data && response.data.videos && response.data.videos.length > 0) {
-        const newVideos = response.data.videos;
-        const combinedVideos = [...filteredVideos, ...newVideos];
-        const uniqueCombinedVideos = removeDuplicateVideos(combinedVideos);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueCombinedVideos);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
-        setCurrentPage(nextPage);
-        setTotalPages(response.data.totalPages);
-      }
-    } catch (error) {
-      console.error('Error loading more filtered videos:', error);
-      showSnackbar('Failed to load more videos', 'error');
-    } finally {
-      setFilterLoading(false);
-    }
-  }, [currentPage, totalPages, filterLoading, filters, filteredVideos]);
+  const displayVideos = isFilteredResults ? filteredVideos : videos;
+  const isLoading = isFilteredResults ? isLoadingFilteredVideos : isLoadingVideos;
+  const isLoadingMore = isFilteredResults ? isLoadingMoreFilteredVideos : isLoadingMoreVideos;
+  const hasMore = isFilteredResults ? hasMoreFilteredVideos : hasMoreVideos;
+  const error = isFilteredResults ? filteredVideoError : videoError;
 
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
@@ -176,16 +122,13 @@ export default function Videos() {
     const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
     
     if (scrollPercentage > 0.8) {
-      if (isFilteredResults && currentPage < totalPages - 1 && !filterLoading) {
-        loadMoreFilteredVideos();
-      } else if (!isFilteredResults && hasMoreVideos && !isLoadingMoreVideos && !filterLoading) {
-        const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
-        if (!hasFilters) {
-          loadMoreVideos();
-        }
+      if (isFilteredResults && hasMore && !isLoadingMore) {
+        loadMoreFilteredVideos(filters);
+      } else if (!isFilteredResults && hasMore && !isLoadingMore) {
+        loadMoreVideos();
       }
     }
-  }, [hasMoreVideos, isLoadingMoreVideos, filterLoading, filters, loadMoreVideos, isFilteredResults, currentPage, totalPages, loadMoreFilteredVideos]);
+  }, [hasMore, isLoadingMore, filters, loadMoreVideos, isFilteredResults, loadMoreFilteredVideos]);
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -217,13 +160,10 @@ export default function Videos() {
   }, [userDetails, jobid]);
 
   useEffect(() => {
-    if (!isLoadingVideos && videos.length > 0 && !isFilteredResults) {
-      const uniqueVideos = removeDuplicateVideos(videos);
-      const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideos);
-      setFilteredVideos(videosWithThumbnails);
-      storeFilteredVideosForNavigation(videosWithThumbnails);
+    if (displayVideos.length > 0) {
+      storeFilteredVideosForNavigation(displayVideos);
     }
-  }, [videos, isLoadingVideos, isFilteredResults]);
+  }, [displayVideos]);
 
   const applyPersistedFilters = async () => {
     const persistedFilters = getPersistedFilters();
@@ -232,17 +172,7 @@ export default function Videos() {
       return;
     }
 
-    const finalFilterValues = {
-      transcriptionKeywords: persistedFilters.transcriptionKeywords,
-      keyskills: persistedFilters.keyskills,
-      experience: persistedFilters.experience,
-      industry: persistedFilters.industry,
-      city: persistedFilters.city,
-      college: persistedFilters.college,
-      jobId: persistedFilters.jobid
-    };
-
-    const hasFilters = Object.values(finalFilterValues).some(val => val && val.toString().trim() !== '');
+    const hasFilters = Object.values(persistedFilters).some(val => val && val.toString().trim() !== '');
 
     if (!hasFilters) {
       fetchVideos();
@@ -250,62 +180,18 @@ export default function Videos() {
     }
 
     try {
-      setFilterLoading(true);
-      setCurrentPage(0);
-
-      const payload = {};
-      for (const [key, value] of Object.entries(finalFilterValues)) {
-        if (value && value.toString().trim() !== '') {
-          payload[key] = value;
-        }
-      }
-
-      const response = await axiosInstance.post(`/videos/filter?page=0&size=20`, payload);
-
-      if (response.data && response.data.videos && response.data.videos.length > 0) {
-        const uniqueFilteredVideos = removeDuplicateVideos(response.data.videos);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueFilteredVideos);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
-        setCurrentPage(response.data.currentPage || 0);
-        setTotalPages(response.data.totalPages || 1);
-        setIsFilteredResults(true);
-      } else {
-        setFilteredVideos([]);
-        storeFilteredVideosForNavigation([]);
-        setCurrentPage(0);
-        setTotalPages(0);
-        setIsFilteredResults(true);
-      }
+      setIsFilteredResults(true);
+      await getFilteredVideos(persistedFilters);
     } catch (error) {
       console.error('Error applying persisted filters:', error);
       fetchVideos();
-    } finally {
-      setFilterLoading(false);
     }
   };
 
   const fetchVideos = async () => {
     try {
-      let videoData;
-      if (jobid && userDetails?.jobid === jobid) {
-        const response = await axiosInstance.get(`/videos/job/${jobid}`, {
-          params: { page: 0, size: 20 }
-        });
-        videoData = response.data?.videos || [];
-        const uniqueVideoData = removeDuplicateVideos(videoData);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideoData);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
-        setIsFilteredResults(false);
-      } else {
-        videoData = await getVideos();
-        const uniqueVideoData = removeDuplicateVideos(videoData);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideoData);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
-        setIsFilteredResults(false);
-      }
+      setIsFilteredResults(false);
+      await getVideos();
     } catch (error) {
       console.error('Error fetching videos:', error);
       showSnackbar('Failed to fetch videos', 'error');
@@ -314,25 +200,11 @@ export default function Videos() {
 
   const handleRefresh = async () => {
     try {
-      setCurrentPage(0);
-      setIsFilteredResults(false);
-      let videoData;
-      if (jobid && userDetails?.jobid === jobid) {
-        const response = await axiosInstance.get(`/videos/job/${jobid}`, {
-          params: { page: 0, size: 20 }
-        });
-        videoData = response.data?.videos || [];
-        const uniqueVideoData = removeDuplicateVideos(videoData);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideoData);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
-        showSnackbar('Videos refreshed successfully', 'success');
+      if (isFilteredResults) {
+        await refreshFilteredVideos(filters);
+        showSnackbar('Filtered videos refreshed successfully', 'success');
       } else {
-        videoData = await refreshVideos();
-        const uniqueVideoData = removeDuplicateVideos(videoData);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideoData);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
+        await refreshVideos();
         showSnackbar('Videos refreshed successfully', 'success');
       }
     } catch (error) {
@@ -348,69 +220,23 @@ export default function Videos() {
   };
 
   const applyFilters = async () => {
-    const finalFilterValues = {
-      transcriptionKeywords: filters.transcriptionKeywords,
-      keyskills: filters.keyskills,
-      experience: filters.experience,
-      industry: filters.industry,
-      city: filters.city,
-      college: filters.college,
-      jobId: filters.jobid 
-    };
-
-    const hasFilters = Object.values(finalFilterValues).some(val => val && val.toString().trim() !== '');
+    const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
 
     if (!hasFilters) {
-      const uniqueVideos = removeDuplicateVideos(videos);
-      const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideos);
-      setFilteredVideos(videosWithThumbnails);
-      storeFilteredVideosForNavigation(videosWithThumbnails);
       setIsFilteredResults(false);
-      setCurrentPage(0);
-      setTotalPages(0);
+      await getVideos();
       persistFilters(filters);
       return;
     }
 
     try {
-      setFilterLoading(true);
-      setCurrentPage(0);
-
-      const payload = {};
-      for (const [key, value] of Object.entries(finalFilterValues)) {
-        if (value && value.toString().trim() !== '') {
-          payload[key] = value;
-        }
-      }
-
-      const response = await axiosInstance.post(`/videos/filter?page=0&size=20`, payload);
-
-      if (response.data && response.data.videos && response.data.videos.length > 0) {
-        const uniqueFilteredVideos = removeDuplicateVideos(response.data.videos);
-        const videosWithThumbnails = filterVideosWithThumbnails(uniqueFilteredVideos);
-        setFilteredVideos(videosWithThumbnails);
-        storeFilteredVideosForNavigation(videosWithThumbnails);
-        setCurrentPage(response.data.currentPage || 0);
-        setTotalPages(response.data.totalPages || 1);
-        setIsFilteredResults(true);
-        showSnackbar('Fetched videos matching the filters', 'success');
-      } else {
-        setFilteredVideos([]);
-        storeFilteredVideosForNavigation([]);
-        setCurrentPage(0);
-        setTotalPages(0);
-        setIsFilteredResults(true);
-        showSnackbar('Fetched videos matching the filters', 'success');
-      }
+      setIsFilteredResults(true);
+      await getFilteredVideos(filters);
+      showSnackbar('Fetched videos matching the filters', 'success');
     } catch (error) {
       showSnackbar(`Filter error: ${error.response?.data?.message || error.message}`, 'error');
-      const uniqueVideos = removeDuplicateVideos(videos);
-      const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideos);
-      setFilteredVideos(videosWithThumbnails);
-      storeFilteredVideosForNavigation(videosWithThumbnails);
       setIsFilteredResults(false);
-    } finally {
-      setFilterLoading(false);
+      await getVideos();
     }
   };
 
@@ -426,13 +252,8 @@ export default function Videos() {
     };
     setFilters(clearedFilters);
     persistFilters(clearedFilters);
-    const uniqueVideos = removeDuplicateVideos(videos);
-    const videosWithThumbnails = filterVideosWithThumbnails(uniqueVideos);
-    setFilteredVideos(videosWithThumbnails);
-    storeFilteredVideosForNavigation(videosWithThumbnails);
-    setCurrentPage(0);
-    setTotalPages(0);
     setIsFilteredResults(false);
+    getVideos();
   };
 
   const showSnackbar = (message, severity) => {
@@ -478,9 +299,9 @@ export default function Videos() {
           startIcon={<Refresh />}
           variant="outlined"
           onClick={handleRefresh}
-          disabled={isLoadingVideos}
+          disabled={isLoading}
         >
-          {isLoadingVideos ? 'Refreshing...' : 'Refresh'}
+          {isLoading ? 'Refreshing...' : 'Refresh'}
         </Button>
       </Box>
 
@@ -587,9 +408,9 @@ export default function Videos() {
             <Button
               variant="contained"
               onClick={applyFilters}
-              disabled={filterLoading}
+              disabled={isLoading}
             >
-              {filterLoading ? 'Applying...' : 'Apply Filters'}
+              {isLoading ? 'Applying...' : 'Apply Filters'}
             </Button>
             <Button variant="outlined" onClick={clearFilters}>
               Clear All
@@ -598,30 +419,30 @@ export default function Videos() {
         </Paper>
       </Collapse>
 
-      {videoError && (
+      {error && (
         <Box sx={{ mb: 3, p: 2, bgcolor: '#fee2e2', borderRadius: 2, border: '1px solid #fca5a5' }}>
           <Typography color="error">
-            {videoError}
+            {error}
           </Typography>
         </Box>
       )}
 
       <Grid container spacing={0.7}>
-        {isLoadingVideos ? (
+        {isLoading ? (
           Array(12).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={index}>
               <VideoSkeleton />
             </Grid>
           ))
         ) : (
-          filteredVideos.map((video) => (
+          displayVideos.map((video) => (
             <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
               <VideoCard video={video} />
             </Grid>
           ))
         )}
         
-        {(isLoadingMoreVideos || filterLoading) && (
+        {isLoadingMore && (
           Array(8).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={`loading-${index}`}>
               <VideoSkeleton />
@@ -630,7 +451,7 @@ export default function Videos() {
         )}
       </Grid>
 
-      {!isLoadingVideos && filteredVideos.length === 0 && (
+      {!isLoading && displayVideos.length === 0 && (
         <Box sx={{ textAlign: 'center', mt: 4 }}>
           <Typography variant="h6" color="text.secondary">
             {Object.values(filters).some(val => val.trim() !== '')
@@ -641,7 +462,7 @@ export default function Videos() {
         </Box>
       )}
 
-      {(isLoadingMoreVideos || filterLoading) && filteredVideos.length > 0 && (
+      {isLoadingMore && displayVideos.length > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
           <CircularProgress size={24} />
           <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>

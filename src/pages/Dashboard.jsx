@@ -102,7 +102,8 @@ export default function Dashboard() {
     getVideos,
     loadMoreVideos,
     getJobVideosCounts,
-    refreshLikedVideos
+    refreshLikedVideos,
+    refreshCommentedVideos,
   } = useAppStore();
 
   const [displayVideos, setDisplayVideos] = useState([]);
@@ -179,11 +180,19 @@ export default function Dashboard() {
       try {
         await refreshLikedVideos();
       } catch (error) {
-        console.error("Failed to refresh liked videos:", error);
+        snackbar({ open: true, message: "Failed to refresh liked videos", severity: "error" });
+        // console.error("Failed to refresh liked videos:", error);
       }
-    }
+    } else if (activeTab === "commented") {
+      try {
+        await refreshCommentedVideos();
+      } catch (error) {
+        snackbar({ open: true, message: "Failed to refresh commented videos", severity: "error" });
+        // console.error("Failed to refresh commented videos:", error);
+      }
+    };
   };
-
+  
   useEffect(() => {
     if (activeTab === "job") {
       window.addEventListener("scroll", handleScroll);
@@ -218,13 +227,6 @@ export default function Dashboard() {
   }, [activeTab, likedVideos, commentedVideos, videos, initialized]);
 
   const updateDisplayVideos = () => {
-    console.log('Updating display videos for tab:', activeTab);
-    console.log('Available data:', {
-      likedVideos: likedVideos?.length,
-      commentedVideos: commentedVideos?.length,
-      videos: videos?.length
-    });
-
     switch (activeTab) {
       case "liked":
         setDisplayVideos(likedVideos || []);
@@ -254,7 +256,6 @@ export default function Dashboard() {
   };
 
   const loadTabData = async (tab) => {
-    console.log('Loading tab data for:', tab);
     try {
       switch (tab) {
         case "liked":
