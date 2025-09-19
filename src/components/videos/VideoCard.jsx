@@ -29,6 +29,7 @@ export default function VideoCard({ video }) {
   const [totalScore, setTotalScore] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likesLoaded, setLikesLoaded] = useState(false);
+  const [scoreLoaded, setScoreLoaded] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const { userDetails } = useAppStore();
@@ -51,7 +52,7 @@ export default function VideoCard({ video }) {
         });
         setIsLiked(likedVideosMap[video.id] || false);
       } catch (error) {
-        console.error("Error fetching user liked videos:", error);
+        // console.error("Error fetching user liked videos:", error);
       }
     };
 
@@ -60,6 +61,31 @@ export default function VideoCard({ video }) {
     }
   }, [userDetails.userId, video.id]);
 
+  const fetchLikes = async () => {
+    if (!likesLoaded) {
+      try {
+        const likesRes = await axiosInstance.get(`/videos/${video.id}/like-count`);
+        setLikes(likesRes.data);
+        setLikesLoaded(true);
+      } catch (error) {
+        // console.error("Error fetching likes:", error);
+      }
+    }
+  };
+
+  const fetchScore = async () => {
+    if (!scoreLoaded) {
+      try {
+        const scoreRes = await axiosInstance.get(`/totalscore/${video.id}`);
+        setTotalScore(scoreRes.data);
+        setScoreLoaded(true);
+      } catch (error) {
+        // console.error("Error fetching score:", error);
+        setScoreLoaded(true);
+      }
+    }
+  };
+
   const handleInteraction = async () => {
     if (isMobile) {
       setTouched(!touched);
@@ -67,19 +93,8 @@ export default function VideoCard({ video }) {
       setHovered(true);
     }
 
-    if (!likesLoaded) {
-      try {
-        const [likesRes, scoreRes] = await Promise.all([
-          axiosInstance.get(`/videos/${video.id}/like-count`),
-          axiosInstance.get(`/totalscore/${video.id}`),
-        ]);
-        setLikes(likesRes.data);
-        setTotalScore(scoreRes.data);
-        setLikesLoaded(true);
-      } catch (error) {
-        // Handle error silently
-      }
-    }
+    fetchLikes();
+    fetchScore();
   };
 
   const handleMouseEnter = () => {
@@ -206,7 +221,6 @@ export default function VideoCard({ video }) {
             color: "white",
             background:
               "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 70%, transparent 100%)",
-            // Remove backdrop-filter for better mobile performance
             ...(isMobile ? {} : { backdropFilter: "blur(4px)" }),
             p: { xs: 1, sm: 1.5, md: 2 },
             zIndex: 2,
@@ -238,20 +252,19 @@ export default function VideoCard({ video }) {
                 {!video?.profilepic && !video?.profilePic && <Person />}
               </Avatar>
               <Typography 
-  variant="subtitle2" 
-  fontWeight="bold" 
-  noWrap
-  sx={{
-    fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-    maxWidth: { xs: '120px', sm: '150px', md: '200px' }
-  }}
->
-  {isMobile && ((video?.firstname || video?.firstName) || '').length > 8 
-    ? `${((video?.firstname || video?.firstName) || '').substring(0, 8)}...`
-    : (video?.firstname || video?.firstName) || ''
-  }
-</Typography>
-
+                variant="subtitle2" 
+                fontWeight="bold" 
+                noWrap
+                sx={{
+                  fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+                  maxWidth: { xs: '120px', sm: '150px', md: '200px' }
+                }}
+              >
+                {isMobile && ((video?.firstname || video?.firstName) || '').length > 8 
+                  ? `${((video?.firstname || video?.firstName) || '').substring(0, 8)}...`
+                  : (video?.firstname || video?.firstName) || ''
+                }
+              </Typography>
             </Box>
             <Box
               component="img"
@@ -317,7 +330,7 @@ export default function VideoCard({ video }) {
                   fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.875rem" },
                 }}
               >
-                {totalScore?.totalScore?.toFixed(1) || "..."}
+                {scoreLoaded ? (totalScore?.totalScore?.toFixed(1) || "N/A") : "..."}
               </Typography>
             </Box>
           </Box>

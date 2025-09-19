@@ -104,7 +104,7 @@ export default function Profile() {
             </Container>
         );
     }
-
+    
     const displayValue = (value) => value !== null && value !== undefined && value !== '' ? value : 'NA';
     
     const getProfileImage = () => {
@@ -178,32 +178,19 @@ export default function Profile() {
 
     const handleSave = async () => {
         try {
-            let updatedData = { ...editData };
-
-            if (selectedFile && !isPlacementOrAcademy()) {
-                const formData = new FormData();
-                
-                Object.keys(updatedData).forEach(key => {
-                    if (updatedData[key] !== undefined && updatedData[key] !== null && updatedData[key] !== '') {
-                        formData.append(key, updatedData[key]);
-                    }
-                });
-                
-                formData.append('profilePic', selectedFile);
-
-                await updateUserDetails(formData, true);
-            } else {
-                const filteredData = Object.keys(updatedData).reduce((acc, key) => {
-                    if (updatedData[key] !== undefined && updatedData[key] !== null && updatedData[key] !== '') {
-                        acc[key] = updatedData[key];
-                    }
-                    return acc;
-                }, {});
-
-                if (Object.keys(filteredData).length > 0) {
-                    await updateUserDetails(filteredData, false);
+            const formData = new FormData();
+            
+            Object.keys(editData).forEach(key => {
+                if (editData[key] !== undefined && editData[key] !== null && editData[key] !== '') {
+                    formData.append(key, editData[key]);
                 }
+            });
+            
+            if (selectedFile && !isPlacementOrAcademy()) {
+                formData.append('profilePic', selectedFile);
             }
+
+            await updateUserDetails(formData, true);
 
             setSnackbar({ open: true, message: 'Profile updated successfully!', severity: 'success' });
             

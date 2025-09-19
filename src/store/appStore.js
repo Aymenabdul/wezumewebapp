@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import Cookies from 'js-cookie';
 import axiosInstance from '../axios/axios';
 
-
 export const useAppStore = create(
   persist(
     (set, get) => ({
@@ -23,6 +22,10 @@ export const useAppStore = create(
       hasMoreVideos: true,
       isLoadingMoreVideos: false,
       
+      allVideos: [],
+      isLoadingAllVideos: false,
+      allVideosError: null,
+      
       likedVideos: [],
       isLoadingLikedVideos: false,
       likedVideoError: null,
@@ -31,8 +34,32 @@ export const useAppStore = create(
       isLoadingComments: false,
       commentError: null,
       
+      commentedVideos: [],
+      isLoadingCommentedVideos: false,
+      commentedVideoError: null,
+      
       jobVideosCounts: { totalUsers: 0, totalVideos: 0 },
       isLoadingJobVideosCounts: false,
+
+      filterVideos: (videoArray) => {
+        return videoArray
+          .filter(video => {
+            return video && 
+                   video.thumbnail && 
+                   video.thumbnail.trim() !== '' &&
+                   video.thumbnail !== null &&
+                   video.thumbnail !== undefined;
+          })
+          .filter((video, index, self) => {
+            const uniqueId = video.id || video.videoId || video.videoID;
+            if (!uniqueId) return true;
+            
+            return index === self.findIndex(v => {
+              const compareId = v.id || v.videoId || v.videoID;
+              return compareId === uniqueId;
+            });
+          });
+      },
       
       login: async (credentials) => {
         set({ isLoading: true, error: null })
@@ -95,10 +122,14 @@ export const useAppStore = create(
           currentPage: 0,
           hasMoreVideos: true,
           isLoadingMoreVideos: false,
+          allVideos: [],
+          allVideosError: null,
           likedVideos: [],
           likedVideoError: null,
           comments: [],
           commentError: null,
+          commentedVideos: [],
+          commentedVideoError: null,
           jobVideosCounts: { totalUsers: 0, totalVideos: 0 },
           isLoadingJobVideosCounts: false
         })
@@ -176,57 +207,140 @@ export const useAppStore = create(
       },
       
       updateUserDetails: async (updatedData, isFormData = false) => {
-        const { isAuthenticated, userDetails, getToken } = get()
-        
-        if (!isAuthenticated()) {
-          throw new Error('User not authenticated')
-        }
-        if (!userDetails?.userId) {
-          throw new Error('User ID not available')
-        }
-
-
-        set({ isUpdatingUserDetails: true, error: null })
-        
-        try {
-          const token = getToken()
-          const config = {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+          const { isAuthenticated, userDetails, getToken } = get();
+          
+          if (!isAuthenticated()) {
+              throw new Error('User not authenticated');
           }
-
-
-          if (!isFormData) {
-            config.headers['Content-Type'] = 'application/json'
+          
+          if (!userDetails?.userId) {
+              throw new Error('User ID not available');
           }
-
-
-          const response = await axiosInstance.put(
-            `/users/update/${userDetails.userId}`, 
-            updatedData,
-            config
-          )
           
-          const updatedUserDetails = { ...userDetails, ...response.data }
+          set({ isUpdatingUserDetails: true, error: null });
           
-          set({ 
-            userDetails: updatedUserDetails,
-            isUpdatingUserDetails: false 
-          })
-          
-          return updatedUserDetails
-        } catch (error) {
-          const errorMessage = error.response?.data || 'Failed to update user details'
-          set({ 
-            isUpdatingUserDetails: false,
-            error: errorMessage
-          })
-          throw new Error(errorMessage)
-        }
+          try {
+              const token = getToken();
+              const config = {
+                  headers: {
+                      'Authorization': `Bearer ${token}`
+                  }
+              };
+              
+              if (!isFormData) {
+                  config.headers['Content-Type'] = 'application/json';
+              }
+              
+              const response = await axiosInstance.put(
+                  `/users/update/${userDetails.userId}`,
+                  updatedData,
+                  config
+              );
+              
+              const responseData = response.data;
+              const updatedUserDetails = { 
+                  ...userDetails, 
+                  ...(typeof responseData === 'object' ? responseData : {})
+              };
+              
+              set({
+                  userDetails: updatedUserDetails,
+                  isUpdatingUserDetails: false
+              });
+              
+              return updatedUserDetails;
+          } catch (error) {
+              const errorMessage = error.response?.data?.message || error.response?.data || 'Failed to update user details';
+              set({
+                  isUpdatingUserDetails: false,
+                  error: errorMessage
+              });
+              throw new Error(errorMessage);
+          }
       },
       
       clearUserDetails: () => set({ userDetails: null }),
+
+      getAllVideos: async (forceRefresh = false) => {
+        const { userDetails, allVideos, isLoadingAllVideos, filterVideos } = get()
+        
+        if (!userDetails) {
+          return []
+        }
+
+        if (!forceRefresh && allVideos.length > 0) {
+          return allVideos
+        }
+        
+        if (isLoadingAllVideos) {
+          return allVideos
+        }
+        
+        set({ isLoadingAllVideos: true, allVideosError: null })
+        
+        try {
+          const isPlacementOrAcademy = userDetails.jobOption === 'placementDrive' || userDetails.jobOption === 'Academy'
+          let allVideosData = []
+          
+          if (isPlacementOrAcademy && userDetails.jobid) {
+            let page = 0
+            let hasMore = true
+            
+            while (hasMore) {
+              const response = await axiosInstance.get(`/videos/job/${userDetails.jobid}`, {
+                params: { page, size: 100 }
+              })
+              
+              const responseData = response.data || {}
+              const pageVideos = responseData.videos || []
+              const totalPages = responseData.totalPages || 1
+              
+              allVideosData = [...allVideosData, ...pageVideos]
+              
+              hasMore = page < (totalPages - 1)
+              page++
+            }
+          } else {
+            let page = 0
+            let hasMore = true
+            
+            while (hasMore) {
+              const response = await axiosInstance.get('/videos/videos', {
+                params: { page, size: 100 }
+              })
+              
+              const responseData = response.data || {}
+              const pageVideos = responseData.videos || []
+              const totalPages = responseData.totalPages || 1
+              
+              allVideosData = [...allVideosData, ...pageVideos]
+              
+              hasMore = page < (totalPages - 1)
+              page++
+            }
+          }
+          
+          const filteredAllVideos = filterVideos(allVideosData)
+          
+          set({ 
+            allVideos: filteredAllVideos,
+            isLoadingAllVideos: false,
+            allVideosError: null
+          })
+          
+          return filteredAllVideos
+        } catch (error) {
+          console.error('Error fetching all videos:', error)
+          const errorMessage = error.response?.data?.message || 'Failed to fetch all videos'
+          
+          set({ 
+            isLoadingAllVideos: false,
+            allVideosError: errorMessage
+          })
+          
+          return allVideos
+        }
+      },
       
       getVideos: async (forceRefresh = false, loadMore = false) => {
         const { 
@@ -236,7 +350,8 @@ export const useAppStore = create(
           isLoadingMoreVideos,
           lastVideoEndpoint,
           currentPage,
-          hasMoreVideos
+          hasMoreVideos,
+          filterVideos
         } = get()
         
         if (!userDetails) {
@@ -276,19 +391,15 @@ export const useAppStore = create(
           const rawVideoData = responseData.videos || []
           const totalPages = responseData.totalPages || 1
           
-          const filteredVideoData = rawVideoData.filter(video => {
-            return video && 
-                   video.thumbnail && 
-                   video.thumbnail.trim() !== '' &&
-                   video.thumbnail !== null &&
-                   video.thumbnail !== undefined
-          })
+          const filteredVideoData = filterVideos(rawVideoData)
           
-          const newVideos = loadMore ? [...videos, ...filteredVideoData] : filteredVideoData
+          const combinedVideos = loadMore ? [...videos, ...filteredVideoData] : filteredVideoData
+          const finalVideos = filterVideos(combinedVideos)
+          
           const hasMore = page < (totalPages - 1)
           
           set({ 
-            videos: newVideos,
+            videos: finalVideos,
             [loadMore ? 'isLoadingMoreVideos' : 'isLoadingVideos']: false,
             lastVideoEndpoint: currentEndpoint,
             currentPage: page,
@@ -296,7 +407,7 @@ export const useAppStore = create(
             videoError: null
           })
           
-          return newVideos
+          return finalVideos
         } catch (error) {
           console.error('Error fetching videos:', error)
           const errorMessage = error.response?.data?.message || 'Failed to fetch videos'
@@ -378,15 +489,13 @@ export const useAppStore = create(
         return getVideos(true)
       },
 
-
       getLikedVideos: async (forceRefresh = false) => {
-        const { userDetails, likedVideos, isLoadingLikedVideos } = get()
+        const { userDetails, likedVideos, isLoadingLikedVideos, filterVideos } = get()
         
         if (!userDetails) {
           console.error('User details not available')
           return []
         }
-
 
         if (!forceRefresh && likedVideos.length > 0) {
           return likedVideos
@@ -404,13 +513,7 @@ export const useAppStore = create(
           })
           const rawLikedVideoData = response.data || []
           
-          const filteredLikedVideoData = rawLikedVideoData.filter(video => {
-            return video && 
-                   video.thumbnail && 
-                   video.thumbnail.trim() !== '' &&
-                   video.thumbnail !== null &&
-                   video.thumbnail !== undefined
-          })
+          const filteredLikedVideoData = filterVideos(rawLikedVideoData)
           
           set({ 
             likedVideos: filteredLikedVideoData,
@@ -442,14 +545,12 @@ export const useAppStore = create(
         return getLikedVideos(true)
       },
 
-
       getComments: async (forceRefresh = false) => {
         const { userDetails, comments, isLoadingComments } = get()
         
         if (!userDetails?.userId) {
           return []
         }
-
 
         if (!forceRefresh && comments.length > 0) {
           return comments
@@ -485,6 +586,72 @@ export const useAppStore = create(
         }
       },
 
+      getCommentedVideos: async (forceRefresh = false) => {
+        const { userDetails, commentedVideos, isLoadingCommentedVideos, getAllVideos, getComments, filterVideos } = get()
+        
+        if (!userDetails?.userId) {
+          return []
+        }
+
+        if (!forceRefresh && commentedVideos.length > 0) {
+          return commentedVideos
+        }
+        
+        if (isLoadingCommentedVideos) {
+          return commentedVideos
+        }
+        
+        set({ isLoadingCommentedVideos: true, commentedVideoError: null })
+        
+        try {
+          await getAllVideos()
+          const { allVideos } = get()
+          
+          await getComments()
+          const { comments } = get()
+          
+          const videoIds = [...new Set(comments.map(comment => comment.videoId))]
+          
+          if (videoIds.length === 0) {
+            set({ 
+              commentedVideos: [],
+              isLoadingCommentedVideos: false,
+              commentedVideoError: null
+            })
+            return []
+          }
+          
+          const matchingVideos = allVideos.filter(video => {
+            const videoId = video.id || video.videoId || video.videoID;
+            return videoIds.includes(videoId);
+          });
+          
+          const filteredCommentedVideos = filterVideos(matchingVideos)
+          
+          set({ 
+            commentedVideos: filteredCommentedVideos,
+            isLoadingCommentedVideos: false,
+            commentedVideoError: null
+          })
+          
+          return filteredCommentedVideos
+        } catch (error) {
+          console.error('Error fetching commented videos:', error)
+          const errorMessage = error.response?.data?.message || 'Failed to fetch commented videos'
+          
+          set({ 
+            isLoadingCommentedVideos: false,
+            commentedVideoError: errorMessage
+          })
+          
+          return commentedVideos
+        }
+      },
+
+      clearCommentedVideos: () => set({ 
+        commentedVideos: [], 
+        commentedVideoError: null 
+      }),
 
       addComment: async (videoId, comment) => {
         const { userDetails } = get()
@@ -509,7 +676,6 @@ export const useAppStore = create(
         }
       },
 
-
       updateComment: async (commentId, newComment) => {
         const { userDetails } = get()
         
@@ -530,7 +696,6 @@ export const useAppStore = create(
           throw error
         }
       },
-
 
       deleteComment: async (commentId) => {
         const { userDetails } = get()

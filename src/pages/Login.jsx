@@ -36,17 +36,6 @@ const peekIn = keyframes`
   }
 `;
 
-const peekOut = keyframes`
-  0% { 
-    transform: translateX(0);
-    opacity: 1;
-  }
-  100% { 
-    transform: translateX(100%);
-    opacity: 0;
-  }
-`;
-
 export default function Login() {
   const [formData, setFormData] = useState({
     email: "",
@@ -55,9 +44,17 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", severity: "success" });
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [showPeekingAnimation, setShowPeekingAnimation] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [hasEmailBeenFocused, setHasEmailBeenFocused] = useState(false);
 
   const { login, isLoading, clearError, isAuthenticated, getUserDetails } = useAppStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -85,6 +82,10 @@ export default function Login() {
 
   const handleEmailFocus = () => {
     setIsEmailFocused(true);
+    if (isMounted && !hasEmailBeenFocused) {
+      setShowPeekingAnimation(true);
+      setHasEmailBeenFocused(true);
+    }
   };
 
   const handleEmailBlur = () => {
@@ -102,6 +103,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsNavigating(true);
     
     try {
       await login(formData);
@@ -115,6 +117,7 @@ export default function Login() {
         navigate("/app");
       }, 1500);
     } catch (error) {
+      setIsNavigating(false);
       setAlert({
         show: true,
         message: error.message || "Login failed. Please check your credentials and try again.",
@@ -350,16 +353,15 @@ export default function Login() {
                 sx={{
                   position: "absolute",
                   left: -35,
-                  // top: "20%",
                   transform: "translateY(-75%)",
                   width: 55,
                   height: 55,
                   zIndex: 10,
                   pointerEvents: "none",
-                  opacity: isEmailFocused ? 1 : 0,
-                  animation: isEmailFocused 
+                  opacity: showPeekingAnimation && !isNavigating && isMounted ? 1 : 0,
+                  animation: showPeekingAnimation && !isNavigating && isMounted
                     ? `${peekIn} 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`
-                    : `${peekOut} 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards`,
+                    : "none",
                   transition: "opacity 0.3s ease",
                 }}
               >
