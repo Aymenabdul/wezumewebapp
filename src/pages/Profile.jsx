@@ -25,8 +25,8 @@ export default function Profile() {
     const [fileData, setFileData] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const fileInputRef = useRef();
-
-    const collegeOptions = [
+    console.log(userDetails)
+    const cityOption = [
         'New Delhi',
         'Mumbai',
         'Bengaluru',
@@ -299,7 +299,7 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Company Name", "currentEmployer")}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", cityOption)}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Established Year", "establishedYear", { type: "number", inputProps: { min: 1900, max: new Date().getFullYear() } })}</Grid>
                 </>
             );
@@ -323,7 +323,7 @@ export default function Profile() {
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Email", "email", { type: "email" })}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("Industry", "industry", educationOptions)}</Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>{renderTextField("Current Employer", "currentEmployer")}</Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", collegeOptions)}</Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>{renderSelectField("City", "city", cityOption)}</Grid>
                 </>
             );
         }
@@ -455,7 +455,7 @@ export default function Profile() {
                             
                             <Box sx={{ flex: 1, minWidth: 200 }}>
                                 <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'white' }}>
-                                    {userDetails.firstName || 'User'} {userDetails.lastName || ''}
+                                    {userDetails.firstName || userDetails.firstname || 'User'} {userDetails.lastName || userDetails.lastname || ''}
                                 </Typography>
                                 
                                 {hasValue(userDetails.email) && (
@@ -467,17 +467,17 @@ export default function Profile() {
                                     </Box>
                                 )}
                                 
-                                {hasValue(userDetails.phoneNumber) && (
+                                {hasValue(userDetails.phoneNumber || userDetails.phonenumber) && (
                                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                         <PhoneIcon sx={{ mr: 1, fontSize: 20 }} />
                                         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                                            {userDetails.phoneNumber}
+                                            {userDetails.phoneNumber || userDetails.phonenumber}
                                         </Typography>
                                     </Box>
                                 )}
 
                                 {hasValue(userDetails.industry) && (
-                                    <Chip icon={<StarIcon />} label={userDetails.industry} sx={{ 
+                                    <Chip icon={<StarIcon color='white' />} label={userDetails.industry} sx={{ 
                                         bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 600,
                                         backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.3)'
                                     }} />

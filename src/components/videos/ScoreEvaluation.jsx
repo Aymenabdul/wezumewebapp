@@ -111,7 +111,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return ['#Genuine'];
   };
 
-
   const getHashtags3 = score => {
     const emotional = score?.EmotionalExpressiveness ?? 0;
     if (emotional < 4) {
@@ -129,8 +128,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     return ['#Expressive'];
   };
 
-
-  // Enhanced Loading State with Skeletons
   if (loading) {
     return (
       <Box sx={{ 
@@ -138,7 +135,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
         overflow: 'auto',
         p: 2
       }}>
-        {/* Profile Section Skeleton */}
         <Paper sx={{ 
           mb: 2, 
           p: 2,
@@ -156,8 +152,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
           </Stack>
         </Paper>
 
-
-        {/* Overall Score Section Skeleton */}
         <Paper sx={{ 
           mb: 3,
           p: 3,
@@ -187,8 +181,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
           </Box>
         </Paper>
 
-
-        {/* Breakdown Section Skeleton */}
         <Box sx={{ mb: 3 }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
             <Skeleton variant="circular" width={20} height={20} />
@@ -221,7 +213,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
         </Box>
 
 
-        {/* Analysis Section Skeleton */}
         <Paper sx={{ 
           p: 2.5,
           borderRadius: 2,
@@ -248,8 +239,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
     );
   }
 
-
-  // Enhanced Error State - Handle both error prop and scoreData.isError
   if (error || (scoreData && scoreData.isError)) {
     const errorMessage = scoreData?.message || "Score is not available for the video";
     const is404Error = scoreData?.errorType === 404;
@@ -270,7 +259,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
         }}>
           <Stack direction="row" spacing={2} alignItems="center">
             <Avatar 
-              src={decodeProfilePic(video?.profilepic)} 
+              src={decodeProfilePic(video?.profilepic || video?.profilePic)} 
               sx={{ 
                 width: 60, 
                 height: 60,
@@ -288,11 +277,11 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
                 color: '#111827',
                 fontSize: '1.1rem'
               }}>
-                {video?.firstname}
+                {video?.firstname || video?.firstName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, opacity: 0.8, fontSize: '0.85rem' }}>
+              {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 1, opacity: 0.8, fontSize: '0.85rem' }}>
                 {video?.email}
-              </Typography>
+              </Typography> */}
             </Box>
           </Stack>
         </Paper>
@@ -335,7 +324,6 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
   }
 
 
-  // Success State - when scoreData exists
   if (!scoreData) {
     return null;
   }
@@ -432,7 +420,7 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
             }
           >
             <Avatar 
-              src={decodeProfilePic(video.profilepic)} 
+              src={decodeProfilePic(video.profilepic || video.profilePic)} 
               sx={{ 
                 width: 60, 
                 height: 60,
@@ -451,11 +439,11 @@ export default function ScoreEvaluation({ scoreData, video, loading = false, err
               color: '#111827',
               fontSize: '1.1rem'
             }}>
-              {video.firstname}
+              {video?.firstname || video?.firstName}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, opacity: 0.8, fontSize: '0.85rem' }}>
+            {/* <Typography variant="body2" color="text.secondary" sx={{ mb: 1, opacity: 0.8, fontSize: '0.85rem' }}>
               {video.email}
-            </Typography>
+            </Typography> */}
             <Chip 
               label={totalPerformance.label}
               size="small"

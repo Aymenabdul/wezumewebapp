@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -48,7 +49,6 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
       const progress = Math.min((timestamp - startTime) / duration, 1);
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
       const currentCount = Math.floor(easeOutQuart * end);
-
       setCount(currentCount);
 
       if (progress < 1) {
@@ -65,7 +65,7 @@ const AnimatedCounter = ({ end, duration = 2000, suffix = "" }) => {
     };
   }, [end, duration]);
 
-  return <span>{count.toLocaleString()}{suffix}</span>;
+  return <>{count.toLocaleString()}{suffix}</>;
 };
 
 const storeVideosForNavigation = (videos, listType) => {
@@ -147,12 +147,54 @@ export default function Dashboard() {
   const sortedStudentData = [...studentData].sort((a, b) => {
     const aValue = a[sortBy];
     const bValue = b[sortBy];
+
     if (sortOrder === "asc") {
       return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
     } else {
       return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
     }
   });
+
+  const handleVideoClick = (video, index) => {
+    let videoSource = '';
+    let videoList = [];
+    
+    switch (activeTab) {
+      case 'liked':
+        videoSource = 'liked';
+        videoList = likedVideos;
+        break;
+      case 'commented':
+        videoSource = 'commented'; 
+        videoList = commentedVideos;
+        break;
+      case 'job':
+        videoSource = 'videos';
+        videoList = videos;
+        break;
+      default:
+        videoSource = 'videos';
+        videoList = videos;
+    }
+
+    try {
+      sessionStorage.setItem('videoSource', videoSource);
+      sessionStorage.setItem('currentVideosList', JSON.stringify(videoList));
+      sessionStorage.setItem('videoListType', videoSource);
+    } catch (error) {
+      console.error('Failed to store video navigation info:', error);
+    }
+
+    const hashedId = btoa(video.id.toString());
+    navigate(`/app/video/${hashedId}`, {
+      state: { 
+        from: '/app/dashboard',
+        source: videoSource,
+        videoList: videoList,
+        index: index
+      }
+    });
+  };
 
   const handleSort = (column) => {
     if (sortBy === column) {
@@ -180,19 +222,19 @@ export default function Dashboard() {
       try {
         await refreshLikedVideos();
       } catch (error) {
-        snackbar({ open: true, message: "Failed to refresh liked videos", severity: "error" });
-        // console.error("Failed to refresh liked videos:", error);
+        setSnackbar({ open: true, message: "Failed to refresh liked videos", severity: "error" });
+        console.error("Failed to refresh liked videos:", error);
       }
     } else if (activeTab === "commented") {
       try {
         await refreshCommentedVideos();
       } catch (error) {
-        snackbar({ open: true, message: "Failed to refresh commented videos", severity: "error" });
-        // console.error("Failed to refresh commented videos:", error);
+        setSnackbar({ open: true, message: "Failed to refresh commented videos", severity: "error" });
+        console.error("Failed to refresh commented videos:", error);
       }
-    };
+    }
   };
-  
+
   useEffect(() => {
     if (activeTab === "job") {
       window.addEventListener("scroll", handleScroll);
@@ -259,11 +301,9 @@ export default function Dashboard() {
     try {
       switch (tab) {
         case "liked":
-          console.log('Fetching liked videos...');
           await getLikedVideos();
           break;
         case "commented":
-          console.log('Fetching commented videos...');
           await getCommentedVideos();
           break;
         case "job":
@@ -276,7 +316,6 @@ export default function Dashboard() {
             return;
           }
           if (isPlacementOrAcademy && userDetails?.jobid) {
-            console.log('Fetching job videos...');
             await getVideos();
           }
           break;
@@ -295,7 +334,6 @@ export default function Dashboard() {
     if (tab !== activeTab) {
       setActiveTab(tab);
       setShowStudentTable(false);
-      
       const urlTab = tab === 'job' ? 'videos' : tab;
       setSearchParams({ tab: urlTab });
     }
@@ -330,19 +368,6 @@ export default function Dashboard() {
           : `Videos${userDetails?.jobid ? ` (Job ID: ${userDetails.jobid})` : ""}`;
       default:
         return "Videos";
-    }
-  };
-
-  const getTabCount = () => {
-    switch (activeTab) {
-      case "liked":
-        return likedVideos?.length || 0;
-      case "commented":
-        return commentedVideos?.length || 0;
-      case "job":
-        return videos?.length || 0;
-      default:
-        return 0;
     }
   };
 
@@ -403,13 +428,9 @@ export default function Dashboard() {
                     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
                   }}
                 >
-                  <FilterListIcon
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-                    }}
-                  />
+                  <FilterListIcon sx={{ color: "white", fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }} />
                 </Box>
+
                 <Box>
                   <FormControl size="small" sx={{ minWidth: 110 }}>
                     <Select
@@ -422,12 +443,12 @@ export default function Dashboard() {
                         backgroundColor: "white",
                         borderRadius: "10px",
                         fontSize: "0.8rem",
-                        fontWeight: 600,
+                        fontWeight: "600",
                         boxShadow: "0 2px 8px rgba(16, 185, 129, 0.15)",
                         "& .MuiSelect-select": {
                           padding: "8px 12px",
                           fontSize: "0.8rem",
-                          fontWeight: 600,
+                          fontWeight: "600",
                           color: "#059669",
                           display: "flex",
                           alignItems: "center",
@@ -466,7 +487,7 @@ export default function Dashboard() {
                         value="C191"
                         sx={{
                           fontSize: "0.8rem",
-                          fontWeight: 500,
+                          fontWeight: "500",
                           color: "#374151",
                           "&:hover": {
                             backgroundColor: "#ecfdf5",
@@ -475,7 +496,7 @@ export default function Dashboard() {
                           "&.Mui-selected": {
                             backgroundColor: "#d1fae5",
                             color: "#059669",
-                            fontWeight: 600,
+                            fontWeight: "600",
                             "&:hover": {
                               backgroundColor: "#a7f3d0",
                             },
@@ -531,18 +552,14 @@ export default function Dashboard() {
                     boxShadow: "0 4px 12px rgba(168, 85, 247, 0.3)",
                   }}
                 >
-                  <PeopleIcon
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-                    }}
-                  />
+                  <PeopleIcon sx={{ color: "white", fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }} />
                 </Box>
+
                 <Box sx={{ textAlign: "center" }}>
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 600,
+                      fontWeight: "600",
                       fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
                       color: "#1e293b",
                       lineHeight: 1.2,
@@ -551,6 +568,7 @@ export default function Dashboard() {
                   >
                     Total Students
                   </Typography>
+
                   {isLoadingJobVideosCounts ? (
                     <CircularProgress size={16} sx={{ color: "#a855f7" }} />
                   ) : (
@@ -559,10 +577,10 @@ export default function Dashboard() {
                       sx={{
                         color: "#a855f7",
                         fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.3rem" },
-                        fontWeight: 700,
+                        fontWeight: "700",
                       }}
                     >
-                      <AnimatedCounter end={jobVideosCounts.totalUsers} duration={2500} />
+                      <AnimatedCounter end={jobVideosCounts?.totalUsers || 0} duration={2500} />
                     </Typography>
                   )}
                 </Box>
@@ -603,18 +621,14 @@ export default function Dashboard() {
                     boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
                   }}
                 >
-                  <PlayCircleOutlineIcon
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-                    }}
-                  />
+                  <PlayCircleOutlineIcon sx={{ color: "white", fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }} />
                 </Box>
+
                 <Box sx={{ textAlign: "center" }}>
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 600,
+                      fontWeight: "600",
                       fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
                       color: "#1e293b",
                       lineHeight: 1.2,
@@ -623,6 +637,7 @@ export default function Dashboard() {
                   >
                     Total Videos
                   </Typography>
+
                   {isLoadingJobVideosCounts ? (
                     <CircularProgress size={16} sx={{ color: "#3b82f6" }} />
                   ) : (
@@ -631,10 +646,10 @@ export default function Dashboard() {
                       sx={{
                         color: "#3b82f6",
                         fontSize: { xs: "0.9rem", sm: "1.1rem", md: "1.3rem" },
-                        fontWeight: 700,
+                        fontWeight: "700",
                       }}
                     >
-                      <AnimatedCounter end={jobVideosCounts.totalVideos} duration={2000} />
+                      <AnimatedCounter end={jobVideosCounts?.totalVideos || 0} duration={2000} />
                     </Typography>
                   )}
                 </Box>
@@ -702,18 +717,14 @@ export default function Dashboard() {
                     boxShadow: "0 4px 12px rgba(236, 72, 153, 0.3)",
                   }}
                 >
-                  <FavoriteIcon
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-                    }}
-                  />
+                  <FavoriteIcon sx={{ color: "white", fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }} />
                 </Box>
+
                 <Box sx={{ textAlign: "center" }}>
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 600,
+                      fontWeight: "600",
                       fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
                       color: "#1e293b",
                       lineHeight: 1.2,
@@ -782,18 +793,14 @@ export default function Dashboard() {
                     boxShadow: "0 4px 12px rgba(245, 158, 11, 0.3)",
                   }}
                 >
-                  <CommentIcon
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-                    }}
-                  />
+                  <CommentIcon sx={{ color: "white", fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }} />
                 </Box>
+
                 <Box sx={{ textAlign: "center" }}>
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 600,
+                      fontWeight: "600",
                       fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
                       color: "#1e293b",
                       lineHeight: 1.2,
@@ -862,18 +869,14 @@ export default function Dashboard() {
                     boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)",
                   }}
                 >
-                  <WorkIcon
-                    sx={{
-                      color: "white",
-                      fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
-                    }}
-                  />
+                  <WorkIcon sx={{ color: "white", fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }} />
                 </Box>
+
                 <Box sx={{ textAlign: "center" }}>
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 600,
+                      fontWeight: "600",
                       fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
                       color: "#1e293b",
                       lineHeight: 1.2,
@@ -921,7 +924,7 @@ export default function Dashboard() {
           mb: 3,
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+        <Typography variant="h5" sx={{ fontWeight: "600" }}>
           Dashboard
         </Typography>
       </Box>
@@ -930,20 +933,11 @@ export default function Dashboard() {
         {renderTabCards()}
       </Box>
 
-      <Paper
-        sx={{
-          width: "100%",
-          maxWidth: 1200,
-          p: 3,
-          mb: 3,
-          borderRadius: 3,
-          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-        }}
-      >
+      <Paper sx={{ width: "100%", maxWidth: 1200, p: 3, mb: 3, borderRadius: 3, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
         {showStudentTable ? (
           <Box>
             <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: "600", color: "#1e293b", mb: 1 }}>
                 Student Details
               </Typography>
               <Typography variant="body2" sx={{ color: "#64748b" }}>
@@ -968,15 +962,7 @@ export default function Dashboard() {
                       "& th": { borderBottom: "none" },
                     }}
                   >
-                    <TableCell
-                      sx={{
-                        background: "transparent",
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: "0.95rem",
-                        padding: "16px",
-                      }}
-                    >
+                    <TableCell sx={{ background: "transparent", color: "white", fontWeight: "700", fontSize: "0.95rem", padding: "16px" }}>
                       <TableSortLabel
                         active={sortBy === "name"}
                         direction={sortBy === "name" ? sortOrder : "asc"}
@@ -991,15 +977,7 @@ export default function Dashboard() {
                         Name
                       </TableSortLabel>
                     </TableCell>
-                    <TableCell
-                      sx={{
-                        background: "transparent",
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: "0.95rem",
-                        padding: "16px",
-                      }}
-                    >
+                    <TableCell sx={{ background: "transparent", color: "white", fontWeight: "700", fontSize: "0.95rem", padding: "16px" }}>
                       <TableSortLabel
                         active={sortBy === "email"}
                         direction={sortBy === "email" ? sortOrder : "asc"}
@@ -1014,15 +992,7 @@ export default function Dashboard() {
                         Email ID
                       </TableSortLabel>
                     </TableCell>
-                    <TableCell
-                      sx={{
-                        background: "transparent",
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: "0.95rem",
-                        padding: "16px",
-                      }}
-                    >
+                    <TableCell sx={{ background: "transparent", color: "white", fontWeight: "700", fontSize: "0.95rem", padding: "16px" }}>
                       <TableSortLabel
                         active={sortBy === "jobId"}
                         direction={sortBy === "jobId" ? sortOrder : "asc"}
@@ -1055,33 +1025,13 @@ export default function Dashboard() {
                         borderBottom: "1px solid #f1f5f9",
                       }}
                     >
-                      <TableCell
-                        sx={{
-                          fontSize: "0.9rem",
-                          padding: "16px",
-                          fontWeight: 500,
-                          color: "#374151",
-                        }}
-                      >
+                      <TableCell sx={{ fontSize: "0.9rem", padding: "16px", fontWeight: "500", color: "#374151" }}>
                         {student.name}
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: "0.9rem",
-                          padding: "16px",
-                          color: "#6b7280",
-                        }}
-                      >
+                      <TableCell sx={{ fontSize: "0.9rem", padding: "16px", color: "#6b7280" }}>
                         {student.email}
                       </TableCell>
-                      <TableCell
-                        sx={{
-                          fontSize: "0.9rem",
-                          padding: "16px",
-                          fontWeight: 600,
-                          color: "#10b981",
-                        }}
-                      >
+                      <TableCell sx={{ fontSize: "0.9rem", padding: "16px", fontWeight: "600", color: "#10b981" }}>
                         {student.jobId}
                       </TableCell>
                     </TableRow>
@@ -1093,10 +1043,10 @@ export default function Dashboard() {
         ) : (
           <Box>
             <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#1e293b", mb: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: "600", color: "#1e293b", mb: 1 }}>
                 {getTabTitle()}
               </Typography>
-              {activeTab === "liked" && (
+              {/* {activeTab === "liked" && (
                 <Button
                   startIcon={<Refresh />}
                   variant="outlined"
@@ -1106,7 +1056,7 @@ export default function Dashboard() {
                 >
                   {isLoadingLikedVideos ? "Refreshing..." : "Refresh"}
                 </Button>
-              )}
+              )} */}
             </Box>
 
             {activeTab === "liked" && likedVideoError && (
@@ -1123,17 +1073,9 @@ export default function Dashboard() {
               <Grid container spacing={0.7}>
                 {displayVideos.length === 0 ? (
                   <Grid size={{ xs: 12 }}>
-                    <Box
-                      sx={{
-                        textAlign: "center",
-                        py: activeTab === "liked" ? 8 : 6,
-                        bgcolor: activeTab === "liked" ? "#f8fafc" : "transparent",
-                        borderRadius: activeTab === "liked" ? 3 : 0,
-                        border: activeTab === "liked" ? "1px solid #e5e7eb" : "none",
-                        color: "#6b7280",
-                      }}
-                    >
+                    <Box sx={{ textAlign: "center", py: activeTab === "liked" ? 8 : 6, bgcolor: activeTab === "liked" ? "#f8fafc" : "transparent", borderRadius: activeTab === "liked" ? 3 : 0, border: activeTab === "liked" ? "1px solid #e5e7eb" : "none", color: "#6b7280" }}>
                       {activeTab === "liked" && <FavoriteIcon sx={{ fontSize: 64, color: "#d1d5db", mb: 2 }} />}
+
                       <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
                         {activeTab === "liked"
                           ? "No liked videos yet"
@@ -1143,6 +1085,7 @@ export default function Dashboard() {
                           ? "No job ID assigned to your profile"
                           : "No videos found"}
                       </Typography>
+
                       {activeTab === "liked" && (
                         <>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1157,28 +1100,29 @@ export default function Dashboard() {
                   </Grid>
                 ) : (
                   <>
-                    {isCurrentTabLoading() ? (
-                      Array(12)
-                        .fill()
-                        .map((_, index) => (
-                          <Grid size={{ xs: 4, lg: 3 }} key={index}>
-                            <VideoSkeleton />
+                    {isCurrentTabLoading()
+                      ? Array(12)
+                          .fill()
+                          .map((_, index) => (
+                            <Grid size={{ xs: 4, lg: 3 }} key={index}>
+                              <VideoSkeleton />
+                            </Grid>
+                          ))
+                      : displayVideos.map((video) => (
+                          <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
+                            <VideoCard 
+                              video={video} 
+                              onClick={() => handleVideoClick(video)}
+                            />
                           </Grid>
-                        ))
-                    ) : (
-                      displayVideos.map((video) => (
-                        <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
-                          <VideoCard video={video} />
-                        </Grid>
-                      ))
+                        ))}
+
+                    {isLoadingMoreVideos && (
+                      <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                        <CircularProgress />
+                      </Box>
                     )}
                   </>
-                )}
-
-                {isLoadingMoreVideos && (
-                  <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                    <CircularProgress />
-                  </Box>
                 )}
               </Grid>
             )}

@@ -16,7 +16,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { FilterList, ExpandMore, ExpandLess, Refresh } from '@mui/icons-material';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/appStore';
 import VideoCard from '../components/videos/VideoCard';
 import VideoSkeleton from '../components/videos/VideoSkeleton';
@@ -41,12 +41,14 @@ const persistFilters = (filters) => {
 const storeFilteredVideosForNavigation = (videos) => {
   try {
     sessionStorage.setItem('currentVideosList', JSON.stringify(videos));
+    sessionStorage.setItem('videoListType', 'job');
   } catch (error) {
-    console.error('Failed to store filtered videos:', error);
+    console.error('Failed to store filtered videos for navigation:', error);
   }
 };
 
 export default function Videos() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const jobid = searchParams.get('jobid');
   const scrollContainerRef = useRef(null);
@@ -115,12 +117,37 @@ export default function Videos() {
   const hasMore = isFilteredResults ? hasMoreFilteredVideos : hasMoreVideos;
   const error = isFilteredResults ? filteredVideoError : videoError;
 
+  const handleVideoClick = (video, index) => {
+    const videoList = displayVideos;
+    const videoSource = 'videos';
+    
+    try {
+      sessionStorage.setItem('videoSource', videoSource);
+      sessionStorage.setItem('currentVideosList', JSON.stringify(videoList));
+      sessionStorage.setItem('videoListType', videoSource);
+    } catch (error) {
+      console.error('Failed to store video navigation info:', error);
+    }
+
+    const hashedId = btoa(video.id.toString());
+    navigate(`/app/video/${hashedId}`, {
+      state: { 
+        from: '/app/videos',
+        source: videoSource,
+        videoList: videoList,
+        index: index,
+        isFiltered: isFilteredResults,
+        filters: isFilteredResults ? filters : null
+      }
+    });
+  };
+
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current) return;
-    
+
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
     const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-    
+
     if (scrollPercentage > 0.8) {
       if (isFilteredResults && hasMore && !isLoadingMore) {
         loadMoreFilteredVideos(filters);
@@ -173,7 +200,6 @@ export default function Videos() {
     }
 
     const hasFilters = Object.values(persistedFilters).some(val => val && val.toString().trim() !== '');
-
     if (!hasFilters) {
       fetchVideos();
       return;
@@ -221,7 +247,7 @@ export default function Videos() {
 
   const applyFilters = async () => {
     const hasFilters = Object.values(filters).some(val => val && val.toString().trim() !== '');
-
+    
     if (!hasFilters) {
       setIsFilteredResults(false);
       await getVideos();
@@ -266,72 +292,64 @@ export default function Videos() {
   };
 
   return (
-    <Box 
-      ref={scrollContainerRef}
-      sx={{ 
-        p: 3, 
-        height: '100vh', 
-        overflow: 'auto'
-      }}
-    >
+    <Box ref={scrollContainerRef} sx={{ p: 3, height: '100vh', overflow: 'auto' }}>
       {jobid && (
-        <Box sx={{ mb: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 2, border: '1px solid #90caf9' }}>
-          <Typography variant="h6" color="primary">
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'info.light', color: 'info.contrastText' }}>
+          <Typography variant="h6" gutterBottom>
             Job-Specific Videos (Job ID: {jobid})
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2">
             Showing videos related to your assigned job
           </Typography>
-        </Box>
+        </Paper>
       )}
 
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-        <Button
-          startIcon={<FilterList />}
-          endIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
-          onClick={() => setFiltersOpen(!filtersOpen)}
-          variant="outlined"
-        >
-          Filters
-        </Button>
-
-        <Button
-          startIcon={<Refresh />}
-          variant="outlined"
-          onClick={handleRefresh}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Refreshing...' : 'Refresh'}
-        </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">Videos</Typography>
+        <Box sx={{ display: 'flex', gap: { xs: 0.5, lg: 2 } }}>
+          <Button
+            startIcon={<FilterList />}
+            endIcon={filtersOpen ? <ExpandLess /> : <ExpandMore />}
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            variant="outlined"
+            size="small"
+          >
+            {window.innerWidth > 600 ? 'Filters' : ''}
+          </Button>
+          <Button
+            startIcon={<Refresh />}
+            variant="outlined"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            size="small"
+          >
+            {window.innerWidth > 600 ? 'Refresh' : ''}
+          </Button>
+        </Box>
       </Box>
 
       <Collapse in={filtersOpen}>
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" gutterBottom>Filter Videos</Typography>
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <Grid container spacing={0.5}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
-                size="small"
-                label="Keywords"
+                label="Keywords in transcription"
                 value={filters.transcriptionKeywords}
                 onChange={(e) => handleFilterChange('transcriptionKeywords', e.target.value)}
               />
             </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
-                size="small"
                 label="Key Skills"
                 value={filters.keyskills}
                 onChange={(e) => handleFilterChange('keyskills', e.target.value)}
               />
             </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth>
                 <InputLabel>Experience</InputLabel>
                 <Select
                   value={filters.experience}
@@ -342,13 +360,12 @@ export default function Videos() {
                   <MenuItem value="0-1">0-1 years</MenuItem>
                   <MenuItem value="2-3">2-3 years</MenuItem>
                   <MenuItem value="5-10">5-10 years</MenuItem>
-                  <MenuItem value="Above 10">Above 10 years</MenuItem>
+                  <MenuItem value="10+">Above 10 years</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth>
                 <InputLabel>Industry</InputLabel>
                 <Select
                   value={filters.industry}
@@ -364,9 +381,8 @@ export default function Videos() {
                 </Select>
               </FormControl>
             </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-              <FormControl fullWidth size="small">
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <FormControl fullWidth>
                 <InputLabel>City</InputLabel>
                 <Select
                   value={filters.city}
@@ -382,28 +398,23 @@ export default function Videos() {
                 </Select>
               </FormControl>
             </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
-                size="small"
                 label="College"
                 value={filters.college}
                 onChange={(e) => handleFilterChange('college', e.target.value)}
               />
             </Grid>
-
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
               <TextField
                 fullWidth
-                size="small"
                 label="Job ID"
                 value={filters.jobid}
                 onChange={(e) => handleFilterChange('jobid', e.target.value)}
               />
             </Grid>
           </Grid>
-
           <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
             <Button
               variant="contained"
@@ -420,14 +431,12 @@ export default function Videos() {
       </Collapse>
 
       {error && (
-        <Box sx={{ mb: 3, p: 2, bgcolor: '#fee2e2', borderRadius: 2, border: '1px solid #fca5a5' }}>
-          <Typography color="error">
-            {error}
-          </Typography>
-        </Box>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
 
-      <Grid container spacing={0.7}>
+      <Grid container spacing={0.5}>
         {isLoading ? (
           Array(12).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={index}>
@@ -435,13 +444,16 @@ export default function Videos() {
             </Grid>
           ))
         ) : (
-          displayVideos.map((video) => (
+          displayVideos.map((video, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={video.id}>
-              <VideoCard video={video} />
+              <VideoCard
+                video={video}
+                onClick={() => handleVideoClick(video, index)}
+              />
             </Grid>
           ))
         )}
-        
+
         {isLoadingMore && (
           Array(8).fill().map((_, index) => (
             <Grid size={{ xs: 4, lg: 3 }} key={`loading-${index}`}>
@@ -463,9 +475,8 @@ export default function Videos() {
       )}
 
       {isLoadingMore && displayVideos.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-          <CircularProgress size={24} />
-          <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
+        <Box sx={{ textAlign: 'center', mt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
             Loading more videos...
           </Typography>
         </Box>
@@ -475,13 +486,8 @@ export default function Videos() {
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>

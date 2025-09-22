@@ -32,18 +32,21 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { useAppStore } from '../store/appStore';
 
+
 const drawerWidth = 240;
 const collapsedDrawerWidth = 70;
 
+
 export default function BaseLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [moreAnchor, setMoreAnchor] = useState(null);
+    // const [moreAnchor, setMoreAnchor] = useState(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const location = useLocation();
     const navigate = useNavigate();
     const { logout, getLikedVideos, userDetails } = useAppStore();
+
 
     useEffect(() => {
         getLikedVideos();
@@ -56,26 +59,36 @@ export default function BaseLayout() {
         } 
     }, [location.pathname, userDetails?.jobOption]);
 
+
     const handleToggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
     };
+
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
 
-    const handleMoreClick = (event) => {
-        setMoreAnchor(event.currentTarget);
+
+    // const handleMoreClick = (event) => {
+    //     setMoreAnchor(event.currentTarget);
+    // };
+
+
+    // const handleMoreClose = () => {
+    //     setMoreAnchor(null);
+    // };
+
+    const handleLogoClick = () => {
+        window.location.pathname !== "/app/dashboard" ? navigate("/app/dashboard") : null;
     };
 
-    const handleMoreClose = () => {
-        setMoreAnchor(null);
-    };
 
     const handleLogout = () => {
         logout();
         if (isMobile) handleDrawerToggle();
     };
+
 
     const navLinks = [
         { label: "Dashboard", icon: <DashboardIcon />, path: "/app/dashboard" },
@@ -86,25 +99,36 @@ export default function BaseLayout() {
         { label: "Profile", icon: <PersonIcon />, path: "/app/profile" },
     ];
 
-    const moreMenuItems = [
-        { label: "Terms and Conditions", icon: <GavelIcon /> },
-        { label: "Privacy Policy", icon: <PrivacyTipIcon /> }
-    ];
 
-    const isMoreOpen = Boolean(moreAnchor);
+    // const moreMenuItems = [
+    //     { label: "Terms and Conditions", icon: <GavelIcon /> },
+    //     { label: "Privacy Policy", icon: <PrivacyTipIcon /> }
+    // ];
+
+
+    // const isMoreOpen = Boolean(moreAnchor);
     const currentDrawerWidth = isCollapsed ? collapsedDrawerWidth : drawerWidth;
     const shouldShowText = isMobile || !isCollapsed;
+
 
     const drawer = (
         <>
             <Toolbar sx={{ justifyContent: isCollapsed ? 'center' : 'space-between', position: 'relative' }}>
-                <Box sx={{ 
-                    display: "flex", 
-                    alignItems: "center",
-                    filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.3))",
-                    justifyContent: isCollapsed ? 'center' : 'flex-start',
-                    width: isCollapsed ? '100%' : 'auto'
-                }}>
+                <Box 
+                    onClick={handleLogoClick}
+                    sx={{ 
+                        display: "flex", 
+                        alignItems: "center",
+                        filter: "drop-shadow(0px 4px 4px rgba(0,0,0,0.3))",
+                        justifyContent: isCollapsed ? 'center' : 'flex-start',
+                        width: isCollapsed ? '100%' : 'auto',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                            transform: 'scale(1.05)'
+                        }
+                    }}
+                >
                     {isCollapsed && !isMobile ? (
                         <img
                             src="/logo-favicon.png"
@@ -175,6 +199,7 @@ export default function BaseLayout() {
                             )}
                         </ListItemButton>
                     );
+
 
                     return (
                         <ListItem key={index} disablePadding>
@@ -248,7 +273,7 @@ export default function BaseLayout() {
                     )}
                 </ListItem>
                 
-                <ListItem disablePadding>
+                {/* <ListItem disablePadding>
                     {(isCollapsed && !isMobile) ? (
                         <Tooltip title="More" placement="right" arrow>
                             <ListItemButton
@@ -304,10 +329,10 @@ export default function BaseLayout() {
                             {shouldShowText && <ListItemText primary="More" sx={{ transition: 'opacity 0.2s ease' }} />}
                         </ListItemButton>
                     )}
-                </ListItem>
+                </ListItem> */}
             </List>
             
-            <Menu
+            {/* <Menu
                 anchorEl={moreAnchor}
                 open={isMoreOpen}
                 onClose={handleMoreClose}
@@ -347,9 +372,10 @@ export default function BaseLayout() {
                         {item.label}
                     </MenuItem>
                 ))}
-            </Menu>
+            </Menu> */}
         </>
     );
+
 
     return (
         <Box sx={{ display: "flex", minHeight: "100vh", position: 'relative' }}>
@@ -397,12 +423,13 @@ export default function BaseLayout() {
                         >
                             <MenuIcon />
                         </IconButton>
-                        <Typography variant="h6" noWrap component="div">
+                        <Typography variant="h6" noWrap component="div" onClick={handleLogoClick} sx={{ cursor: 'pointer' }}>
                             Wezume
                         </Typography>
                     </Toolbar>
                 </AppBar>
             )}
+
 
             {!isMobile && (
                 <Drawer
@@ -427,6 +454,7 @@ export default function BaseLayout() {
                 </Drawer>
             )}
 
+
             {isMobile && (
                 <Drawer
                     variant="temporary"
@@ -449,6 +477,7 @@ export default function BaseLayout() {
                     {drawer}
                 </Drawer>
             )}
+
 
             <Box
                 component="main"

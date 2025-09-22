@@ -15,6 +15,15 @@ import {
   Typography,
   Chip,
   Popover,
+  Avatar,
+  LinearProgress,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
+  Badge,
+  Stack,
+  Skeleton,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -29,15 +38,19 @@ import {
   Comment,
   Mic,
   Link,
+  TrendingUp,
+  Star,
+  Psychology,
+  Visibility,
+  EmojiEvents,
+  Error,
 } from "@mui/icons-material";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { createPortal } from "react-dom";
 import axiosInstance from "../../axios/axios";
 import { useAppStore } from "../../store/appStore";
-import ScoreEvaluation from "./ScoreEvaluation";
 import CommentsSection from "./CommentsSection";
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
-
 
 const getStoredVideosForNavigation = () => {
   try {
@@ -48,7 +61,6 @@ const getStoredVideosForNavigation = () => {
   }
 };
 
-
 const getStoredVideoListType = () => {
   try {
     return sessionStorage.getItem('videoListType') || null;
@@ -57,6 +69,13 @@ const getStoredVideoListType = () => {
   }
 };
 
+const getStoredVideoSource = () => {
+  try {
+    return sessionStorage.getItem('videoSource') || 'videos';
+  } catch {
+    return 'videos';
+  }
+};
 
 export default function VideoPlayer() {
   const { videoId } = useParams();
@@ -65,20 +84,15 @@ export default function VideoPlayer() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-
   const videoRef = useRef();
   const containerRef = useRef();
   const mobileContainerRef = useRef();
   const videoContainerRef = useRef();
 
-
   const [video, setVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-  const [scoreData, setScoreData] = useState(null);
-  const [scoreLoading, setScoreLoading] = useState(false);
-  const [scoreError, setScoreError] = useState(null);
   const [videoLoading, setVideoLoading] = useState(false);
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
@@ -93,11 +107,29 @@ export default function VideoPlayer() {
     severity: "info",
   });
 
+  const [scoreState, setScoreState] = useState({
+    loading: true,
+    error: null,
+    data: null,
+    hashtags: null,
+    performance: null,
+    feedback: null,
+    scores: null,
+    helpers: null
+  });
 
-  const { userDetails, videos, likedVideos, commentedVideos, isLoadingVideos, getVideos, getLikedVideos } = useAppStore();
+  const { 
+    userDetails, 
+    videos, 
+    likedVideos, 
+    commentedVideos, 
+    isLoadingVideos, 
+    getVideos, 
+    getLikedVideos,
+    getCommentedVideos
+  } = useAppStore();
   
   const [currentVideosList, setCurrentVideosList] = useState([]);
-
 
   let decodedVideoId;
   try {
@@ -107,16 +139,553 @@ export default function VideoPlayer() {
     decodedVideoId = null;
   }
 
+  const decodeProfilePic = (pic) => {
+    if (!pic) return null;
+    if (pic.startsWith('https://wezume')) return pic;
+    try {
+      return atob(pic);
+    } catch {
+      return pic;
+    }
+  };
+
+  const renderScoreEvaluation = () => {
+    if (scoreState.loading) {
+      return (
+        <Box sx={{ 
+          height: '100%', 
+          overflow: 'auto',
+          p: 2
+        }}>
+          <Paper sx={{ 
+            mb: 2, 
+            p: 2,
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Skeleton variant="circular" width={60} height={60} />
+              <Box sx={{ flex: 1 }}>
+                <Skeleton variant="text" width="60%" height={28} />
+                <Skeleton variant="text" width="40%" height={20} />
+                <Skeleton variant="rounded" width={80} height={24} sx={{ mt: 1 }} />
+              </Box>
+            </Stack>
+          </Paper>
+
+          <Paper sx={{ 
+            mb: 3,
+            p: 3,
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)',
+            textAlign: 'center'
+          }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <CircularProgress size={60} sx={{ color: '#1976d2' }} />
+            </Box>
+            <Typography variant="h6" sx={{ 
+              color: '#1976d2',
+              fontWeight: 600,
+              mb: 1
+            }}>
+              Analyzing Performance
+            </Typography>
+            <Typography variant="body2" sx={{ 
+              color: '#6b7280',
+              fontWeight: 500
+            }}>
+              Please wait while we evaluate the video...
+            </Typography>
+            <Box sx={{ maxWidth: 300, mx: 'auto', mt: 2 }}>
+              <Skeleton variant="rounded" height={12} />
+            </Box>
+          </Paper>
+
+          <Box sx={{ mb: 3 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <Skeleton variant="circular" width={20} height={20} />
+              <Skeleton variant="text" width={100} height={28} />
+            </Stack>
+
+            <Grid container spacing={1.5}>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Grid size={{ xs: 12 }} key={index}>
+                  <Paper sx={{ 
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid rgba(0,0,0,0.05)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                  }}>
+                    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1.5 }}>
+                      <Skeleton variant="rounded" width={32} height={32} />
+                      <Box sx={{ flex: 1 }}>
+                        <Skeleton variant="text" width="40%" height={20} />
+                        <Skeleton variant="text" width="60%" height={16} />
+                      </Box>
+                      <Skeleton variant="text" width={30} height={28} />
+                    </Stack>
+                    <Skeleton variant="rounded" height={6} />
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+
+          <Paper sx={{ 
+            p: 2.5,
+            borderRadius: 2,
+            border: '1px solid rgba(0,0,0,0.05)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+          }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+              <Skeleton variant="circular" width={20} height={20} />
+              <Skeleton variant="text" width={80} height={28} />
+            </Stack>
+            <Divider sx={{ mb: 2 }} />
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} variant="rounded" width={80} height={24} />
+              ))}
+            </Box>
+
+            <Skeleton variant="text" width="90%" height={20} sx={{ mb: 1 }} />
+            <Skeleton variant="text" width="85%" height={20} />
+          </Paper>
+        </Box>
+      );
+    }
+
+    if (scoreState.error) {
+      const errorMessage = scoreState.error?.message || "Score is not available for the video";
+      const is404Error = scoreState.error?.errorType === 404;
+      
+      return (
+        <Box sx={{ 
+          height: '100%', 
+          overflow: 'auto',
+          p: 2
+        }}>
+          <Paper sx={{ 
+            mb: 2, 
+            p: 2,
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar 
+                src={decodeProfilePic(video?.profilepic || video?.profilePic)} 
+                sx={{ 
+                  width: 60, 
+                  height: 60,
+                  border: '2px solid rgba(0,0,0,0.05)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
+                }}
+              >
+                {video?.firstname?.charAt(0)}
+              </Avatar>
+              
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  mb: 0.5, 
+                  color: '#111827',
+                  fontSize: '1.1rem'
+                }}>
+                  {video?.firstname || video?.firstName}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          <Paper sx={{ 
+            p: 3,
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            border: is404Error ? '1px solid rgba(251, 146, 60, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+            bgcolor: is404Error ? 'rgba(251, 146, 60, 0.05)' : 'rgba(239, 68, 68, 0.05)',
+            textAlign: 'center'
+          }}>
+            <Box sx={{ mb: 2 }}>
+              {is404Error ? (
+                <Assessment sx={{ fontSize: 48, color: '#f59e0b', mb: 2 }} />
+              ) : (
+                <Error sx={{ fontSize: 48, color: '#ef4444', mb: 2 }} />
+              )}
+              <Typography variant="h6" sx={{ 
+                color: is404Error ? '#f59e0b' : '#ef4444',
+                fontWeight: 600,
+                mb: 1
+              }}>
+                {errorMessage}
+              </Typography>
+              <Typography variant="body2" sx={{ 
+                color: '#6b7280',
+                fontWeight: 500
+              }}>
+                {is404Error 
+                  ? "This video has not been evaluated yet or the score data is unavailable."
+                  : "There was an issue loading the score data. Please try again later."
+                }
+              </Typography>
+            </Box>
+          </Paper>
+        </Box>
+      );
+    }
+
+    if (!scoreState.data) {
+      return null;
+    }
+
+    const { hashtags, performance, feedback, scores, helpers, data } = scoreState;
+
+    return (
+      <Box sx={{ 
+        height: '100%', 
+        overflow: 'auto',
+        p: 2
+      }}>
+        <Paper sx={{ 
+          mb: 2, 
+          p: 2,
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Badge
+              overlap="circular"
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              badgeContent={
+                <Box sx={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  bgcolor: helpers.getScoreColor(data.totalScore),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }}>
+                  <Typography variant="caption" sx={{ 
+                    color: 'white', 
+                    fontSize: '10px', 
+                    fontWeight: 700 
+                  }}>
+                    {data.totalScore}
+                  </Typography>
+                </Box>
+              }
+            >
+              <Avatar 
+                src={decodeProfilePic(video.profilepic || video.profilePic)} 
+                sx={{ 
+                  width: 60, 
+                  height: 60,
+                  border: '2px solid rgba(0,0,0,0.05)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)'
+                }}
+              >
+                {video.firstname?.charAt(0)}
+              </Avatar>
+            </Badge>
+            
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 600, 
+                mb: 0.5, 
+                color: '#111827',
+                fontSize: '1.1rem'
+              }}>
+                {video?.firstname || video?.firstName}
+              </Typography>
+              <Chip 
+                label={performance.label}
+                size="small"
+                sx={{ 
+                  bgcolor: performance.color,
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  height: 24
+                }}
+              />
+            </Box>
+          </Stack>
+        </Paper>
+
+        <Paper sx={{ 
+          mb: 3,
+          p: 3,
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)',
+          textAlign: 'center'
+        }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h3" sx={{ 
+              fontWeight: 700, 
+              color: helpers.getScoreColor(data.totalScore),
+              mb: 1
+            }}>
+              {data.totalScore}
+              <Typography component="span" variant="h5" sx={{ color: 'text.secondary', opacity: 0.6 }}>
+                /10
+              </Typography>
+            </Typography>
+            <Typography variant="body1" sx={{ 
+              color: '#6b7280',
+              fontWeight: 500
+            }}>
+              Overall Performance Score
+            </Typography>
+          </Box>
+          
+          <Box sx={{ maxWidth: 300, mx: 'auto' }}>
+            <LinearProgress 
+              variant="determinate" 
+              value={(data.totalScore / 10) * 100} 
+              sx={{ 
+                height: 12, 
+                borderRadius: 6,
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: helpers.getScoreColor(data.totalScore),
+                  borderRadius: 6
+                }
+              }}
+            />
+          </Box>
+        </Paper>
+
+        <Box sx={{ mb: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <Assessment sx={{ color: '#6b7280', fontSize: 20 }} />
+            <Typography variant="h6" sx={{ 
+              color: '#111827', 
+              fontWeight: 600,
+              fontSize: '1.1rem'
+            }}>
+              Breakdown
+            </Typography>
+          </Stack>
+
+          <Grid container spacing={1.5}>
+            {scores.map((score, index) => (
+              <Grid size={{ xs: 12 }} key={index}>
+                <Paper sx={{ 
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid rgba(0,0,0,0.05)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    transform: 'translateY(-1px)'
+                  }
+                }}>
+                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1.5 }}>
+                    <Box sx={{ 
+                      p: 1, 
+                      borderRadius: 2, 
+                      bgcolor: `${helpers.getScoreColor(score.value)}15`,
+                      color: helpers.getScoreColor(score.value),
+                      display: 'flex'
+                    }}>
+                      {helpers.getScoreIcon(score.label)}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ 
+                        fontWeight: 600, 
+                        color: '#111827',
+                        mb: 0.5
+                      }}>
+                        {score.label}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', opacity: 0.8 }}>
+                        {score.description}
+                      </Typography>
+                    </Box>
+                    <Typography variant="h6" sx={{ 
+                      color: helpers.getScoreColor(score.value),
+                      fontWeight: 700
+                    }}>
+                      {score.value}
+                    </Typography>
+                  </Stack>
+                  
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(score.value / 10) * 100} 
+                    sx={{ 
+                      height: 6, 
+                      borderRadius: 3,
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
+                      '& .MuiLinearProgress-bar': {
+                        bgcolor: helpers.getScoreColor(score.value),
+                        borderRadius: 3
+                      }
+                    }}
+                  />
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        <Paper sx={{ 
+          p: 2.5,
+          borderRadius: 2,
+          border: '1px solid rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+            <Psychology sx={{ color: '#6b7280', fontSize: 20 }} />
+            <Typography variant="h6" sx={{ 
+              color: '#111827', 
+              fontWeight: 600,
+              fontSize: '1.1rem'
+            }}>
+              Analysis
+            </Typography>
+          </Stack>
+          <Divider sx={{ mb: 2 }} />
+          
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            <Chip 
+              label={hashtags.clarity}
+              size="small"
+              sx={{ 
+                bgcolor: helpers.getScoreColor(data.clarityScore),
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24
+              }}
+            />
+            <Chip 
+              label={hashtags.confidence}
+              size="small"
+              sx={{ 
+                bgcolor: helpers.getScoreColor(data.confidenceScore),
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24
+              }}
+            />
+            <Chip 
+              label={hashtags.authenticity}
+              size="small"
+              sx={{ 
+                bgcolor: helpers.getScoreColor(data.authenticityScore),
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24
+              }}
+            />
+            <Chip 
+              label={hashtags.emotional}
+              size="small"
+              sx={{ 
+                bgcolor: helpers.getScoreColor(data.emotionalScore),
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                height: 24
+              }}
+            />
+          </Box>
+
+          <Typography variant="body2" sx={{ 
+            color: 'text.secondary', 
+            mb: 1,
+            fontWeight: 500,
+            fontSize: '0.85rem'
+          }}>
+            💪 <strong>Strength:</strong> {feedback.strength}
+          </Typography>
+          <Typography variant="body2" sx={{ 
+            color: 'text.secondary',
+            fontWeight: 500,
+            fontSize: '0.85rem'
+          }}>
+            🎯 <strong>Improvement:</strong> {feedback.improvement}
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  };
 
   useEffect(() => {
-    const storedVideos = getStoredVideosForNavigation();
-    if (storedVideos && storedVideos.length > 0) {
-      setCurrentVideosList(storedVideos);
-    } else if (videos && videos.length > 0) {
-      setCurrentVideosList(videos);
-    }
-  }, [videos]);
+    if (decodedVideoId && userDetails) {
+      const videoSource = location.state?.source || getStoredVideoSource();
+      const storedList = getStoredVideosForNavigation();
 
+      const loadVideosBySource = async () => {
+        try {
+          let targetList = [];
+          
+          switch (videoSource) {
+            case 'liked':
+              if (likedVideos.length === 0) {
+                await getLikedVideos();
+              }
+              targetList = likedVideos;
+              break;
+              
+            case 'commented':
+              if (commentedVideos.length === 0) {
+                await getCommentedVideos();
+              }
+              targetList = commentedVideos;
+              break;
+              
+            case 'videos':
+            default:
+              if (videos.length === 0) {
+                await getVideos();
+              }
+              targetList = videos;
+              break;
+          }
+
+          const videosList = storedList && storedList.length > 0 ? storedList : targetList;
+          
+          if (videosList && videosList.length > 0) {
+            const foundIndex = videosList.findIndex(
+              (v) => v && v.id && v.id.toString() === decodedVideoId
+            );
+            
+            if (foundIndex >= 0) {
+              const foundVideo = videosList[foundIndex];
+              setCurrentIndex(foundIndex);
+              setCurrentVideosList(videosList);
+              loadVideo(foundVideo);
+            } else if (videosList.length > 0) {
+              setCurrentIndex(0);
+              setCurrentVideosList(videosList);
+              loadVideo(videosList[0]);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading videos by source:', error);
+          if (videos && videos.length > 0) {
+            setCurrentVideosList(videos);
+            loadVideo(videos[0]);
+          }
+        }
+      };
+
+      loadVideosBySource();
+    }
+  }, [decodedVideoId, userDetails, location.state?.source, videos, likedVideos, commentedVideos]);
 
   const convertSrtToVtt = (srtContent) => {
     if (!srtContent) return "";
@@ -124,7 +693,6 @@ export default function VideoPlayer() {
     vttContent += srtContent.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
     return vttContent;
   };
-
 
   const fetchSubtitles = async (videoId) => {
     if (!videoId || subtitlesFetched.has(videoId)) return;
@@ -152,7 +720,6 @@ export default function VideoPlayer() {
     }
   };
 
-
   const cleanupBlobs = () => {
     Object.entries(subtitles).forEach(([videoId, url]) => {
       if (url && url.startsWith("blob:")) {
@@ -165,11 +732,9 @@ export default function VideoPlayer() {
     setSubtitlesFetched(new Set());
   };
 
-
   const showSnackbar = (message, severity = "info") => {
     setSnackbar({ open: true, message, severity });
   };
-
 
   const handleBackNavigation = () => {
     if (location.state?.from) {
@@ -180,7 +745,6 @@ export default function VideoPlayer() {
       navigate('/app/videos');
     }
   };
-
 
   const fetchLikeData = async (videoId) => {
     if (!videoId || !userDetails?.userId) return;
@@ -198,30 +762,177 @@ export default function VideoPlayer() {
     }
   };
 
+  const loadVideo = async (videoData) => {
+    if (!videoData || !videoData.id) return;
+
+    setVideo(videoData);
+    setVideoLoading(false);
+    
+    setScoreState({
+      loading: true,
+      error: null,
+      data: null,
+      hashtags: null,
+      performance: null,
+      feedback: null,
+      scores: null,
+      helpers: null
+    });
+
+    await fetchLikeData(videoData.id);
+
+    if (!subtitlesFetched.has(videoData.id)) {
+      fetchSubtitles(videoData.id);
+    }
+
+    try {
+      const scoreRes = await axiosInstance.get(`/totalscore/${videoData.id}`);
+      const scoreData = scoreRes.data;
+      
+      const getScoreColor = (score) => {
+        if (score >= 8) return '#10b981';
+        if (score >= 6) return '#f59e0b';
+        if (score >= 4) return '#ef4444';
+        return '#6b7280';
+      };
+
+      const getScoreIcon = (label) => {
+        switch (label.toLowerCase()) {
+          case 'clarity': return <Visibility fontSize="small" />;
+          case 'confidence': return <TrendingUp fontSize="small" />;
+          case 'authenticity': return <Star fontSize="small" />;
+          case 'emotional': return <Favorite fontSize="small" />;
+          default: return <EmojiEvents fontSize="small" />;
+        }
+      };
+
+      const getHashtagForScore = (score, type) => {
+        switch (type) {
+          case 'clarity':
+            if (score < 4) return '#Unclear';
+            if (score >= 4 && score <= 6) return '#Improving';
+            if (score > 6 && score <= 8) return '#Clear';
+            return '#Articulate';
+            
+          case 'confidence':
+            if (score < 4) return '#Hesitant';
+            if (score >= 4 && score <= 6) return '#Composed';
+            if (score > 6 && score <= 8) return '#Poised';
+            return '#Assured';
+            
+          case 'authenticity':
+            if (score < 4) return '#Guarded';
+            if (score >= 4 && score <= 6) return '#Honest';
+            if (score > 6 && score <= 8) return '#Natural';
+            return '#Genuine';
+            
+          case 'emotional':
+            if (score < 4) return '#Flat';
+            if (score >= 4 && score <= 6) return '#Thoughtful';
+            if (score > 6 && score <= 8) return '#Empathic';
+            return '#Expressive';
+            
+          default:
+            return '#Unknown';
+        }
+      };
+
+      const getPerformanceLabel = (totalScore) => {
+        if (totalScore >= 9) return { label: 'Outstanding', color: '#059669' };
+        if (totalScore >= 7) return { label: 'Excellent', color: '#0891b2' };
+        if (totalScore >= 5) return { label: 'Good', color: '#d97706' };
+        if (totalScore >= 3) return { label: 'Average', color: '#dc2626' };
+        return { label: 'Needs Work', color: '#7c2d12' };
+      };
+
+      const getFeedback = (Clarity, Confidence, Authenticity, emotional) => {
+        const scores = [
+          { key: 'Clarity', value: Number(Clarity) },
+          { key: 'Confidence', value: Number(Confidence) },
+          { key: 'Authenticity', value: Number(Authenticity) },
+          { key: 'Emotional', value: Number(emotional) },
+        ];
+        scores.sort((a, b) => a.value - b.value);
+        const weakest = scores[0]?.key;
+        if (!weakest) return { strength: 'Well-rounded performance!', improvement: 'Continue practicing all areas.' };
+        const feedbackMessages = {
+          Clarity: { strength: 'Shows potential to express ideas.', improvement: 'Needs structured thought and clearer articulation.' },
+          Confidence: { strength: 'Shows honesty and openness.', improvement: 'Work on tone, eye contact, and vocal steadiness.' },
+          Authenticity: { strength: 'Cautious and controlled.', improvement: 'Loosen up for better emotional engagement.' },
+          Emotional: { strength: 'Mindful and considered.', improvement: 'Vary pace and tone to match emotional context.' },
+        };
+        return feedbackMessages[weakest];
+      };
+
+      const computed = {
+        hashtags: {
+          clarity: getHashtagForScore(scoreData.clarityScore, 'clarity'),
+          confidence: getHashtagForScore(scoreData.confidenceScore, 'confidence'),
+          authenticity: getHashtagForScore(scoreData.authenticityScore, 'authenticity'),
+          emotional: getHashtagForScore(scoreData.emotionalScore, 'emotional')
+        },
+        performance: getPerformanceLabel(scoreData.totalScore),
+        feedback: getFeedback(
+          scoreData.clarityScore,
+          scoreData.confidenceScore, 
+          scoreData.authenticityScore,
+          scoreData.emotionalScore
+        ),
+        scores: [
+          { label: 'Clarity', value: scoreData.clarityScore, description: 'Communication clarity' },
+          { label: 'Confidence', value: scoreData.confidenceScore, description: 'Presentation confidence' },
+          { label: 'Authenticity', value: scoreData.authenticityScore, description: 'Genuine expression' },
+          { label: 'Emotional', value: scoreData.emotionalScore, description: 'Emotional connection' }
+        ],
+        helpers: {
+          getScoreColor,
+          getScoreIcon
+        }
+      };
+
+      setScoreState({
+        loading: false,
+        error: null,
+        data: scoreData,
+        ...computed
+      });
+
+    } catch (error) {
+      setScoreState({
+        loading: false,
+        error: {
+          isError: true,
+          errorType: error.response?.status === 404 ? 404 : 500,
+          message: error.response?.status === 404 ? "Score not available" : "Failed to load score data"
+        },
+        data: null,
+        hashtags: null,
+        performance: null,
+        feedback: null,
+        scores: null,
+        helpers: null
+      });
+    }
+  };
 
   const navigateVideo = useCallback(
     (direction) => {
       if (!currentVideosList || currentVideosList.length === 0) return;
-
 
       const newIndex =
         direction === "next"
           ? (currentIndex + 1) % currentVideosList.length
           : (currentIndex - 1 + currentVideosList.length) % currentVideosList.length;
 
-
       if (!currentVideosList[newIndex]) return;
-
 
       setIsScrolling(true);
       setCurrentIndex(newIndex);
       const nextVideo = currentVideosList[newIndex];
       loadVideo(nextVideo);
 
-
       const hashedId = btoa(nextVideo.id.toString());
       navigate(`/app/video/${hashedId}`, { replace: true });
-
 
       if (!isMobile && containerRef.current) {
         const scrollDirection = direction === "next" ? 1 : -1;
@@ -231,274 +942,13 @@ export default function VideoPlayer() {
         });
       }
 
-
       setTimeout(() => setIsScrolling(false), 1000);
     },
     [currentVideosList, currentIndex, navigate, isMobile]
   );
 
-
-  useEffect(() => {
-    if (!isMobile || !mobileContainerRef.current) return;
-
-
-    let touchStartY = null;
-    let touchStartX = null;
-    let touchStartTime = null;
-    const minSwipeDistance = 80;
-    const maxSwipeTime = 800;
-
-
-    const handleTouchStart = (e) => {
-      if (e.touches[0].clientY < 100) {
-        e.preventDefault();
-      }
-      touchStartY = e.touches[0].clientY;
-      touchStartX = e.touches[0].clientX;
-      touchStartTime = Date.now();
-    };
-
-
-    const handleTouchMove = (e) => {
-      if (touchStartY && e.touches[0].clientY < touchStartY) {
-        e.preventDefault();
-      }
-    };
-
-
-    const handleTouchEnd = (e) => {
-      if (!touchStartY || !touchStartX || !touchStartTime) return;
-
-
-      const touchEndY = e.changedTouches[0].clientY;
-      const touchEndX = e.changedTouches[0].clientX;
-      const touchEndTime = Date.now();
-      const deltaY = touchStartY - touchEndY;
-      const deltaX = Math.abs(touchStartX - touchEndX);
-      const duration = touchEndTime - touchStartTime;
-
-
-      touchStartY = null;
-      touchStartX = null;
-      touchStartTime = null;
-
-
-      if (duration > maxSwipeTime) return;
-      if (Math.abs(deltaY) < minSwipeDistance) return;
-      if (deltaX > Math.abs(deltaY)) return;
-
-
-      e.preventDefault();
-      e.stopPropagation();
-
-
-      if (deltaY > 0) {
-        navigateVideo("next");
-      } else {
-        navigateVideo("prev");
-      }
-    };
-
-
-    const container = mobileContainerRef.current;
-    container.addEventListener("touchstart", handleTouchStart, {
-      passive: false,
-    });
-    container.addEventListener("touchmove", handleTouchMove, {
-      passive: false,
-    });
-    container.addEventListener("touchend", handleTouchEnd, { passive: false });
-
-
-    return () => {
-      if (container) {
-        container.removeEventListener("touchstart", handleTouchStart);
-        container.removeEventListener("touchmove", handleTouchMove);
-        container.removeEventListener("touchend", handleTouchEnd);
-      }
-    };
-  }, [isMobile, navigateVideo]);
-
-
-  useEffect(() => {
-    if (userDetails) {
-      fetchVideos();
-    }
-  }, [userDetails]);
-
-
-  useEffect(() => {
-    if (currentVideosList && currentVideosList.length > 0) {
-      currentVideosList.forEach((video) => {
-        if (video && video.id) {
-          fetchSubtitles(video.id);
-        }
-      });
-    }
-  }, [currentVideosList]);
-
-
-  useEffect(() => {
-    if (decodedVideoId) {
-      let foundVideo = null;
-      let foundIndex = -1;
-      let foundList = null;
-
-
-      const storedListType = getStoredVideoListType();
-      
-      if (currentVideosList && currentVideosList.length > 0) {
-        foundIndex = currentVideosList.findIndex(
-          (v) => v && v.id && v.id.toString() === decodedVideoId
-        );
-        if (foundIndex >= 0) {
-          foundVideo = currentVideosList[foundIndex];
-          foundList = currentVideosList;
-        }
-      }
-
-
-      if (!foundVideo && storedListType) {
-        if (storedListType === 'liked' && likedVideos && likedVideos.length > 0) {
-          foundIndex = likedVideos.findIndex(
-            (v) => v && v.id && v.id.toString() === decodedVideoId
-          );
-          if (foundIndex >= 0) {
-            foundVideo = likedVideos[foundIndex];
-            foundList = likedVideos;
-          }
-        } else if (storedListType === 'commented' && commentedVideos && commentedVideos.length > 0) {
-          foundIndex = commentedVideos.findIndex(
-            (v) => v && v.id && v.id.toString() === decodedVideoId
-          );
-          if (foundIndex >= 0) {
-            foundVideo = commentedVideos[foundIndex];
-            foundList = commentedVideos;
-            console.log('Found video in commented videos at index:', foundIndex);
-          }
-        } else if (storedListType === 'job' && videos && videos.length > 0) {
-          foundIndex = videos.findIndex(
-            (v) => v && v.id && v.id.toString() === decodedVideoId
-          );
-          if (foundIndex >= 0) {
-            foundVideo = videos[foundIndex];
-            foundList = videos;
-          }
-        }
-      }
-
-
-      if (!foundVideo && likedVideos && likedVideos.length > 0) {
-        foundIndex = likedVideos.findIndex(
-          (v) => v && v.id && v.id.toString() === decodedVideoId
-        );
-        if (foundIndex >= 0) {
-          foundVideo = likedVideos[foundIndex];
-          foundList = likedVideos;
-        }
-      }
-
-
-      if (foundVideo && foundList) {
-        setCurrentIndex(foundIndex);
-        setCurrentVideosList(foundList);
-        loadVideo(foundVideo);
-      } else if (currentVideosList && currentVideosList.length > 0) {
-        setCurrentIndex(0);
-        loadVideo(currentVideosList[0]);
-      }
-    }
-  }, [currentVideosList, likedVideos, commentedVideos, videos, decodedVideoId]);
-
-
-  useEffect(() => {
-    const handleWheel = (e) => {
-      if (isMobile) return;
-
-
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 50) {
-        e.preventDefault();
-        if (e.deltaX > 0) {
-          navigateVideo("next");
-        } else {
-          navigateVideo("prev");
-        }
-      }
-    };
-
-
-    if (containerRef.current && !isMobile) {
-      containerRef.current.addEventListener("wheel", handleWheel, {
-        passive: false,
-      });
-
-
-      return () => {
-        if (containerRef.current) {
-          containerRef.current.removeEventListener("wheel", handleWheel);
-        }
-      };
-    }
-  }, [currentVideosList, currentIndex, isMobile, navigateVideo]);
-
-
-  useEffect(() => {
-    return () => {
-      cleanupBlobs();
-    };
-  }, []);
-
-
-  const fetchVideos = async () => {
-    try {
-      await getVideos();
-    } catch (error) { /* empty */ }
-  };
-
-
-  const loadVideo = async (videoData) => {
-    if (!videoData || !videoData.id) return;
-
-
-    setVideo(videoData);
-    setVideoLoading(false);
-    await fetchLikeData(videoData.id);
-
-
-    if (!subtitlesFetched.has(videoData.id)) {
-      fetchSubtitles(videoData.id);
-    }
-
-
-    try {
-      setScoreLoading(true);
-      setScoreError(null);
-      const scoreRes = await axiosInstance.get(`/totalscore/${videoData.id}`);
-      setScoreData(scoreRes.data);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setScoreError({
-          isError: true,
-          errorType: 404,
-          message: "Score not available"
-        });
-      } else {
-        setScoreError({
-          isError: true,
-          errorType: error.response?.status || 500,
-          message: "Failed to load score data"
-        });
-      }
-      setScoreData(null);
-    } finally {
-      setScoreLoading(false);
-    }
-  };
-
-
   const handleLike = async () => {
     if (!video || !video.id || !userDetails) return;
-
 
     try {
       const endpoint = isLiked ? "dislike" : "like";
@@ -506,13 +956,11 @@ export default function VideoPlayer() {
         `/videos/${video.id}/${endpoint}?userId=${userDetails.userId}&firstName=${userDetails.firstName}`
       );
 
-
       const newLikedStatus = !isLiked;
       setIsLiked(newLikedStatus);
       setLikeCount((prev) =>
         newLikedStatus ? prev + 1 : Math.max(0, prev - 1)
       );
-
 
       if (currentVideosList && currentVideosList[currentIndex]) {
         currentVideosList[currentIndex].isLiked = newLikedStatus;
@@ -521,7 +969,6 @@ export default function VideoPlayer() {
           ? (currentVideosList[currentIndex].likeCount || 0) + 1
           : Math.max(0, (currentVideosList[currentIndex].likeCount || 0) - 1);
       }
-
 
       showSnackbar(
         newLikedStatus ? "Video liked!" : "Video unliked!",
@@ -533,53 +980,76 @@ export default function VideoPlayer() {
     }
   };
 
-
   const handleShare = async () => {
     if (!video) return;
 
+    // First check if thumbnail is available
+    if (!video.thumbnail) {
+      showSnackbar('Thumbnail is not available for sharing', 'warning');
+      console.warn('Thumbnail is missing for the current video:', video);
+      return;
+    }
 
-    const videoUrl = `${window.location.origin}/app/video/${btoa(
-      video.id.toString()
-    )}`;
-    const videoTitle = video.title || 'Check out this video!';
-
-
-    const shareData = {
-      title: 'Wezume',
-      text: videoTitle,
-      url: videoUrl,
-    };
-
-
+    const thumbnailUrl = video.thumbnail;
+    const firstName = video.firstname || video.firstName || 'User';
+    const videoUrl = `${window.location.origin}/app/video/${btoa(video.id.toString())}`;
+    
     try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-        showSnackbar("Shared successfully!", "success");
-        return;
+      // Check if the thumbnail URL is accessible
+      const response = await fetch(thumbnailUrl);
+      if (!response.ok) {
+        throw new Error('Thumbnail URL is not accessible.');
       }
 
+      const shareData = {
+        title: 'Wezume - Video Share',
+        text: `Check out this video shared by ${firstName}\n\n${videoUrl}`,
+        url: thumbnailUrl, // Share the URL of the thumbnail
+      };
 
-      if (navigator.share) {
+      // Check if the Web Share API is supported and can share URLs
+      if (navigator.canShare && navigator.canShare({ url: thumbnailUrl })) {
         try {
           await navigator.share(shareData);
           showSnackbar("Shared successfully!", "success");
           return;
         } catch (shareError) {
+          if (shareError.name === 'AbortError') {
+            return; // User cancelled, don't show error
+          }
+          console.log("Web Share API failed, trying fallback:", shareError);
+        }
+      }
+
+      // Fallback to Web Share API without checking canShare
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareData.title,
+            text: shareData.text,
+            url: videoUrl // Fallback to video URL instead of thumbnail
+          });
+          showSnackbar("Shared successfully!", "success");
+          return;
+        } catch (shareError) {
+          if (shareError.name === 'AbortError') {
+            return; // User cancelled
+          }
           console.log("Share failed, trying clipboard fallback:", shareError);
         }
       }
 
-
+      // Fallback to clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(window.location.href);
-        showSnackbar("Link copied to clipboard!", "success");
+        await navigator.clipboard.writeText(videoUrl);
+        showSnackbar("Video link copied to clipboard!", "success");
         return;
       }
 
-
+      // Final fallback for older browsers
       if (document.execCommand) {
         const textArea = document.createElement('textarea');
-        textArea.value = window.location.href;
+        textArea.value = videoUrl;
         textArea.style.position = 'fixed';
         textArea.style.left = '-999999px';
         textArea.style.top = '-999999px';
@@ -587,38 +1057,40 @@ export default function VideoPlayer() {
         textArea.focus();
         textArea.select();
 
-
         try {
           document.execCommand('copy');
           document.body.removeChild(textArea);
-          showSnackbar("Link copied to clipboard!", "success");
+          showSnackbar("Video link copied to clipboard!", "success");
           return;
         } catch (err) {
           document.body.removeChild(textArea);
         }
       }
 
-
       showSnackbar("Please copy the URL manually from your address bar", "info");
+
     } catch (error) {
-      console.error("Share error:", error);
-
-
-      if (error.name === 'AbortError') {
+      console.error('Error sharing video:', error);
+      
+      if (error.message === 'Thumbnail URL is not accessible.') {
+        showSnackbar("Thumbnail is not accessible for sharing", "warning");
         return;
       }
 
+      if (error.name === 'AbortError') {
+        return; // User cancelled
+      }
 
       if (error.name === 'NotAllowedError') {
         showSnackbar("Sharing requires user interaction", "warning");
         return;
       }
 
-
+      // Fallback to clipboard if sharing fails
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(window.location.href);
-          showSnackbar("Link copied to clipboard!", "success");
+          await navigator.clipboard.writeText(videoUrl);
+          showSnackbar("Video link copied to clipboard!", "success");
         } else {
           showSnackbar("Unable to share or copy link", "error");
         }
@@ -628,16 +1100,16 @@ export default function VideoPlayer() {
     }
   };
 
-
   const handleCall = async (event) => {
-    if (!video?.phonenumber) return;
+    const phoneNumber = video?.phonenumber || video?.phoneNumber;
+    if (!phoneNumber) return;
     
     setPhoneAnchorEl(event.currentTarget);
     setPhonePopoverOpen(true);
     
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(video.phonenumber);
+        await navigator.clipboard.writeText(phoneNumber);
         showSnackbar("Phone number copied to clipboard!", "success");
       }
     } catch (error) {
@@ -645,24 +1117,20 @@ export default function VideoPlayer() {
     }
   };
 
-
   const handlePhonePopoverClose = () => {
     setPhonePopoverOpen(false);
     setPhoneAnchorEl(null);
   };
-
 
   const handleEmail = () => {
     if (!video || !video.email) return;
     window.open(`mailto:${video.email}`);
   };
 
-
   const handleLinkedIn = () => {
     if (!video || !video.linkedinprofile) return;
     window.open(video?.linkedinprofile, '_blank');
   };
-
 
   const handleVideoContainerClick = (e) => {
     const target = e.target;
@@ -671,20 +1139,16 @@ export default function VideoPlayer() {
       target.closest("button") ||
       target.closest('[role="button"]');
 
-
     const isVideoControl =
       target.closest("video") || target.tagName === "VIDEO";
-
 
     if (isButton || isVideoControl) {
       e.stopPropagation();
       return;
     }
 
-
     e.stopPropagation();
   };
-
 
   const enableSubtitles = (videoElement) => {
     if (
@@ -702,10 +1166,8 @@ export default function VideoPlayer() {
     }
   };
 
-
   const handleVideoLoad = (videoElement, videoId) => {
     setVideoLoading(false);
-
 
     const checkAndEnableSubtitles = () => {
       if (subtitles[videoId]) {
@@ -715,12 +1177,134 @@ export default function VideoPlayer() {
       }
     };
 
-
     setTimeout(checkAndEnableSubtitles, 100);
   };
 
+  useEffect(() => {
+    if (!isMobile || !mobileContainerRef.current) return;
 
-  if (isLoadingVideos) {
+    let touchStartY = null;
+    let touchStartX = null;
+    let touchStartTime = null;
+    const minSwipeDistance = 80;
+    const maxSwipeTime = 800;
+
+    const handleTouchStart = (e) => {
+      if (e.touches[0].clientY < 100) {
+        e.preventDefault();
+      }
+      touchStartY = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+      touchStartTime = Date.now();
+    };
+
+    const handleTouchMove = (e) => {
+      if (touchStartY && e.touches[0].clientY < touchStartY) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!touchStartY || !touchStartX || !touchStartTime) return;
+
+      const touchEndY = e.changedTouches[0].clientY;
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndTime = Date.now();
+      const deltaY = touchStartY - touchEndY;
+      const deltaX = Math.abs(touchStartX - touchEndX);
+      const duration = touchEndTime - touchStartTime;
+
+      touchStartY = null;
+      touchStartX = null;
+      touchStartTime = null;
+
+      if (duration > maxSwipeTime) return;
+      if (Math.abs(deltaY) < minSwipeDistance) return;
+      if (deltaX > Math.abs(deltaY)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (deltaY > 0) {
+        navigateVideo("next");
+      } else {
+        navigateVideo("prev");
+      }
+    };
+
+    const container = mobileContainerRef.current;
+    container.addEventListener("touchstart", handleTouchStart, {
+      passive: false,
+    });
+    container.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+    container.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+    return () => {
+      if (container) {
+        container.removeEventListener("touchstart", handleTouchStart);
+        container.removeEventListener("touchmove", handleTouchMove);
+        container.removeEventListener("touchend", handleTouchEnd);
+      }
+    };
+  }, [isMobile, navigateVideo]);
+
+  useEffect(() => {
+    if (userDetails) {
+      const fetchVideos = async () => {
+        try {
+          await getVideos();
+        } catch (error) { /* empty */ }
+      };
+      fetchVideos();
+    }
+  }, [userDetails]);
+
+  useEffect(() => {
+    if (currentVideosList && currentVideosList.length > 0) {
+      currentVideosList.forEach((video) => {
+        if (video && video.id) {
+          fetchSubtitles(video.id);
+        }
+      });
+    }
+  }, [currentVideosList]);
+
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (isMobile) return;
+
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 50) {
+        e.preventDefault();
+        if (e.deltaX > 0) {
+          navigateVideo("next");
+        } else {
+          navigateVideo("prev");
+        }
+      }
+    };
+
+    if (containerRef.current && !isMobile) {
+      containerRef.current.addEventListener("wheel", handleWheel, {
+        passive: false,
+      });
+
+      return () => {
+        if (containerRef.current) {
+          containerRef.current.removeEventListener("wheel", handleWheel);
+        }
+      };
+    }
+  }, [currentVideosList, currentIndex, isMobile, navigateVideo]);
+
+  useEffect(() => {
+    return () => {
+      cleanupBlobs();
+    };
+  }, []);
+
+  if (isLoadingVideos && !video) {
     return (
       <Box
         sx={{
@@ -734,7 +1318,6 @@ export default function VideoPlayer() {
       </Box>
     );
   }
-
 
   if (!video || !currentVideosList || currentVideosList.length === 0) {
     return (
@@ -757,7 +1340,6 @@ export default function VideoPlayer() {
       </Box>
     );
   }
-
 
   if (isMobile) {
     return (
@@ -949,7 +1531,7 @@ export default function VideoPlayer() {
                 </Fab>
                 <Fab
                   size="small"
-                  onClick={handleLinkedIn}
+                  // onClick={handleLinkedIn}
                   sx={{ bgcolor: "rgba(255,255,255,0.9)", color: "#0A66C2" }}
                 >
                   <LinkedInIcon />
@@ -1001,7 +1583,7 @@ export default function VideoPlayer() {
             >
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                  📞 {video?.phonenumber || "Phone number not available"}
+                  📞 {video?.phonenumber || video?.phoneNumber || "Phone number not available"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
                   Copied to clipboard!
@@ -1024,7 +1606,7 @@ export default function VideoPlayer() {
             sx={{
               width: "90vw",
               height: "80vh",
-              overflow: "hidden",
+              overflow: "auto",
               position: "relative",
               borderRadius: 2,
             }}
@@ -1035,12 +1617,7 @@ export default function VideoPlayer() {
             >
               <ArrowBack />
             </IconButton>
-            <ScoreEvaluation 
-              scoreData={scoreError || scoreData} 
-              video={video} 
-              loading={scoreLoading}
-              error={!!scoreError}
-            />
+            {renderScoreEvaluation()}
           </Paper>
         </Modal>
         <Modal
@@ -1075,7 +1652,6 @@ export default function VideoPlayer() {
     );
   }
 
-
   return (
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <Box
@@ -1105,7 +1681,6 @@ export default function VideoPlayer() {
           Back to Videos
         </Button>
       </Box>
-
 
       <Box
         ref={containerRef}
@@ -1236,7 +1811,7 @@ export default function VideoPlayer() {
               <Share />
             </IconButton>
             <IconButton
-              onClick={handleLinkedIn}
+              // onClick={handleLinkedIn}
               sx={{
                 bgcolor: "rgba(255,255,255,0.9)",
                 color: "#0A66C2",
@@ -1285,18 +1860,16 @@ export default function VideoPlayer() {
             </IconButton>
           </Box>
         </Box>
+
         <Box sx={{ flex: 1, bgcolor: "white", borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-          <ScoreEvaluation 
-            scoreData={scoreError || scoreData} 
-            video={video} 
-            loading={scoreLoading}
-            error={!!scoreError}
-          />
+          {renderScoreEvaluation()}
         </Box>
+
         <Box sx={{ flex: 1, bgcolor: "white", borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
           <CommentsSection videoId={video.id} />
         </Box>
       </Box>
+
       <IconButton
         sx={{
           position: "absolute",
@@ -1367,7 +1940,7 @@ export default function VideoPlayer() {
       >
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-            📞 {video?.phonenumber || "Phone number not available"}
+            📞 {video?.phonenumber || video?.phoneNumber || "Phone number not available"}
           </Typography>
           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
             Copied to clipboard!

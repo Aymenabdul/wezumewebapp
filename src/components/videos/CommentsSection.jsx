@@ -140,7 +140,7 @@ export default function CommentsSection({ videoId }) {
   return (
     <Paper sx={{ 
       p: 3, 
-      height: '100%', 
+      height: { xs: '75%', md: '100%' }, 
       display: 'flex', 
       flexDirection: 'column',
       borderRadius: 2,

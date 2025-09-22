@@ -23,7 +23,7 @@ import axiosInstance from "../../axios/axios";
 import { useAppStore } from "../../store/appStore";
 import CountUp from "react-countup";
 
-export default function VideoCard({ video }) {
+export default function VideoCard({ video, onClick }) {
   const [hovered, setHovered] = useState(false);
   const [likes, setLikes] = useState(0);
   const [totalScore, setTotalScore] = useState(null);
@@ -137,7 +137,14 @@ export default function VideoCard({ video }) {
       handleInteraction();
       return;
     }
-    navigate(`/app/video/${hashVideoId(video.id)}`);
+
+    // Use the provided onClick prop if available, otherwise fallback to default navigation
+    if (onClick) {
+      onClick();
+    } else {
+      // Fallback to default navigation (shouldn't happen with new implementation)
+      navigate(`/app/video/${hashVideoId(video.id)}`);
+    }
   };
 
   const showSlide = isMobile ? touched : hovered;
