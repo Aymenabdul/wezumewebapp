@@ -21,7 +21,7 @@ export default function HeroBackground() {
       {images.map((image, index) => (
         <div
           key={index}
-          className={`absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover transition-opacity duration-2000 ease-in-out ${
+          className={`absolute inset-0 w-full h-full ${index==2?"bg-center":"bg-right"} bg-no-repeat bg-cover transition-opacity duration-2000 ease-in-out ${
             index === currentImageIndex ? 'opacity-100' : 'opacity-0'
           }`}
           style={{

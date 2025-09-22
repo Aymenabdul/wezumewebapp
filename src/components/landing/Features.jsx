@@ -86,7 +86,7 @@ export default function Features() {
                   y: -8,
                   transition: { duration: 0.25, ease: "easeOut" },
                 }}
-                className="text-center p-6 bg-white rounded-xl shadow-lg relative z-30 group"
+                className="text-center p-6 bg-gradient-to-br from-blue-500/20 to-blue-700/10 backdrop-blur-md border border-blue-400/20 rounded-xl shadow-lg relative z-30 group"
               >
                 {/* Icon */}
                 <motion.div
@@ -100,10 +100,10 @@ export default function Features() {
                 </motion.div>
 
                 {/* Title with Counter (if applicable) */}
-                <h3 className="text-xl font-bold text-blue-600">
+                <h3 className="text-xl font-bold text-gray-900 drop-shadow-sm">
                   {feature.title(inView)}
                 </h3>
-                <p className="mt-2 text-gray-600">{feature.description}</p>
+                <p className="mt-2 text-gray-700 drop-shadow-sm">{feature.description}</p>
               </motion.div>
             );
           })}

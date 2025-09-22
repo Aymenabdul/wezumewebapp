@@ -4,7 +4,10 @@ import { motion } from "framer-motion";
 
 const Hero = () => {
   return (
-    <div id="home" className="relative min-h-screen overflow-hidden bg-blue-600">
+    <div
+      id="home"
+      className="relative min-h-screen overflow-hidden bg-blue-600"
+    >
       {/* Background */}
       <HeroBackground />
 
@@ -59,15 +62,15 @@ const Hero = () => {
             "
           >
             {/* Heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold mb-4 leading-tight">
-              Speak <span className="text-blue-600">Up.</span>
-              <span className="lg:hidden block">
-                <br />
-              </span>
-              {/* Only show a space for desktop */}
-              <span className="hidden lg:inline">&nbsp;</span>
-              Stand <span className="text-blue-600">Out.</span>
-            </h1>
+            <div className="flex flex-col sm:flex-row gap-1">
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold mb-4 leading-tight">
+                Speak <span className="text-blue-600">Up.</span>
+              </h1>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-5xl font-extrabold mb-4 leading-tight">
+                Stand <span className="text-blue-600">Out.</span>
+              </h1>
+            </div>
 
             {/* Subheading */}
             <p className="mt-6 text-lg sm:text-xl lg:text-2xl text-white/90 font-medium leading-relaxed">
